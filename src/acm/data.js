@@ -49,6 +49,38 @@ export const RELATION_META = {
 
 export const PRIORITIES = ["P0", "P1", "P2", "P3"];
 
+// ---- Domain Profiles / Templates (plan §6.5, §8.7) ----
+// Profiles only remap UI DISPLAY NAMES over the same stable ACM-MD NodeType
+// vocabulary. They never touch underlying types, ids, edges or Agent Diff.
+export const DOMAIN_PROFILES = [
+  { id: "generic",  label: "通用逻辑",   glyph: "◇", desc: "任何带逻辑关联的任务或思考" },
+  { id: "software", label: "软件开发",   glyph: "▤", desc: "产品 / 模块 / 功能 / 任务" },
+  { id: "research", label: "研究分析",   glyph: "◎", desc: "目标 / 维度 / 论点 / 证据" },
+  { id: "writing",  label: "写作策划",   glyph: "✎", desc: "篇章 / 论点 / 素材 / 待写" },
+  { id: "bid",      label: "投标准备",   glyph: "▣", desc: "标段 / 响应 / 资质 / 风险" },
+  { id: "decision", label: "个人决策",   glyph: "⚖", desc: "选项 / 理由 / 风险 / 决定" },
+];
+export const DOMAIN_PROFILE_META = Object.fromEntries(DOMAIN_PROFILES.map((p) => [p.id, p]));
+
+// per-profile display name for each canonical NodeType
+export const PROFILE_LABELS = {
+  generic:  { Goal: "目标", Module: "主题", Feature: "要点", Page: "视角", DataEntity: "资料", API: "交接点", Constraint: "约束", Risk: "风险", Assumption: "假设", Question: "问题", Decision: "决策", Task: "下一步" },
+  software: { Goal: "产品目标", Module: "模块", Feature: "功能", Page: "页面", DataEntity: "数据对象", API: "接口", Constraint: "规则/验收", Risk: "技术风险", Assumption: "前提假设", Question: "待澄清问题", Decision: "技术取舍", Task: "开发任务" },
+  research: { Goal: "研究目标", Module: "分析维度", Feature: "发现/论点", Page: "观察视角", DataEntity: "证据/资料", API: "外部来源", Constraint: "边界条件", Risk: "不确定性", Assumption: "研究假设", Question: "待验证问题", Decision: "判断/结论", Task: "研究任务" },
+  writing:  { Goal: "写作目标", Module: "篇章/板块", Feature: "论点/段落", Page: "场景", DataEntity: "素材", API: "引用来源", Constraint: "体例/字数", Risk: "风险点", Assumption: "预设", Question: "待定问题", Decision: "取舍", Task: "待写" },
+  bid:      { Goal: "投标目标", Module: "标段/章节", Feature: "响应要点", Page: "场景", DataEntity: "资质/材料", API: "评分/依赖", Constraint: "招标要求", Risk: "废标风险", Assumption: "前提假设", Question: "待澄清条款", Decision: "策略决策", Task: "待办" },
+  decision: { Goal: "想要的结果", Module: "考量维度", Feature: "选项/理由", Page: "情境", DataEntity: "事实/信息", API: "外部因素", Constraint: "限制条件", Risk: "风险", Assumption: "假设", Question: "待想清楚", Decision: "决定", Task: "下一步" },
+};
+
+// Active profile is local UI state (NOT written into exported ACM-MD v0.1).
+// Set synchronously at the top of <App> render so all children read it.
+let ACTIVE_PROFILE = "software";
+export function setActiveProfile(id) { if (PROFILE_LABELS[id]) ACTIVE_PROFILE = id; }
+export function typeLabel(type) {
+  const m = PROFILE_LABELS[ACTIVE_PROFILE];
+  return (m && m[type]) || (NODE_TYPE_META[type] && NODE_TYPE_META[type].label) || type;
+}
+
 // ---- Relation inference rules (ACM-MD v0.1 §11, plan §6.5) ----
 // key: "FromType>ToType" -> { auto?: relation, candidates: [relation,...] }
 const INFERENCE = {
@@ -278,7 +310,7 @@ export function buildChangeSet(base, cur, d) {
 
   const instr = [];
   const nameOf = (id) => (cur.nodes.find((n) => n.id === id) || base.nodes.find((n) => n.id === id) || {}).title || id;
-  for (const n of d.added_nodes) instr.push(`处理新增${NODE_TYPE_META[n.type]?.label || n.type}「${n.title}」(${n.id})。`);
+  for (const n of d.added_nodes) instr.push(`处理新增${typeLabel(n.type)}「${n.title}」(${n.id})。`);
   for (const n of d.removed_nodes) instr.push(`移除已删除节点「${n.title}」(${n.id}) 的相关实现。`);
   for (const m of d.modified_nodes) instr.push(`「${nameOf(m.id)}」的 ${m.field}：${JSON.stringify(m.before)} → ${JSON.stringify(m.after)}。`);
   for (const e of d.added_edges) instr.push(`建立关系 ${nameOf(e.from)} —${RELATION_META[e.type]?.label}→ ${nameOf(e.to)}。`);
@@ -382,7 +414,7 @@ export function toAcmMd(doc, changeSet) {
 export function toMermaid(doc) {
   const lines = ["graph LR"];
   const safe = (id) => id.replace(/[^a-zA-Z0-9_]/g, "_");
-  for (const n of doc.nodes) lines.push(`  ${safe(n.id)}["${NODE_TYPE_META[n.type]?.label || n.type}: ${n.title}"]`);
+  for (const n of doc.nodes) lines.push(`  ${safe(n.id)}["${typeLabel(n.type)}: ${n.title}"]`);
   for (const e of doc.edges) lines.push(`  ${safe(e.from)} -- ${RELATION_META[e.type]?.label || e.type} --> ${safe(e.to)}`);
   return lines.join("\n");
 }

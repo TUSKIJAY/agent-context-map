@@ -5,6 +5,7 @@ import {
   NODE_TYPES, NODE_TYPE_META, NODE_STATUSES, STATUS_META,
   RELATION_TYPES, RELATION_META, PRIORITIES,
   validateDoc, diffDoc, diffCount, buildChangeSet,
+  DOMAIN_PROFILES, DOMAIN_PROFILE_META, typeLabel,
 } from "./data.js";
 
 // ---------- small controls ----------
@@ -13,8 +14,52 @@ function Field({ label, children, hint }) {
     <label style={{ display: "block", marginBottom: 12 }}>
       <div style={{ fontSize: 11, fontWeight: 600, color: "#667085", marginBottom: 5, letterSpacing: ".02em" }}>{label}</div>
       {children}
-      {hint && <div style={{ fontSize: 10.5, color: "#98a2b3", marginTop: 4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize: 10.5, color: "#98a2b3", marginTop: 4, lineHeight: 1.5 }}>{hint}</div>}
     </label>
+  );
+}
+// confidence → qualitative tier (低 / 中 / 高) + color, used in the confidence labels
+function confTier(v) {
+  if (v == null) return { t: "—", c: "#98a2b3" };
+  if (v < 0.5) return { t: "低", c: "#e11d48" };
+  if (v < 0.8) return { t: "中", c: "#d97706" };
+  return { t: "高", c: "#16a34a" };
+}
+function ConfLabel({ value }) {
+  const tier = confTier(value);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <span style={{ whiteSpace: "nowrap" }}>置信度</span>
+      <span style={{ fontFamily: "var(--mono)", color: "#344054" }}>{value != null ? value.toFixed(2) : "—"}</span>
+      <span style={{ fontSize: 10, fontWeight: 700, color: tier.c, background: `color-mix(in oklch, ${tier.c} 12%, white)`,
+        padding: "0 6px", borderRadius: 999 }}>{tier.t}</span>
+    </span>
+  );
+}
+// confidence (machine signal) → a SUGGESTED status (human decision). Never auto-applied.
+function suggestStatus(conf) {
+  if (conf == null) return null;
+  if (conf < 0.5) return "needs_validation";
+  if (conf < 0.8) return "suggested";
+  return "confirmed";
+}
+// banner shown when the machine's confidence implies a different status than the human set
+function StatusSuggestion({ conf, status, onApply }) {
+  if (status === "deprecated") return null; // deprecation is a deliberate human call
+  const sug = suggestStatus(conf);
+  if (!sug || sug === status) return null;
+  const sm = STATUS_META[sug];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fffaf0", border: "1px solid #fbe8c8",
+      borderRadius: 8, padding: "7px 10px", margin: "-4px 0 12px" }}>
+      <span style={{ fontSize: 13, color: "#d97706" }}>↳</span>
+      <span style={{ flex: 1, fontSize: 11, color: "#92611a", lineHeight: 1.45 }}>
+        置信度{conf != null ? ` ${conf.toFixed(2)}` : ""} 偏{confTier(conf).t}，建议状态改为
+        <b style={{ color: sm.c }}>「{sm.label}」</b>
+      </span>
+      <button onClick={() => onApply(sug)} style={{ border: "1px solid #f0d9b0", background: "#fff", color: "#b45309",
+        borderRadius: 6, padding: "3px 9px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>应用</button>
+    </div>
   );
 }
 const inputStyle = {
@@ -46,8 +91,26 @@ export function Chip({ children, color }) {
     border: `1px solid color-mix(in oklch, ${color} 22%, white)`, padding: "2px 8px", borderRadius: 999 }}>{children}</span>;
 }
 
+// Domain-template dropdown — only remaps display names, never the protocol.
+function ProfileSelect({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #e3e6ec", borderRadius: 8,
+      padding: "6px 9px", background: "#fff" }}>
+      <span style={{ width: 20, height: 20, borderRadius: 6, background: "#f2f4f7", display: "grid", placeItems: "center",
+        fontSize: 12, color: "#475467", flex: "0 0 20px" }}>{DOMAIN_PROFILE_META[value]?.glyph}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}
+        style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: "inherit",
+          fontSize: 13, fontWeight: 600, color: "#1d2433", cursor: "pointer", appearance: "none",
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23889' fill='none' stroke-width='1.5'/%3E%3C/svg%3E\")",
+          backgroundRepeat: "no-repeat", backgroundPosition: "right center" }}>
+        {DOMAIN_PROFILES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
 // ---------- Left rail ----------
-export function LeftRail({ doc, dirty, onAddNode, onFit, legendFilter, setLegendFilter }) {
+export function LeftRail({ doc, dirty, onAddNode, onFit, legendFilter, setLegendFilter, profile, onChangeProfile }) {
   const counts = {};
   for (const n of doc.nodes) counts[n.type] = (counts[n.type] || 0) + 1;
   const used = NODE_TYPES.filter((t) => counts[t]);
@@ -79,6 +142,15 @@ export function LeftRail({ doc, dirty, onAddNode, onFit, legendFilter, setLegend
         )}
       </div>
 
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid #ebedf1" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "#98a2b3", letterSpacing: ".06em" }}>图谱模板</div>
+          <span title="只改界面显示名，不改底层 ACM-MD 类型、id 和关系" style={{ fontSize: 10, color: "#cbd2dc", fontFamily: "var(--mono)" }}>仅显示</span>
+        </div>
+        <ProfileSelect value={profile} onChange={onChangeProfile} />
+        <div style={{ fontSize: 10.5, color: "#98a2b3", marginTop: 6, lineHeight: 1.5 }}>{DOMAIN_PROFILE_META[profile]?.desc}</div>
+      </div>
+
       <div style={{ padding: "12px 16px 4px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontSize: 10.5, fontWeight: 700, color: "#98a2b3", letterSpacing: ".06em" }}>节点类型</div>
         <span style={{ fontSize: 10.5, color: "#cbd2dc", fontFamily: "var(--mono)" }}>{doc.nodes.length}个</span>
@@ -94,7 +166,7 @@ export function LeftRail({ doc, dirty, onAddNode, onFit, legendFilter, setLegend
                 background: active ? "#f2f4f7" : "transparent", textAlign: "left" }}>
               <span style={{ width: 18, height: 18, borderRadius: 5, background: meta.c, display: "grid", placeItems: "center",
                 color: "#fff", fontSize: 11, fontFamily: "var(--mono)", flex: "0 0 18px" }}>{meta.glyph}</span>
-              <span style={{ fontSize: 12.5, color: "#344054", flex: 1 }}>{meta.label}</span>
+              <span style={{ fontSize: 12.5, color: "#344054", flex: 1 }}>{typeLabel(t)}</span>
               <span style={{ fontSize: 11, color: "#98a2b3", fontFamily: "var(--mono)" }}>{counts[t]}</span>
             </button>
           );
@@ -103,7 +175,7 @@ export function LeftRail({ doc, dirty, onAddNode, onFit, legendFilter, setLegend
 
       <div style={{ padding: 12, borderTop: "1px solid #ebedf1", display: "grid", gap: 7 }}>
         <Select value={"__add"} onChange={(t) => t !== "__add" && onAddNode(t)}
-          options={["__add", ...NODE_TYPES]} render={(o) => o === "__add" ? "+ 新增节点…" : `+ ${NODE_TYPE_META[o].label} ${o}`} />
+          options={["__add", ...NODE_TYPES]} render={(o) => o === "__add" ? "+ 新增节点…" : `+ ${typeLabel(o)} ${o}`} />
         <button onClick={onFit} style={{ ...ghostBtn }}>适应窗口</button>
       </div>
     </div>
@@ -123,23 +195,26 @@ export function Inspector({ doc, selection, patchNode, patchEdge, deleteNode, de
     const meta = NODE_TYPE_META[n.type];
     return (
       <div style={panelBody}>
-        <HeaderRow color={meta.c} glyph={meta.glyph} kind={meta.label} id={n.id} onDelete={() => deleteNode(n.id)} />
+        <HeaderRow color={meta.c} glyph={meta.glyph} kind={typeLabel(n.type)} id={n.id} onDelete={() => deleteNode(n.id)} />
         <Field label="标题"><TextInput value={n.title} onChange={(e) => patchNode(n.id, { title: e.target.value })} /></Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Field label="类型"><Select value={n.type} onChange={(v) => patchNode(n.id, { type: v })}
-            options={NODE_TYPES} render={(o) => NODE_TYPE_META[o].label + " · " + o} /></Field>
-          <Field label="状态"><Select value={n.status} onChange={(v) => patchNode(n.id, { status: v })}
+            options={NODE_TYPES} render={(o) => typeLabel(o) + " · " + o} /></Field>
+          <Field label="状态" hint="人工评审决策（≠ 置信度）">
+            <Select value={n.status} onChange={(v) => patchNode(n.id, { status: v })}
             options={NODE_STATUSES} render={(o) => STATUS_META[o].label} /></Field>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Field label="优先级"><Select value={n.priority || ""} onChange={(v) => patchNode(n.id, { priority: v })}
             options={["", ...PRIORITIES]} render={(o) => o || "—"} /></Field>
-          <Field label={`置信度 ${n.confidence != null ? n.confidence.toFixed(2) : "—"}`}>
+          <Field label={<ConfLabel value={n.confidence} />}
+            hint="机器拆解时的把握度（0–1），是“信号”而非“决策”。改动它只会给出状态建议，不会自动改状态。">
             <input type="range" min="0" max="1" step="0.01" value={n.confidence ?? 0.9}
               onChange={(e) => patchNode(n.id, { confidence: parseFloat(e.target.value) })}
               style={{ width: "100%", accentColor: meta.c }} />
           </Field>
         </div>
+        <StatusSuggestion conf={n.confidence} status={n.status} onApply={(s) => patchNode(n.id, { status: s })} />
         <Field label="描述"><TextArea value={n.description || ""} onChange={(e) => patchNode(n.id, { description: e.target.value })} placeholder="节点描述…" /></Field>
         <Field label="标签" hint="逗号分隔">
           <TextInput value={(n.tags || []).join(", ")} onChange={(e) => patchNode(n.id, { tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="例如 闭环, MVP" />
@@ -174,10 +249,12 @@ export function Inspector({ doc, selection, patchNode, patchEdge, deleteNode, de
         <button onClick={() => confirmEdge(e.id)} style={{ ...ghostBtn, width: "100%", marginBottom: 12,
           borderColor: "#16a34a", color: "#16a34a", background: "#f0fdf4", fontWeight: 600 }}>✓ 确认此关系（suggested → confirmed）</button>
       )}
-      <Field label={`置信度 ${e.confidence != null ? e.confidence.toFixed(2) : "—"}`}>
+      <Field label={<ConfLabel value={e.confidence} />}
+        hint="机器对“这条关系成立”的把握度（0–1），是信号而非人工决策。">
         <input type="range" min="0" max="1" step="0.01" value={e.confidence ?? 0.9}
           onChange={(ev) => patchEdge(e.id, { confidence: parseFloat(ev.target.value) })} style={{ width: "100%", accentColor: rc }} />
       </Field>
+      <StatusSuggestion conf={e.confidence} status={e.status} onApply={(s) => patchEdge(e.id, { status: s })} />
       <Field label="原因 reason" hint="删除或关键修改时建议填写"><TextArea value={e.reason || ""} onChange={(ev) => patchEdge(e.id, { reason: ev.target.value })} placeholder="为什么存在这条关系…" style={{ minHeight: 44 }} /></Field>
       <MetaCell label="来源" value={e.source || "—"} />
     </div>
@@ -242,7 +319,7 @@ export function DiffPanel({ base, cur, nameOf }) {
         <div style={{ marginTop: 8, fontSize: 10.5, color: "#818cf8", fontFamily: "var(--mono)" }}>{cs.change_set_id} · base {cs.base_doc_id}</div>
       </div>
 
-      <DiffGroup title="新增节点" color="#16a34a" items={d.added_nodes} render={(n) => <DiffLine c="#16a34a" sign="+" text={`${NODE_TYPE_META[n.type].label}「${n.title}」`} id={n.id} />} />
+      <DiffGroup title="新增节点" color="#16a34a" items={d.added_nodes} render={(n) => <DiffLine c="#16a34a" sign="+" text={`${typeLabel(n.type)}「${n.title}」`} id={n.id} />} />
       <DiffGroup title="删除节点" color="#e11d48" items={d.removed_nodes} render={(n) => <DiffLine c="#e11d48" sign="−" text={`「${n.title}」`} id={n.id} />} />
       <DiffGroup title="修改节点字段" color="#d97706" items={d.modified_nodes} render={(m) => <FieldChange c="#d97706" name={nameOf(m.id)} field={m.field} before={m.before} after={m.after} />} />
       <DiffGroup title="新增关系" color="#2563eb" items={d.added_edges} render={(e) => <DiffLine c="#2563eb" sign="+" text={`${nameOf(e.from)} —${RELATION_META[e.type].label}→ ${nameOf(e.to)}`} id={e.id} />} />
