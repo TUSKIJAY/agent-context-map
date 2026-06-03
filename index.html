@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Context Map · 需求图谱编辑器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sans: "IBM Plex Sans", "Noto Sans SC", system-ui, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { font-family: var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+      background: #fff; overscroll-behavior: none; }
+    #root { height: 100%; }
+    button { font-family: var(--sans); }
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-thumb { background: #d7dbe2; border-radius: 9px; border: 2px solid #fff; }
+    ::-webkit-scrollbar-thumb:hover { background: #c2c8d2; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    select { font-family: var(--sans); }
+    input[type="range"] { height: 18px; }
+    .acm-handle { opacity: 0; transition: opacity .12s; }
+    .acm-node:hover .acm-handle { opacity: 1; }
+    .acm-node:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
