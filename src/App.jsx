@@ -5,18 +5,26 @@ import {
   NODE_TYPES, NODE_TYPE_META, RELATION_META,
   sampleDoc, nextId, TYPE_PREFIX,
   validateDoc, diffDoc, diffCount, buildChangeSet,
-  toExportDoc, toAcmMd, toMermaid, toYaml, inferRelation,
+  toExportDoc, toAcmMd, toMermaid, toYaml, inferRelation, parseAcmMd, layoutGraph,
   DOMAIN_PROFILES, DOMAIN_PROFILE_META, PROFILE_LABELS, setActiveProfile, typeLabel,
 } from "./acm/data.js";
-import { GraphCanvas } from "./acm/Canvas.jsx";
+import { GraphCanvas } from "./acm/FlowCanvas.jsx";
 import { LeftRail, Inspector, DiffPanel, ValidatePanel, ghostBtn } from "./acm/Panels.jsx";
 import {
   useTweaks, TweaksPanel, TweakSection, TweakToggle, TweakRadio, TweakColor,
 } from "./acm/TweaksPanel.jsx";
+import { Home } from "./acm/Home.jsx";
+import * as store from "./storage/store.js";
+import { openTextFile, saveTextFile } from "./storage/files.js";
 
 const { useState, useRef, useMemo, useCallback: useCb, useEffect: useFx } = React;
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
+
+// Placeholder document held in state before a real one is loaded from the store.
+// Never shown to the user (the Home/loading view covers it) but keeps the diff /
+// validate memos below safe to run unconditionally.
+const BLANK_DOC = { schema_version: "acm-md/0.1", doc_id: "", meta: { title: "" }, nodes: [], edges: [] };
 
 const TWEAK_DEFAULTS = {
   cardStyle: "chip",
@@ -41,8 +49,11 @@ export default function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [profile, setProfile] = useState("software"); // domain template — display names only
   setActiveProfile(profile); // sync global so all children render the right labels
-  const [doc, setDoc] = useState(() => sampleDoc());
-  const [base, setBase] = useState(() => sampleDoc());
+  const [view, setView] = useState("loading"); // loading | home | editor
+  const [docId, setDocId] = useState(null);     // current document id in the local store
+  const [recent, setRecent] = useState([]);     // recent documents for the Home page
+  const [doc, setDoc] = useState(BLANK_DOC);
+  const [base, setBase] = useState(BLANK_DOC);
   const [selection, setSelection] = useState(null);
   const [vp, setVp] = useState({ x: 40, y: 30, scale: 0.82 });
   const [tab, setTab] = useState("inspector");
@@ -54,6 +65,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [rankdir, setRankdir] = useState("LR"); // dagre layout direction: LR (横向) | TB (纵向)
 
   const undoRef = useRef([]); const redoRef = useRef([]);
   const lastKeyRef = useRef(null);
@@ -66,6 +78,83 @@ export default function App() {
   const errCount = useMemo(() => validateDoc(doc).filter((i) => i.level === "error").length, [doc]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 1900); };
+
+  // ---- persistence (local store: SQLite on desktop, localStorage in browser dev) ----
+  const saveTimer = useRef(null);
+  const refreshRecent = useCb(() => { store.listDocuments().then(setRecent).catch(() => {}); }, []);
+
+  const loadRecord = (rec, savedVp) => {
+    const pid = rec.domain_profile || "software";
+    setProfile(pid); setActiveProfile(pid);
+    setDoc(rec.body);
+    setBase(rec.base_snapshot ? rec.base_snapshot : clone(rec.body));
+    setDocId(rec.doc_id);
+    setSelection(null);
+    undoRef.current = []; redoRef.current = []; lastKeyRef.current = null;
+    setView("editor");
+    if (savedVp && typeof savedVp.scale === "number") setVp(savedVp);       // restore working viewport
+    else setTimeout(() => setFitSignal((s) => s + 1), 60);                  // or fit to content
+  };
+
+  const persistAndOpen = async (body, profileId, sourcePath = null) => {
+    const id = body.doc_id;
+    const title = (body.meta && body.meta.title) || "未命名图谱";
+    try {
+      await store.upsertDocument({ doc_id: id, title, domain_profile: profileId, body,
+        base_snapshot: body, source_path: sourcePath, dirty: false, created_at: body.meta && body.meta.created_at });
+      await store.setAppState("last_opened_doc_id", id);
+    } catch (e) { console.warn("[acm] create failed", e); }
+    loadRecord({ doc_id: id, title, domain_profile: profileId, body, base_snapshot: clone(body) });
+    refreshRecent();
+  };
+
+  // boot: restore last working session if any, otherwise show the Home page
+  useFx(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const list = await store.listDocuments();
+        if (alive) setRecent(list);
+        const lastId = await store.getAppState("last_opened_doc_id", null);
+        if (lastId) {
+          const rec = await store.getDocument(lastId);
+          if (alive && rec) {
+            const savedVp = await store.getAppState("vp:" + lastId, null);
+            if (alive) loadRecord(rec, savedVp);
+            return;
+          }
+        }
+      } catch (e) { console.warn("[acm] restore failed", e); }
+      if (alive) setView("home");
+    })();
+    return () => { alive = false; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // debounced autosave of the working document body (does not move the diff baseline)
+  useFx(() => {
+    if (view !== "editor" || !docId) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      store.saveBody(docId, { title: (doc.meta && doc.meta.title) || "未命名图谱",
+        domain_profile: profile, body: doc, dirty }).then(refreshRecent).catch(() => {});
+    }, 800);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [doc, dirty, view, docId, profile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // debounced persistence of the canvas viewport, restored on next open
+  useFx(() => {
+    if (view !== "editor" || !docId) return;
+    const id = setTimeout(() => { store.setAppState("vp:" + docId, vp).catch(() => {}); }, 600);
+    return () => clearTimeout(id);
+  }, [vp, view, docId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Give the canvas its space back: the right panel (Inspector) auto-collapses when
+  // nothing is selected (it would only show an empty-state then) and re-opens on
+  // selection. The Diff/校验 tabs open the panel explicitly, so they are unaffected.
+  useFx(() => {
+    if (selection) { setRightPanelOpen(true); setTab("inspector"); }
+    else if (tab === "inspector") setRightPanelOpen(false);
+  }, [selection, tab]);
 
   const commit = useCb((next, coalesceKey = null) => {
     setDoc((prev) => {
@@ -131,93 +220,65 @@ export default function App() {
   };
   const confirmEdge = (id) => patchEdge(id, { status: "confirmed" });
 
-  const onSave = () => { setBase(clone(doc)); undoRef.current = []; redoRef.current = []; lastKeyRef.current = null; showToast("已保存为新基线，下一轮 diff 已重置"); };
-  const createFromTemplate = (profileId) => {
-    setProfile(profileId); setActiveProfile(profileId);
-    const nd = minimalDoc(profileId);
-    setDoc(nd); setBase(clone(nd)); setSelection(null);
+  const onSave = async () => {
+    if (view !== "editor" || !docId) return;
+    setBase(clone(doc));
     undoRef.current = []; redoRef.current = []; lastKeyRef.current = null;
-    setPicker(false);
-    showToast(`已新建「${DOMAIN_PROFILE_META[profileId].label}」模板的最小合法 ACM-MD 文档`);
-    setTimeout(() => setFitSignal((s) => s + 1), 30);
+    try {
+      await store.saveBody(docId, { title: (doc.meta && doc.meta.title) || "未命名图谱", domain_profile: profile, body: doc, dirty: false });
+      await store.saveBaseline(docId, doc);
+      await store.addSnapshot(docId, "手动保存", doc);
+      refreshRecent();
+      showToast("已保存（新版基线已更新）");
+    } catch (e) { showToast("保存失败：" + (e?.message || e)); }
   };
-  const onNew = () => setPicker(true);
-  const onOpen = () => { const nd = sampleDoc(); setDoc(nd); setBase(clone(nd)); setSelection(null); undoRef.current = []; redoRef.current = []; showToast("已载入示例图谱"); setTimeout(() => setFitSignal((s) => s + 1), 30); };
-  // Hierarchical tree auto-layout: the `contains` tree is the backbone; parents
-  // are vertically centered over their children, and annotation nodes (risk /
-  // constraint / question / api / entity …) sit to the RIGHT of what they touch,
-  // aligned to that node's height — instead of being dumped into column 0.
-  const autoLayout = () => {
+  const createFromTemplate = (profileId) => {
+    setPicker(false);
+    persistAndOpen(minimalDoc(profileId), profileId);
+    showToast(`已新建「${DOMAIN_PROFILE_META[profileId].label}」模板`);
+  };
+  // onNew(): open template picker; onNew("generic"): create that template directly.
+  const onNew = (presetProfile) => { if (typeof presetProfile === "string") createFromTemplate(presetProfile); else setPicker(true); };
+  const viewSample = () => { persistAndOpen(sampleDoc(), "software"); showToast("已载入示例图谱"); };
+  const openRecent = async (id) => {
+    const rec = await store.getDocument(id);
+    if (!rec) { showToast("记录不存在或已删除"); refreshRecent(); return; }
+    try { await store.setAppState("last_opened_doc_id", id); } catch {}
+    const savedVp = await store.getAppState("vp:" + id, null);
+    loadRecord(rec, savedVp);
+  };
+  const renameDoc = (title) => commit((d) => ({ ...d, meta: { ...(d.meta || {}), title } }), "meta:title");
+  const deleteRecent = async (id) => {
+    await store.deleteDocument(id);
+    if (id === docId) { setDocId(null); try { await store.setAppState("last_opened_doc_id", null); } catch {} }
+    refreshRecent();
+    showToast("已从本地删除该图谱");
+  };
+  const goHome = () => { refreshRecent(); setSelection(null); setView("home"); };
+  const onImport = async () => {
+    const f = await openTextFile();
+    if (!f) return;
+    const res = parseAcmMd(f.text);
+    if (!res.doc) { showToast("导入失败：" + (res.errors[0] || "无法解析")); return; }
+    await persistAndOpen(res.doc, "generic", f.path);
+    const note = res.warnings && res.warnings.length ? "（" + res.warnings.join("；") + "）" : "";
+    showToast("已导入 " + (f.name || "文件") + note);
+  };
+  // Hierarchical tree auto-layout (shared with import). The `contains` tree is the
+  // backbone; parents are centered over their children; annotation nodes sit to the
+  // right of what they touch; disconnected clusters are laid out and stacked apart.
+  const applyLayout = (dir) => {
     commit((d) => {
-      const COL_W = 320, ROW_H = 132, X0 = 60, Y0 = 40;
-      const ids = d.nodes.map((n) => n.id);
-      const idSet = new Set(ids);
-      const baseY = Object.fromEntries(d.nodes.map((n) => [n.id, n.y]));
-      const kids = {}; ids.forEach((id) => (kids[id] = []));      // contains children
-      const cparent = {}; ids.forEach((id) => (cparent[id] = 0)); // contains in-degree
-      const nbr = {}; ids.forEach((id) => (nbr[id] = []));        // all neighbors
-      for (const e of d.edges) {
-        if (!idSet.has(e.from) || !idSet.has(e.to)) continue;
-        nbr[e.from].push(e.to); nbr[e.to].push(e.from);
-        if (e.type === "contains") { kids[e.from].push(e.to); cparent[e.to]++; }
-      }
-      // ---- columns ----
-      // backbone roots have contains-children but no contains-parent (e.g. Goal)
-      const col = {};
-      const roots = ids.filter((id) => cparent[id] === 0 && kids[id].length > 0);
-      const queue = [...roots]; roots.forEach((id) => (col[id] = 0));
-      while (queue.length) {
-        const u = queue.shift();
-        for (const v of kids[u]) {
-          const c = col[u] + 1;
-          if (col[v] == null || c > col[v]) { col[v] = c; queue.push(v); }
-        }
-      }
-      // annotation / unplaced nodes: one column right of their best-placed neighbor
-      for (let pass = 0; pass < ids.length; pass++) {
-        let changed = false;
-        for (const id of ids) {
-          if (col[id] != null) continue;
-          let best = null;
-          for (const v of nbr[id]) if (col[v] != null) best = Math.max(best ?? 0, col[v] + 1);
-          if (best != null) { col[id] = best; changed = true; }
-        }
-        if (!changed) break;
-      }
-      ids.forEach((id) => { if (col[id] == null) col[id] = 0; });
-      // ---- vertical: center each parent over its contains-children ----
-      const y = {};
-      let leaf = 0;
-      const dfs = (id) => {
-        if (y[id] != null) return y[id];
-        const ch = kids[id];
-        if (!ch.length) { y[id] = Y0 + leaf * ROW_H; leaf++; return y[id]; }
-        const cys = ch.map(dfs).filter((v) => v != null);
-        y[id] = cys.length ? (Math.min(...cys) + Math.max(...cys)) / 2 : (Y0 + (leaf++) * ROW_H);
-        return y[id];
-      };
-      roots.sort((a, b) => baseY[a] - baseY[b]).forEach(dfs);
-      // backbone nodes unreached by a root (cycles) → stack as leaves
-      for (const id of ids) if ((kids[id].length || cparent[id]) && y[id] == null) { y[id] = Y0 + leaf * ROW_H; leaf++; }
-      // annotation nodes: align to the average height of their placed neighbors
-      for (const id of ids) {
-        if (y[id] != null) continue;
-        const nys = nbr[id].map((v) => y[v]).filter((v) => v != null);
-        y[id] = nys.length ? nys.reduce((s, v) => s + v, 0) / nys.length : Y0 + (leaf++) * ROW_H;
-      }
-      // ---- resolve in-column overlaps (keep order, push down by ROW_H) ----
-      const byCol = {};
-      for (const id of ids) (byCol[col[id]] ||= []).push(id);
-      Object.values(byCol).forEach((group) => {
-        group.sort((a, b) => y[a] - y[b]);
-        for (let i = 1; i < group.length; i++) if (y[group[i]] < y[group[i - 1]] + ROW_H) y[group[i]] = y[group[i - 1]] + ROW_H;
-      });
-      const pos = {};
-      for (const id of ids) pos[id] = { x: X0 + col[id] * COL_W, y: Math.round(y[id]) };
-      return { ...d, nodes: d.nodes.map((n) => ({ ...n, ...pos[n.id] })) };
+      const pos = layoutGraph(d, { rankdir: dir });
+      return { ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) };
     });
     setTimeout(() => setFitSignal((s) => s + 1), 30);
-    showToast("已自动布局（层级树形，⌘Z 可撤销）");
+  };
+  const autoLayout = () => { applyLayout(rankdir); showToast("已自动布局（dagre 分层，⌘Z 可撤销）"); };
+  const toggleDir = () => {
+    const nd = rankdir === "LR" ? "TB" : "LR";
+    setRankdir(nd); applyLayout(nd);
+    showToast(nd === "LR" ? "已切换为横向布局（LR · 根在左）" : "已切换为纵向布局（TB · 根在上）");
   };
 
   const nameOf = (id) => (doc.nodes.find((n) => n.id === id) || base.nodes.find((n) => n.id === id) || {}).title || id;
@@ -244,11 +305,21 @@ export default function App() {
   const accent = t.accent || "#6366f1";
   const diffN = diffCount(diff);
 
+  if (view === "loading") {
+    return <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", background: "#f7f8fa", color: "#98a2b3", fontSize: 13 }}>正在载入工作现场…</div>;
+  }
+
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#fff", color: "#1d2433" }}>
-      <Toolbar {...{ onNew, onOpen, onSave, undo, redo, autoLayout, dirty, errCount,
+      {view === "home" ? (
+        <Home recent={recent} onNew={onNew} onViewSample={viewSample} onOpenRecent={openRecent}
+          onDeleteRecent={deleteRecent} onImport={onImport} persistenceMode={store.persistenceMode} accent={accent} />
+      ) : (
+      <>
+      <Toolbar {...{ onHome: goHome, onNew, onImport, onSave, onRename: renameDoc, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount,
+        title: (doc.meta && doc.meta.title) || "",
         canUndo: undoRef.current.length > 0, canRedo: redoRef.current.length > 0,
-        onValidate: () => setTab("validate"), onExport: () => setExportTab("acmmd"), accent }} />
+        onValidate: () => { setTab("validate"); setRightPanelOpen(true); }, onExport: () => setExportTab("acmmd"), accent }} />
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         {leftPanelOpen ? (
           <div style={{ position: "relative", flex: "0 0 auto", minHeight: 0 }}>
@@ -262,7 +333,7 @@ export default function App() {
         )}
         <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
           <GraphCanvas doc={doc} selection={selection} onSelect={setSelection} onMoveNode={moveNode}
-            onCreateEdge={createEdge} vp={vp} setVp={setVp} cardStyle={t.cardStyle} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter} />
+            onCreateEdge={createEdge} rankdir={rankdir} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter} />
           <CanvasHint />
         </div>
         {rightPanelOpen ? (
@@ -274,6 +345,8 @@ export default function App() {
           <CollapsedPanel side="right" onClick={() => setRightPanelOpen(true)} label="展开右栏" />
         )}
       </div>
+      </>
+      )}
 
       {picker && <TemplatePicker current={profile} onPick={createFromTemplate} onClose={() => setPicker(false)} />}
       {candidate && <CandidateMenu cand={candidate} onPick={pickCandidate} onClose={() => setCandidate(null)} nameOf={nameOf} doc={doc} />}
@@ -281,6 +354,7 @@ export default function App() {
       {toast && <div style={{ position: "fixed", bottom: 22, left: "50%", transform: "translateX(-50%)", background: "#1d2433",
         color: "#fff", padding: "9px 16px", borderRadius: 10, fontSize: 12.5, zIndex: 60, boxShadow: "0 10px 30px -10px rgba(0,0,0,.4)" }}>{toast}</div>}
 
+      {view === "editor" && (
       <TweaksPanel>
         <TweakSection label="节点卡片" />
         <TweakRadio label="卡片样式" value={t.cardStyle} options={["bar", "chip", "minimal"]} onChange={(v) => setTweak("cardStyle", v)} />
@@ -288,11 +362,12 @@ export default function App() {
         <TweakSection label="主题" />
         <TweakColor label="主色" value={t.accent} options={["#6366f1", "#2563eb", "#0d9488", "#e11d48"]} onChange={(v) => setTweak("accent", v)} />
       </TweaksPanel>
+      )}
     </div>
   );
 }
 
-function Toolbar({ onNew, onOpen, onSave, undo, redo, autoLayout, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent }) {
+function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent, title }) {
   const Btn = ({ onClick, disabled, children, title }) => (
     <button onClick={onClick} disabled={disabled} title={title}
       style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #e7e9ee", background: "#fff",
@@ -303,14 +378,25 @@ function Toolbar({ onNew, onOpen, onSave, undo, redo, autoLayout, dirty, errCoun
   return (
     <div style={{ height: 52, flex: "0 0 52px", borderBottom: "1px solid #ebedf1", display: "flex", alignItems: "center",
       gap: 6, padding: "0 14px", background: "#fff", zIndex: 20 }}>
-      <Btn onClick={onNew} title="新建图谱（选择领域模板）"><span style={{ fontFamily: "var(--mono)" }}>＋</span>新建</Btn>
-      <Btn onClick={onOpen} title="载入示例图谱">打开</Btn>
-      <Btn onClick={onSave} title="保存为新基线 (⌘S)">保存{dirty && <span style={{ width: 6, height: 6, borderRadius: 9, background: "#d97706" }} />}</Btn>
+      <Btn onClick={onHome} title="返回开始页（编辑已自动保存）"><span style={{ fontFamily: "var(--mono)" }}>‹</span>开始页</Btn>
+      <Div />
+      <Btn onClick={() => onNew()} title="新建图谱（选择领域模板）"><span style={{ fontFamily: "var(--mono)" }}>＋</span>新建</Btn>
+      <Btn onClick={onImport} title="导入 ACM-MD 文件（.md / .acm.md）">导入</Btn>
+      <Btn onClick={onSave} title="保存为新版基线 (⌘S)">保存{dirty && <span style={{ width: 6, height: 6, borderRadius: 9, background: "#d97706" }} />}</Btn>
+      <input value={title} onChange={(e) => onRename(e.target.value)} placeholder="未命名图谱" title="点击修改图谱标题"
+        style={{ marginLeft: 6, fontSize: 12.5, color: "#1d2433", fontWeight: 600, border: "1px solid transparent",
+          borderRadius: 7, padding: "4px 8px", width: 200, background: "transparent", fontFamily: "inherit", outline: "none" }}
+        onFocus={(e) => { e.target.style.borderColor = "#dfe3ea"; e.target.style.background = "#fff"; }}
+        onBlur={(e) => { e.target.style.borderColor = "transparent"; e.target.style.background = "transparent"; }} />
+      {dirty && <span style={{ fontSize: 11, color: "#d97706", whiteSpace: "nowrap" }}>· 未保存</span>}
       <Div />
       <Btn onClick={undo} disabled={!canUndo} title="撤销 (⌘Z)">↶</Btn>
       <Btn onClick={redo} disabled={!canRedo} title="重做 (⇧⌘Z)">↷</Btn>
       <Div />
-      <Btn onClick={autoLayout} title="自动布局">⊞ 自动布局</Btn>
+      <Btn onClick={autoLayout} title="自动布局（dagre 分层）">⊞ 自动布局</Btn>
+      <Btn onClick={toggleDir} title="切换布局方向：LR 横向（根在左）/ TB 纵向（根在上）">
+        {rankdir === "LR" ? "⇄ 横向" : "⇅ 纵向"}
+      </Btn>
       <Btn onClick={onValidate} title="校验">
         ◇ 校验{errCount > 0 && <span style={{ fontSize: 10.5, fontWeight: 700, color: "#e11d48", background: "#fef2f2", padding: "0 5px", borderRadius: 999, fontFamily: "var(--mono)" }}>{errCount}</span>}
       </Btn>
@@ -389,6 +475,12 @@ function ExportModal({ doc, base, diff, tab, setTab, onClose, showToast }) {
     return "";
   }, [tab, doc, cs]);
   const copy = () => { navigator.clipboard?.writeText(content); showToast("已复制到剪贴板"); };
+  const safeTitle = ((doc.meta && doc.meta.title) || "context-map").replace(/[\\/:*?"<>|]/g, "_");
+  const fileName = tab === "json" ? "graph.json" : tab === "mermaid" ? "preview.mmd" : tab === "diff" ? safeTitle + ".changeset.acm.md" : safeTitle + ".acm.md";
+  const saveToFile = async () => {
+    try { const r = await saveTextFile(content, { defaultName: fileName }); if (r) showToast("已保存到 " + r.path); }
+    catch (e) { showToast("保存失败：" + (e?.message || e)); }
+  };
   const tabs = [["acmmd", "完整 ACM-MD"], ["diff", "Agent Diff"], ["json", "图谱 JSON"], ["mermaid", "Mermaid 预览"]];
   return (
     <>
@@ -412,7 +504,8 @@ function ExportModal({ doc, base, diff, tab, setTab, onClose, showToast }) {
           <div style={{ display: "flex", alignItems: "center", padding: "7px 12px", borderBottom: "1px solid #f0f1f4", background: "#fafbfc" }}>
             <span style={{ fontSize: 11, color: "#98a2b3", fontFamily: "var(--mono)" }}>{tab === "json" ? "graph.json" : tab === "mermaid" ? "preview.mmd" : tab === "diff" ? "changeset.acm" : "context-map.acm.md"}</span>
             <span style={{ flex: 1 }} />
-            <button onClick={copy} style={{ ...ghostBtn, padding: "4px 10px", fontSize: 11.5 }}>复制</button>
+            <button onClick={saveToFile} style={{ ...ghostBtn, padding: "4px 10px", fontSize: 11.5 }}>保存到文件</button>
+            <button onClick={copy} style={{ ...ghostBtn, padding: "4px 10px", fontSize: 11.5, marginLeft: 6 }}>复制</button>
           </div>
           <pre style={{ flex: 1, margin: 0, overflow: "auto", padding: "14px 16px", fontSize: 12, lineHeight: 1.6,
             fontFamily: "var(--mono)", color: "#344054", background: "#fff", whiteSpace: "pre" }}>{content}</pre>

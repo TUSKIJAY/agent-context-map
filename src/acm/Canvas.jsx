@@ -453,10 +453,19 @@ export function GraphCanvas({ doc, selection, onSelect, onMoveNode, onCreateEdge
       maxX = Math.max(maxX, n.x + s.w); maxY = Math.max(maxY, n.y + s.h);
     }
     if (!isFinite(minX)) return;
+    // Guard against a viewport narrower/shorter than the padding (e.g. both side
+    // panels open on a small window): a raw (width - pad*2) goes NEGATIVE, which
+    // used to yield a negative scale that flipped the graph to invisibility. Floor
+    // the usable space and the final scale so fit always shows the content.
     const pad = 80;
-    const scale = Math.min(1.4, (r.width - pad * 2) / (maxX - minX), (r.height - pad * 2) / (maxY - minY));
-    setVp({ scale, x: pad - minX * scale + (r.width - pad * 2 - (maxX - minX) * scale) / 2,
-      y: pad - minY * scale + (r.height - pad * 2 - (maxY - minY) * scale) / 2 });
+    const availW = Math.max(40, r.width - pad * 2);
+    const availH = Math.max(40, r.height - pad * 2);
+    const spanX = Math.max(1, maxX - minX);   // also avoids div-by-zero for a single node
+    const spanY = Math.max(1, maxY - minY);
+    const scale = Math.max(0.1, Math.min(1.4, availW / spanX, availH / spanY));
+    // center the content in the full viewport (robust regardless of pad vs size)
+    setVp({ scale, x: (r.width - spanX * scale) / 2 - minX * scale,
+      y: (r.height - spanY * scale) / 2 - minY * scale });
   }, [fitSignal]);
 
   const nodeMap = Object.fromEntries(doc.nodes.map((n) => [n.id, n]));

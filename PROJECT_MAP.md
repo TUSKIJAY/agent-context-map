@@ -84,6 +84,43 @@ src/App.jsx
 ## src/acm
 
 ```text
+src/acm/Home.jsx
+```
+
+开始页（启动首屏）。列出最近打开的图谱，提供新建（选模板）、查看示例、导入入口。替代"启动即演示"。
+
+适合修改：
+
+- 开始页布局与入口
+- 最近打开列表展示
+- 空状态文案
+
+```text
+src/storage/store.js
+```
+
+本地持久化抽象层。文档级 CRUD + app_state + 快照。两套后端：桌面走 SQLite（`@tauri-apps/plugin-sql`，表由 `src-tauri/src/lib.rs` 迁移创建），浏览器 dev 走 localStorage 兜底。图谱正文按整份 JSON 存储，保证 ACM-MD 往返不丢字段。
+
+适合修改：
+
+- 文档读写 / 最近列表查询
+- 自动保存与基线（saveBody / saveBaseline）
+- 应用状态（last_opened_doc_id、视口 vp:<docId>）
+- 历史快照
+
+```text
+src/storage/files.js
+```
+
+磁盘文件读写。打开/导入用 `<input type=file>`（浏览器与 WebView2 通用）；另存/导出用桌面原生 `dialog.save()`+`fs.writeTextFile`，浏览器回退 `<a download>`。配合 `data.js` 的 `parseAcmMd`（ACM-MD 导入解析）。
+
+适合修改：
+
+- 文件打开/导入入口
+- 导出到磁盘（另存为）
+- 文件类型过滤
+
+```text
 src/acm/data.js
 ```
 
@@ -177,7 +214,61 @@ doc/02-任务拆解大师改造/plan/02-任务拆解大师改造Plan.md
 
 任务拆解大师改造计划。记录与 ACM-MD 或任务拆解工作流相关的扩展设想。
 
+## src-tauri（桌面壳 / 绿色版 exe）
+
+```text
+src-tauri/tauri.conf.json
+```
+
+Tauri v2 桌面配置。定义 `productName`、`identifier`、主窗口尺寸、`frontendDist`（指向 `../dist`）和构建钩子。修改窗口、打包标识、前端产物路径时改这里。
+
+```text
+src-tauri/Cargo.toml
+```
+
+Rust 端依赖与包配置。包名 `agent-context-map`，release 二进制为 `agent-context-map.exe`。
+
+```text
+src-tauri/src/main.rs
+src-tauri/src/lib.rs
+src-tauri/build.rs
+```
+
+桌面壳入口与构建脚本。`main.rs` 调用 `lib.rs` 的 `run()` 启动 Tauri；当前仅承载前端，未接入本地文件能力。
+
+```text
+src-tauri/capabilities/default.json
+src-tauri/icons/
+```
+
+Tauri 权限能力声明与应用图标（当前为脚手架默认图标）。
+
+适合修改：
+
+- 桌面窗口与打包配置
+- 应用标识与图标
+- 后续接入 Tauri 本地文件 / 持久化能力
+
+构建绿色版 exe：
+
+```text
+npm run tauri:build -- --no-bundle
+```
+
 ## 生成与本地目录
+
+```text
+output/portable/Agent Context Map/
+```
+
+绿色版 exe 交付目录。含 `Agent Context Map.exe` 与 `version.txt`。由打包后从 `src-tauri/target/release/` 复制改名生成，属构建产物，不应提交。
+
+```text
+src-tauri/target/
+src-tauri/gen/
+```
+
+Rust 编译缓存与 Tauri 生成文件，不应提交。
 
 ```text
 dist/

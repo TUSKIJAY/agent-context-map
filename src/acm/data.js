@@ -1,4 +1,6 @@
 // data.js — ACM controlled vocabulary, visual tokens, sample graph, pure helpers.
+import { parse as parseYaml } from "yaml";
+import dagre from "@dagrejs/dagre";
 // Ported from the design prototype (data.jsx); window globals → ES exports.
 
 // ---- Controlled vocabulary (ACM-MD v0.1 §7/§8/§10) ----
@@ -417,4 +419,297 @@ export function toMermaid(doc) {
   for (const n of doc.nodes) lines.push(`  ${safe(n.id)}["${typeLabel(n.type)}: ${n.title}"]`);
   for (const e of doc.edges) lines.push(`  ${safe(e.from)} -- ${RELATION_META[e.type]?.label || e.type} --> ${safe(e.to)}`);
   return lines.join("\n");
+}
+
+// ---- Hierarchical auto-layout (pure) ----
+// The `contains` tree is the backbone (columns = depth); parents are vertically
+// centered over their children; annotation nodes (risk / constraint / decision /
+// question …) sit one column to the right of what they touch. The graph is first
+// split into UNDIRECTED connected components, each laid out independently and
+// stacked vertically — so a cluster with no link to the main Goal (e.g. a "砍掉"
+// branch) becomes its own small tree instead of collapsing onto column 0.
+// Returns { [nodeId]: { x, y } }. Used by both ACM-MD import and the toolbar button.
+// ---- Auto-layout via dagre (layered directed-graph layout) ----
+// ACM graphs are layered DAGs (Goal → Modules → Features) with cross relations
+// (depends_on / impacts / replaces …). dagre's Sugiyama layout assigns ranks and
+// minimizes edge crossings across ALL relations — the job a hand-rolled grid can't
+// do. We feed approximate node sizes and read back top-left corners for the canvas.
+// `rankdir` "LR" puts roots on the left and flows rightward (a mind-map feel).
+// Returns { [nodeId]: { x, y } }. Used by both ACM-MD import and the toolbar button.
+const NODE_W = 220, NODE_H = 104;   // approx card size; canvas measures the real size at render
+export function layoutGraph(doc, opts = {}) {
+  const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
+  const edges = Array.isArray(doc?.edges) ? doc.edges : [];
+  if (!nodes.length) return {};
+  try {
+    const g = new dagre.graphlib.Graph({ multigraph: true });
+    g.setGraph({
+      rankdir: opts.rankdir || "LR",
+      ranksep: opts.ranksep ?? 120,   // gap between depth layers
+      nodesep: opts.nodesep ?? 40,    // gap between siblings within a layer
+      edgesep: 24,
+      marginx: 60, marginy: 60,
+      ranker: "network-simplex",
+    });
+    g.setDefaultEdgeLabel(() => ({}));
+    const idSet = new Set(nodes.map((n) => n.id));
+    for (const n of nodes) g.setNode(n.id, { width: NODE_W, height: NODE_H });
+    for (const e of edges) {
+      if (!idSet.has(e.from) || !idSet.has(e.to) || e.from === e.to) continue;
+      g.setEdge(e.from, e.to, {}, e.id);   // edge id as name → tolerates parallel edges
+    }
+    dagre.layout(g);
+    const pos = {};
+    for (const n of nodes) {
+      const gn = g.node(n.id);
+      // dagre returns the node CENTER; the canvas positions by the TOP-LEFT corner
+      if (gn && isFinite(gn.x) && isFinite(gn.y)) pos[n.id] = { x: Math.round(gn.x - NODE_W / 2), y: Math.round(gn.y - NODE_H / 2) };
+    }
+    // any fully-isolated node dagre dropped → tuck into a grid below the graph
+    let maxY = 0; for (const p of Object.values(pos)) maxY = Math.max(maxY, p.y);
+    let gx = 0;
+    for (const n of nodes) if (!pos[n.id]) { pos[n.id] = { x: 60 + gx * (NODE_W + 40), y: maxY + NODE_H + 80 }; gx++; }
+    return pos;
+  } catch (err) {
+    // Never let a layout failure break import / auto-layout — fall back to a grid.
+    console.warn("[acm] dagre layout failed, using grid fallback", err);
+    const pos = {}, cols = Math.max(1, Math.ceil(Math.sqrt(nodes.length)));
+    nodes.forEach((n, i) => { pos[n.id] = { x: 60 + (i % cols) * (NODE_W + 60), y: 40 + Math.floor(i / cols) * (NODE_H + 60) }; });
+    return pos;
+  }
+}
+
+// Legacy hand-rolled layered grid (pre-dagre). Kept as a fallback reference; not used.
+function layoutGraphLegacy(doc) {
+  const COL_W = 320, ROW_H = 132, X0 = 60, Y0 = 40, COMPONENT_GAP = 96;
+  const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
+  const edges = Array.isArray(doc?.edges) ? doc.edges : [];
+  const ids = nodes.map((n) => n.id);
+  const idSet = new Set(ids);
+  const baseY = Object.fromEntries(nodes.map((n) => [n.id, typeof n.y === "number" ? n.y : 0]));
+
+  const kids = {}, cparent = {}, nbr = {};
+  ids.forEach((id) => { kids[id] = []; cparent[id] = 0; nbr[id] = []; });
+  for (const e of edges) {
+    if (!idSet.has(e.from) || !idSet.has(e.to)) continue;
+    nbr[e.from].push(e.to); nbr[e.to].push(e.from);
+    if (e.type === "contains") { kids[e.from].push(e.to); cparent[e.to]++; }
+  }
+
+  // ---- undirected connected components ----
+  const comp = {}; let nc = 0;
+  for (const id of ids) {
+    if (comp[id] != null) continue;
+    const stack = [id]; comp[id] = nc;
+    while (stack.length) { const u = stack.pop(); for (const v of nbr[u]) if (comp[v] == null) { comp[v] = nc; stack.push(v); } }
+    nc++;
+  }
+  const components = Array.from({ length: nc }, () => []);
+  ids.forEach((id) => components[comp[id]].push(id));
+  // backbone components (with a contains-root) first, then larger ones, for a stable stack
+  const order = components.map((_, i) => i).sort((a, b) => {
+    const ra = components[a].some((id) => cparent[id] === 0 && kids[id].length > 0);
+    const rb = components[b].some((id) => cparent[id] === 0 && kids[id].length > 0);
+    if (ra !== rb) return ra ? -1 : 1;
+    return components[b].length - components[a].length;
+  });
+
+  const pos = {};
+  let yCursor = Y0;
+  for (const ci of order) {
+    const group = components[ci];
+    const gset = new Set(group);
+    const col = {};
+    // roots: have contains-children but no contains-parent (e.g. Goal). If a
+    // component has no contains backbone at all, seed its highest-degree node.
+    let roots = group.filter((id) => cparent[id] === 0 && kids[id].length > 0);
+    if (!roots.length) {
+      let seed = group[0];
+      for (const id of group) if (nbr[id].length > nbr[seed].length) seed = id;
+      roots = [seed];
+    }
+    const queue = [...roots]; roots.forEach((id) => (col[id] = 0));
+    while (queue.length) {
+      const u = queue.shift();
+      for (const v of kids[u]) { const c = col[u] + 1; if (col[v] == null || c > col[v]) { col[v] = c; queue.push(v); } }
+    }
+    // annotation / unplaced nodes: one column right of their best-placed neighbor
+    for (let pass = 0; pass < group.length; pass++) {
+      let changed = false;
+      for (const id of group) {
+        if (col[id] != null) continue;
+        let best = null;
+        for (const v of nbr[id]) if (col[v] != null) best = Math.max(best ?? 0, col[v] + 1);
+        if (best != null) { col[id] = best; changed = true; }
+      }
+      if (!changed) break;
+    }
+    group.forEach((id) => { if (col[id] == null) col[id] = 0; });
+
+    // ---- vertical: center each parent over its contains-children ----
+    const y = {}; let leaf = 0;
+    const dfs = (id) => {
+      if (y[id] != null) return y[id];
+      const ch = kids[id].filter((c) => gset.has(c));
+      if (!ch.length) { y[id] = leaf * ROW_H; leaf++; return y[id]; }
+      const cys = ch.map(dfs).filter((v) => v != null);
+      y[id] = cys.length ? (Math.min(...cys) + Math.max(...cys)) / 2 : (leaf++ * ROW_H);
+      return y[id];
+    };
+    roots.sort((a, b) => baseY[a] - baseY[b]).forEach(dfs);
+    for (const id of group) if ((kids[id].length || cparent[id]) && y[id] == null) { y[id] = leaf * ROW_H; leaf++; }
+    for (const id of group) {
+      if (y[id] != null) continue;
+      const nys = nbr[id].map((v) => y[v]).filter((v) => v != null);
+      y[id] = nys.length ? nys.reduce((s, v) => s + v, 0) / nys.length : leaf++ * ROW_H;
+    }
+    // resolve in-column overlaps (keep order, push down by ROW_H)
+    const byCol = {};
+    for (const id of group) (byCol[col[id]] ||= []).push(id);
+    Object.values(byCol).forEach((g) => {
+      g.sort((a, b) => y[a] - y[b]);
+      for (let i = 1; i < g.length; i++) if (y[g[i]] < y[g[i - 1]] + ROW_H) y[g[i]] = y[g[i - 1]] + ROW_H;
+    });
+
+    // Default placement: x by contains-depth (column), y by the centered tree above.
+    let place = {};
+    for (const id of group) place[id] = { x: col[id] * COL_W, y: y[id] };
+    // Bushy-graph remedy: a wide-but-shallow component (one Goal → many modules →
+    // many leaves) stacks dozens of same-depth siblings into one tall column, so the
+    // tree becomes a thin vertical strip that fits-to-screen as an unreadable thread.
+    // When a component is far taller than wide, re-pack it: each depth level's
+    // siblings wrap horizontally into a near-square grid (siblings spread sideways
+    // and fold into multiple sub-columns) so the aspect ratio matches the canvas.
+    let tMaxX = 0, tMinY = Infinity, tMaxY = -Infinity;
+    for (const id of group) { tMaxX = Math.max(tMaxX, place[id].x); tMinY = Math.min(tMinY, place[id].y); tMaxY = Math.max(tMaxY, place[id].y); }
+    const treeW = tMaxX + COL_W, treeH = (isFinite(tMinY) ? tMaxY - tMinY : 0) + ROW_H;
+    if (group.length > 6 && treeH > 1.6 * treeW) {
+      place = packBalanced(group, col, kids, gset, baseY, COL_W, ROW_H, 1.3);
+    }
+
+    // normalize this component to start at (X0, yCursor), then advance the stack
+    let minX = Infinity, minY = Infinity, maxY = -Infinity;
+    for (const id of group) { minX = Math.min(minX, place[id].x); minY = Math.min(minY, place[id].y); maxY = Math.max(maxY, place[id].y); }
+    if (!isFinite(minY)) { minX = 0; minY = 0; maxY = 0; }
+    for (const id of group) pos[id] = { x: Math.round(X0 + place[id].x - minX), y: Math.round(yCursor + place[id].y - minY) };
+    yCursor += (maxY - minY) + ROW_H + COMPONENT_GAP;
+  }
+  return pos;
+}
+
+// Re-pack one over-tall component into a balanced grid. Depth still flows left→right,
+// but each depth level's nodes wrap into multiple sub-columns (cap = rows per
+// sub-column) instead of one tall stack, so the component fills a near-square box.
+// Nodes are visited in contains pre-order (sorted by baseY) so a parent's children
+// stay grouped; non-tree nodes (annotations/isolates) are appended by depth. The row
+// cap is chosen by searching for the aspect ratio closest to `targetAspect`.
+// Returns { [id]: { x, y } } in local (0-based) coordinates; caller normalizes.
+function packBalanced(group, col, kids, gset, baseY, COL_W, ROW_H, targetAspect) {
+  // contains pre-order for sibling grouping, seeded from the shallowest level
+  const minCol = Math.min(...group.map((id) => col[id]));
+  const seeds = group.filter((id) => col[id] === minCol).sort((a, b) => baseY[a] - baseY[b]);
+  const order = [], placed = new Set();
+  const visit = (id) => {
+    if (placed.has(id)) return;
+    placed.add(id); order.push(id);
+    kids[id].filter((c) => gset.has(c)).sort((a, b) => baseY[a] - baseY[b]).forEach(visit);
+  };
+  seeds.forEach(visit);
+  group.filter((id) => !placed.has(id)).sort((a, b) => col[a] - col[b] || baseY[a] - baseY[b])
+    .forEach((id) => { order.push(id); placed.add(id); });
+
+  // nodes grouped by depth level, in pre-order
+  const levels = {};
+  order.forEach((id) => { (levels[col[id]] ||= []).push(id); });
+  const levelKeys = Object.keys(levels).map(Number).sort((a, b) => a - b);
+
+  // search the rows-per-sub-column cap whose resulting box is closest to target
+  let best = null;
+  for (let cap = 3; cap <= group.length; cap++) {
+    const pos = {}; let physCol = 0, maxRow = 0;
+    for (const lvl of levelKeys) {
+      const arr = levels[lvl];
+      arr.forEach((id, i) => {
+        const sc = Math.floor(i / cap), sr = i % cap;
+        pos[id] = { x: (physCol + sc) * COL_W, y: sr * ROW_H };
+        if (sr > maxRow) maxRow = sr;
+      });
+      physCol += Math.ceil(arr.length / cap);
+    }
+    const W = physCol * COL_W, H = (maxRow + 1) * ROW_H;
+    const score = Math.abs(W / H - targetAspect);
+    if (!best || score < best.score) best = { score, pos };
+  }
+  return best.pos;
+}
+
+// ---- Import: parse an ACM-MD markdown file back into a runtime GraphDocument ----
+// Inverse of toAcmMd: pull the ```acm fenced YAML, merge layout into node x/y, and
+// preserve protocol fields (validation / changes) for lossless round-trip.
+export function parseAcmMd(text) {
+  const warnings = [];
+  if (!text || !text.trim()) return { doc: null, errors: ["文件为空"], warnings };
+
+  const re = /```acm[^\n]*\n([\s\S]*?)```/g;
+  const blocks = [];
+  let m;
+  while ((m = re.exec(text)) !== null) blocks.push(m[1]);
+
+  let yamlText;
+  if (blocks.length === 0) {
+    // tolerate a raw YAML file without a fence as a fallback
+    yamlText = text;
+    warnings.push("未找到 ```acm 代码块，按整份 YAML 尝试解析");
+  } else {
+    if (blocks.length > 1) warnings.push(`发现 ${blocks.length} 个 acm 代码块，仅使用第 1 个`);
+    yamlText = blocks[0];
+  }
+
+  let raw;
+  try { raw = parseYaml(yamlText); }
+  catch (e) { return { doc: null, errors: ["YAML 解析失败：" + (e?.message || e)], warnings }; }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { doc: null, errors: ["acm 内容不是有效的图谱对象"], warnings };
+  }
+
+  const nodes = Array.isArray(raw.nodes) ? raw.nodes.map((n) => ({ ...n })) : [];
+  const edges = Array.isArray(raw.edges) ? raw.edges.map((e) => ({ ...e })) : [];
+  // Coordinate sources, in priority order:
+  //   1) layout.nodes[id]   2) inline node.x/y   3) hierarchical auto-layout   4) grid
+  const lay = (raw.layout && raw.layout.nodes) || {};
+  let positioned = 0;
+  nodes.forEach((n) => {
+    const p = lay[n.id];
+    if (p && typeof p.x === "number" && typeof p.y === "number") { n.x = p.x; n.y = p.y; positioned++; }
+    else if (typeof n.x === "number" && typeof n.y === "number") { positioned++; }
+  });
+  // No usable coordinates in the file → lay out by graph structure (layered tree,
+  // grouped by connected component) instead of a structure-blind grid.
+  if (positioned === 0 && nodes.length) {
+    const pos = layoutGraph({ nodes, edges });
+    nodes.forEach((n) => { const p = pos[n.id]; if (p) { n.x = p.x; n.y = p.y; } });
+    if (blocks.length) warnings.push("文件无 layout，已按图谱结构自动布局");
+  }
+  // Final safety net: anything still unplaced (e.g. layout listed only some nodes) gets a grid slot.
+  nodes.forEach((n, i) => {
+    if (typeof n.x !== "number" || typeof n.y !== "number") {
+      n.x = 80 + (i % 4) * 240; n.y = 60 + Math.floor(i / 4) * 150;
+    }
+  });
+
+  const doc = {
+    schema_version: raw.schema_version || "acm-md/0.1",
+    doc_id: raw.doc_id || `acm_import_${Date.now()}`,
+    meta: (raw.meta && typeof raw.meta === "object") ? { ...raw.meta } : {},
+    nodes,
+    edges,
+  };
+  if (!doc.meta.title) doc.meta.title = "导入的图谱";
+  if (raw.changes) doc.changes = raw.changes;       // ChangeSet passthrough
+  if (raw.validation) doc.validation = raw.validation; // validation passthrough (v0.1)
+
+  const errors = [];
+  if (!Array.isArray(raw.nodes)) errors.push("缺少 nodes 数组");
+  if (!Array.isArray(raw.edges)) warnings.push("缺少 edges，按空数组处理");
+  return { doc, errors, warnings };
 }

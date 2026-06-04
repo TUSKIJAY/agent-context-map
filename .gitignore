@@ -3,6 +3,12 @@ dist/
 .vite/
 .claude/
 
+# Tauri 构建产物与生成文件（不提交二进制和编译缓存）
+src-tauri/target/
+src-tauri/gen/
+# 绿色版 exe 输出目录（构建产物，本地交付，不入库）
+output/
+
 .env
 .env.*
 *.local

@@ -251,3 +251,41 @@ exe: output/portable/Agent Context Map/Agent Context Map.exe
 - 拖动节点确认连线跟随；
 - 从节点圆点拖线新建关系；
 - 打开导出弹窗确认 ACM-MD / Diff / JSON / Mermaid 仍可生成。
+
+## 11. 便携版 exe 打包完成记录（2026-06-03）
+
+§10 预留的桌面壳此前为空缺，本次已补齐并产出首个 Windows 绿色版 exe。
+
+新增桌面壳工程（Tauri v2）：
+
+- `src-tauri/`（`tauri.conf.json` / `Cargo.toml` / `build.rs` / `src/main.rs` / `src/lib.rs` / `capabilities/default.json` / `icons/`）
+  - `identifier`: `com.stargate.agent-context-map`
+  - Cargo 包名: `agent-context-map`（release 二进制即 `agent-context-map.exe`）
+  - 主窗口: 1280×860，最小 960×640，居中
+  - `frontendDist: ../dist`，`beforeBuildCommand: npm run build`
+- `package.json` 新增脚本：`tauri` / `tauri:dev` / `tauri:build`
+- `.gitignore` 新增忽略：`src-tauri/target/`、`src-tauri/gen/`、`output/`（构建产物不入库）
+
+构建与验收：
+
+```text
+命令: npm run tauri:build -- --no-bundle   （未打 MSI/NSIS/zip，仅 release exe）
+编译: Rust 1.95 / Tauri CLI 2.11.2，release 编译用时约 2m23s，exit 0
+产物: src-tauri/target/release/agent-context-map.exe (≈9.48 MB)
+交付: output/portable/Agent Context Map/Agent Context Map.exe（+ version.txt）
+构建时间: 2026-06-03 15:57
+WebView2 Runtime: 本机已安装 v148.0.3967.96（P5 依赖满足）
+```
+
+exe 冒烟（自动）已通过：
+
+- 进程正常启动，主窗口标题 `Agent Context Map`；
+- WebView2 子进程被拉起（前端页面已加载渲染）；
+- 干净退出，无启动即崩溃。
+
+仍建议人工补跑 §10 末尾的交互冒烟清单（自动布局 / 侧栏收展 / 连线不跳动 / 拖线建边 / 导出弹窗）。
+
+待办（下一手）：
+
+- 本次仅打通桌面壳与 exe 产物，尚未接入 Tauri 本地文件/持久化能力（plan P5 的「可恢复工作现场」仍是 Web 侧浏览器存储）。
+- 以上改动尚未提交 Git，由用户确认后再 commit。
