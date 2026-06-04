@@ -1,8 +1,44 @@
+<div align="center">
+
 # Agent Context Map
+
+**协议驱动的 Agent 需求图谱编辑器** · 把任务拆解、需求澄清和协作上下文变成可视化、可编辑、可校验、可导出的结构化图谱。
+
+![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5-646cff?logo=vite&logoColor=white)
+![React Flow](https://img.shields.io/badge/React_Flow-12-ff0072)
+![Tauri](https://img.shields.io/badge/Tauri-2-24c8db?logo=tauri&logoColor=white)
+![ACM-MD](https://img.shields.io/badge/protocol-ACM--MD_v0.1-7c5cff)
+![Local First](https://img.shields.io/badge/local--first-no_backend-22c55e)
+
+</div>
 
 Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器。它把对话式任务拆解结果整理成可视化、可编辑、可校验、可导出的结构化上下文，让后续 Agent 可以更清楚地理解目标、约束、模块、功能和执行关系。
 
-项目基于 `ACM-MD v0.1` 协议构建，使用 Vite + React 实现，适合用于需求澄清、任务拆解、Agent 协作交接和复杂项目上下文管理。
+项目基于 `ACM-MD v0.1` 协议构建，使用 Vite + React + React Flow 实现，并可通过 Tauri 打包为绿色版桌面应用，适合用于需求澄清、任务拆解、Agent 协作交接和复杂项目上下文管理。
+
+![Agent Context Map 编辑器界面](assets/screenshots/02-editor.png)
+
+## 界面预览
+
+<table>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/03-inspector.png" alt="节点 Inspector 详情" /></td>
+    <td width="50%"><img src="assets/screenshots/04-validate.png" alt="图谱校验面板" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Inspector · 逐节点编辑</b><br/>类型、状态、优先级、置信度、标签与来源一目了然</td>
+    <td align="center"><b>校验 · 一键体检</b><br/>悬空边、重复 ID、未确认关系等问题实时汇总</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/05-export.png" alt="导出给 Agent" /></td>
+    <td width="50%"><img src="assets/screenshots/01-home.png" alt="开始页" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>导出给 Agent</b><br/>完整 ACM-MD / Agent Diff / 图谱 JSON / Mermaid 预览</td>
+    <td align="center"><b>开始页</b><br/>新建、导入、查看示例，编辑自动保存到本地</td>
+  </tr>
+</table>
 
 ## 核心能力
 
@@ -72,10 +108,11 @@ doc/03-ACM-MD格式规范指导文件.md
 
 ## 技术栈
 
-- React 18
-- Vite 5
-- 原生 CSS / 内联样式
-- 纯前端本地状态管理
+- React 18 + Vite 5
+- React Flow（@xyflow/react）画布与连线
+- Dagre 自动布局、html-to-image 画布导出
+- Tauri 2 桌面打包（绿色版 exe，SQLite 本地持久化）
+- 原生 CSS / 内联样式，纯前端本地状态管理
 
 ## 适用场景
 
