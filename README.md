@@ -17,6 +17,12 @@ Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器�
 
 项目基于 `ACM-MD v0.1` 协议构建，使用 Vite + React + React Flow 实现，并可通过 Tauri 打包为绿色版桌面应用，适合用于需求澄清、任务拆解、Agent 协作交接和复杂项目上下文管理。
 
+![Agent Context Map 演示](assets/screenshots/demo.gif)
+
+> 拖动节点实时跟手 · 一键自动布局 · 选中即可逐节点编辑 · 一键导出 ACM-MD / Agent Diff / Mermaid
+
+完整编辑器界面：
+
 ![Agent Context Map 编辑器界面](assets/screenshots/02-editor.png)
 
 ## 界面预览
