@@ -3,6 +3,14 @@ dist/
 .vite/
 .claude/
 
+# 本地 Agent 技能脚手架（给 Agent 运行时使用，不属于产品代码，不入库）
+skills/
+
+# 临时与备份文件
+*.tmp
+*.bak
+*~
+
 # Tauri 构建产物与生成文件（不提交二进制和编译缓存）
 src-tauri/target/
 src-tauri/gen/

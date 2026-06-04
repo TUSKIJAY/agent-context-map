@@ -15,7 +15,7 @@
 
 Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器。它把对话式任务拆解结果整理成可视化、可编辑、可校验、可导出的结构化上下文，让后续 Agent 可以更清楚地理解目标、约束、模块、功能和执行关系。
 
-项目基于 `ACM-MD v0.1` 协议构建，使用 Vite + React + React Flow 实现，并可通过 Tauri 打包为绿色版桌面应用，适合用于需求澄清、任务拆解、Agent 协作交接和复杂项目上下文管理。
+项目基于 **ACM-MD v0.1** 协议构建——*ACM-MD = Agent Context Map · Markdown*，一种用 **Markdown + YAML** 描述 Agent 任务上下文（目标、模块、功能、约束、关系、校验结果等）的开放文本格式，人能读、Agent 也能解析。本工具用 Vite + React + React Flow 实现，并可通过 Tauri 打包为绿色版桌面应用，适合用于需求澄清、任务拆解、Agent 协作交接和复杂项目上下文管理。
 
 ![Agent Context Map 演示](assets/screenshots/demo.gif)
 
@@ -96,9 +96,9 @@ doc/
   03-ACM-MD格式规范指导文件.md
 ```
 
-## 协议说明
+## 什么是 ACM-MD
 
-ACM-MD 是本项目的核心数据契约。它用 Markdown + YAML 结构描述 Agent 任务上下文，包括：
+**ACM-MD（Agent Context Map · Markdown）** 是本项目的核心数据契约，也是一份与具体工具无关的开放格式约定。它用 Markdown + YAML 结构描述 Agent 任务上下文，包括：
 
 - 项目目标与范围
 - 节点清单
