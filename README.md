@@ -86,14 +86,14 @@ src/
   main.jsx
   App.jsx
   acm/
-    Canvas.jsx
-    Panels.jsx
-    TweaksPanel.jsx
-    data.js
-doc/
-  01-Agent-Context-Map-工具开发/
-  02-任务拆解大师改造/
-  03-ACM-MD格式规范指导文件.md
+    FlowCanvas.jsx     # React Flow 画布、节点与连线
+    Home.jsx           # 开始页
+    Panels.jsx         # Inspector / Agent Diff / 校验面板
+    TweaksPanel.jsx    # 显示设置
+    data.js            # ACM-MD 数据契约、关系推断、校验、导入导出
+src-tauri/             # Tauri 桌面壳（绿色版 exe）
+skills/
+  acm-md/              # ACM-MD 生成 / 校验 Agent 技能（含协议规范与校验器）
 ```
 
 ## 什么是 ACM-MD
@@ -106,11 +106,25 @@ doc/
 - 校验结果
 - Agent 可继续执行的上下文差异
 
-详细规范见：
+详细规范见仓库内的协议文本：
 
 ```text
-doc/03-ACM-MD格式规范指导文件.md
+skills/acm-md/references/acm-md-v0.1.md
 ```
+
+## Agent 技能（ACM-MD Skill）
+
+仓库内置了一个与编辑器配套的 Agent 技能，放在 `skills/acm-md/`，让任意 Agent 都能正确地生成、读取、校验和修复 ACM-MD：
+
+```text
+skills/acm-md/
+  SKILL.md                  # 技能说明与调用指引
+  references/acm-md-v0.1.md # ACM-MD v0.1 协议规范（开放文本格式）
+  scripts/validate_acm_md.py# ACM-MD 校验器（结构 / 关系 / 悬空边等）
+  agents/openai.yaml        # Agent 接入配置
+```
+
+它让「对话式拆解 → 生成 ACM-MD → 在本编辑器里可视化校验 → 导出给下一个 Agent」形成闭环。
 
 ## 技术栈
 

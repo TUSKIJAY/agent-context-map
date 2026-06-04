@@ -1,7 +1,8 @@
 # ACM-MD 格式规范指导文件
 
-版本：v0.1  
-日期：2026-06-03  
+规范文档版本：v0.1.1  
+日期：2026-06-04  
+协议版本标识：`acm-md/0.1`  
 全称：Agent Context Map Markdown  
 用途：定义 Agent 需求图谱的标准 Markdown 承载格式
 
@@ -36,7 +37,7 @@ Markdown 可以包含标题、说明、摘要，但工具只解析 `acm` 代码�
 
 ````markdown
 ```acm
-schema_version: "0.1"
+schema_version: "acm-md/0.1"
 ...
 ```
 ````
@@ -45,9 +46,15 @@ schema_version: "0.1"
 
 ### 2.3 全文只允许一个主 acm 块
 
-一个 ACM-MD 文件中推荐只包含一个主 `acm` 代码块。
+Agent 生成和工具正式导出 ACM-MD 时，全文必须只包含一个主 `acm` 代码块。
 
 如果未来需要多图谱，应通过 `doc_id` 或外部文件拆分，而不是在同一文件放多个主图谱。
+
+工具导入或修复旧文件时可采用宽容模式：
+
+- 未找到 `acm` 代码块时，可以尝试把全文当作 YAML 解析，但必须提示 warning。
+- 找到多个 `acm` 代码块时，可以只使用第一个主块，但必须提示 warning，不得静默合并。
+- 宽容导入只用于恢复和修复；重新导出时仍必须回到单一主 `acm` 块。
 
 ### 2.4 id 必须稳定
 
@@ -56,6 +63,16 @@ schema_version: "0.1"
 禁止使用 title 作为 id。
 
 title 可以修改，id 不能随意修改。
+
+### 2.5 schema_version 口径
+
+正式生成和导出时使用：
+
+```yaml
+schema_version: "acm-md/0.1"
+```
+
+为兼容早期草案，工具导入时可以接受 `"0.1"`，但导出时应统一规范化为 `"acm-md/0.1"`。
 
 ## 3. 文件整体结构
 
@@ -71,7 +88,7 @@ title 可以修改，id 不能随意修改。
 ## Graph
 
 ```acm
-schema_version: "0.1"
+schema_version: "acm-md/0.1"
 doc_id: "acm_001"
 meta:
   title: "..."
@@ -95,7 +112,7 @@ changes:
 ### 4.1 必填字段
 
 ```yaml
-schema_version: "0.1"
+schema_version: "acm-md/0.1"
 doc_id: "acm_001"
 meta: {}
 nodes: []
@@ -114,7 +131,7 @@ validation: {}
 
 | 字段 | 必填 | 类型 | 说明 |
 | --- | --- | --- | --- |
-| schema_version | 是 | string | 协议版本 |
+| schema_version | 是 | string | 协议版本；正式值为 `acm-md/0.1`，导入兼容早期 `"0.1"` |
 | doc_id | 是 | string | 当前图谱文档 id |
 | meta | 是 | object | 图谱元信息 |
 | nodes | 是 | array | 节点列表 |
@@ -477,16 +494,19 @@ changes_001
 违反以下规则时，工具应阻止导出为有效 Agent 上下文：
 
 1. 缺少 `schema_version`
-2. 缺少 `doc_id`
-3. `nodes` 不是数组
-4. `edges` 不是数组
-5. 节点 id 重复
-6. 边 id 重复
-7. 边的 `from` 或 `to` 引用不存在的节点
-8. 节点 type 不在允许枚举中
-9. 边 type 不在允许枚举中
-10. 节点缺少 id、type、title、status 任一必填字段
-11. 边缺少 id、from、to、type、status 任一必填字段
+2. `schema_version` 不是受支持版本（正式值 `acm-md/0.1`；导入兼容 `"0.1"`）
+3. 缺少 `doc_id`
+4. `meta` 不是对象，或缺少 `meta.title`
+5. `nodes` 不是数组
+6. `edges` 不是数组
+7. 节点 id 重复
+8. 边 id 重复
+9. 边的 `from` 或 `to` 引用不存在的节点
+10. 节点 type 不在允许枚举中
+11. 边 type 不在允许枚举中
+12. 节点缺少 id、type、title、status 任一必填字段
+13. 边缺少 id、from、to、type、status 任一必填字段
+14. 存在 `changes` 但缺少 `changes.summary`
 
 ### 15.2 Warning 级规则
 
@@ -513,7 +533,7 @@ changes_001
 ## Graph
 
 ```acm
-schema_version: "0.1"
+schema_version: "acm-md/0.1"
 doc_id: "acm_agent_context_map_001"
 
 meta:

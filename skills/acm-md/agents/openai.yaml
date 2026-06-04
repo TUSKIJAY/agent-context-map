@@ -1,0 +1,4 @@
+interface:
+  display_name: "ACM-MD"
+  short_description: "Generate, read, repair, and validate ACM-MD graphs"
+  default_prompt: "Use $acm-md to generate a valid Agent Context Map ACM-MD graph for this project idea."
