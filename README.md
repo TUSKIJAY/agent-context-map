@@ -19,7 +19,7 @@ Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器�
 
 ![Agent Context Map 演示](assets/screenshots/demo.gif)
 
-> 拖动节点实时跟手 · 一键自动布局 · 选中即可逐节点编辑 · 一键导出 ACM-MD / Agent Diff / Mermaid
+> 拖拽节点圆点即可连线、自动推断关系（suggested → 待确认）· 拖动节点实时跟手 · 一键自动布局 · 选中即可逐节点编辑 · 一键导出 ACM-MD / Agent Diff / Mermaid
 
 完整编辑器界面：
 
