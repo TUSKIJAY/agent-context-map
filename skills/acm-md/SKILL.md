@@ -50,7 +50,18 @@ Ids must be stable and unique. Do not use titles as ids. Existing nonconforming 
    - Unsettled items: `status: "needs_validation"` and a matching `Question` or `Assumption` node when useful.
 4. Build nodes first, then edges. Every edge `from` and `to` must reference an existing node id.
 5. If `changes` exists, include `changes.summary`. When reading Agent Diff, consume `summary`, then `agent_instructions`, then added/modified/removed nodes and edges.
-6. Validate before handing off. Prefer the script below for any saved file.
+6. Before handing off generated ACM-MD, scan all free-text fields for raw Markdown fence delimiters. Do not place the literal three-backtick sequence inside YAML string values; write "acm fenced code block", "three-backtick code block", or another plain-text phrase instead.
+7. Validate before handing off. Prefer the script below for any saved file.
+
+## Generation Safety Hooks
+
+- Fence hygiene hook: generated/exported ACM-MD must not contain the raw three-backtick sequence inside the main YAML body. A literal Markdown fence inside `description`, `notes`, `reason`, `summary`, or similar text can prematurely close the outer `acm` block in importers that parse Markdown fences directly.
+- If source material contains Markdown code fences, paraphrase or escape the idea in prose before placing it into ACM-MD YAML fields.
+- Type hygiene hook: ids, titles, statuses, types, sources, notes, descriptions, reasons, and layout engine values should be strings; `tags` should be an array of strings; `confidence` should be a real number from 0 to 1.
+- Graph hygiene hook: every edge must point to existing nodes, should not self-loop, and should avoid duplicate `from`/`to` pairs unless there is a deliberate reason the target app supports parallel relations.
+- Layout hygiene hook: if `layout.nodes` is present, every layout entry should reference an existing node id and contain numeric `x` and `y` coordinates.
+- ChangeSet hygiene hook: if `changes` is present, include `change_set_id`, `base_doc_id`, and `summary`; keep added/modified/removed node and edge arrays structurally valid.
+- The validator below enforces this in strict mode and warns in tolerant mode.
 
 ## Validation
 
@@ -66,7 +77,7 @@ Run tolerant validation when repairing legacy or pasted input:
 python C:\Users\LENOVO\.codex\skills\acm-md\scripts\validate_acm_md.py <file.md> --mode tolerant
 ```
 
-Strict mode fails on zero or multiple `acm` blocks. Tolerant mode may parse raw YAML or use the first block, but reports warnings.
+Strict mode fails on zero or multiple `acm` blocks, and also fails when the YAML body contains a raw three-backtick fence delimiter. Tolerant mode may parse raw YAML or use the first block, but reports warnings.
 
 ## Repair Rules
 
