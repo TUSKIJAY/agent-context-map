@@ -85,12 +85,22 @@ export default function App() {
   // D-4: whole-group fold. Set<groupId>; members of a collapsed group join the hidden set
   // (reusing A's computeHidden render/layout pipeline) while the frame stays as a header.
   const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
+  // Mirror ref so onToggleGroup reads the LATEST fold set even across rapid same-frame
+  // clicks (closure state would be stale until the next render).
+  const collapsedGroupsRef = useRef(collapsedGroups);
+  collapsedGroupsRef.current = collapsedGroups;
   // Folded `contains` subtrees. PURE view state — same level as profile / viewport:
   // never written into doc, undo, layout or any export (ACM-MD v0.1 stays untouched).
   const [collapsed, setCollapsed] = useState(() => new Set()); // Set<nodeId>
 
   const undoRef = useRef([]); const redoRef = useRef([]);
   const lastKeyRef = useRef(null);
+  // layoutTokenRef guards against overlapping ELK runs (only the latest applies + owns the
+  // loading veil). docEpochRef bumps on EVERY doc mutation (commit/undo/redo/open) so an
+  // async ELK result computed from a now-stale doc is discarded instead of clobbering a
+  // concurrent drag/undo/edit — the token alone can't see doc changes.
+  const layoutTokenRef = useRef(0);
+  const docEpochRef = useRef(0);
   const [, force] = useState(0);
 
   useFx(() => { const id = setTimeout(() => setFitSignal((s) => s + 1), 160); return () => clearTimeout(id); }, []);
@@ -125,6 +135,7 @@ export default function App() {
 
   const loadRecord = (rec, savedVp) => {
     const pid = rec.domain_profile || "software";
+    docEpochRef.current++; // new doc → discard any ELK layout still in flight for the old one
     setProfile(pid); setActiveProfile(pid);
     setDoc(rec.body);
     setBase(rec.base_snapshot ? rec.base_snapshot : clone(rec.body));
@@ -200,6 +211,7 @@ export default function App() {
   }, [selection, tab]);
 
   const commit = useCb((next, coalesceKey = null) => {
+    docEpochRef.current++; // doc is changing → invalidate any in-flight async ELK layout
     setDoc((prev) => {
       if (!(coalesceKey && coalesceKey === lastKeyRef.current)) {
         undoRef.current.push(prev);
@@ -216,8 +228,8 @@ export default function App() {
   // them (edges → smoothstep, render flattens). The grouping MODE is kept so re-layout
   // restores the frames. clearViewLayout centralises that "positions changed" reset.
   const clearViewLayout = () => { setElkRoutes(null); setGroupOf(null); setGroupBoxes(null); };
-  const undo = () => { if (!undoRef.current.length) return; redoRef.current.push(doc); setDoc(undoRef.current.pop()); lastKeyRef.current = null; clearViewLayout(); force((n) => n + 1); };
-  const redo = () => { if (!redoRef.current.length) return; undoRef.current.push(doc); setDoc(redoRef.current.pop()); lastKeyRef.current = null; clearViewLayout(); force((n) => n + 1); };
+  const undo = () => { if (!undoRef.current.length) return; docEpochRef.current++; redoRef.current.push(doc); setDoc(undoRef.current.pop()); lastKeyRef.current = null; clearViewLayout(); force((n) => n + 1); };
+  const redo = () => { if (!redoRef.current.length) return; docEpochRef.current++; undoRef.current.push(doc); setDoc(redoRef.current.pop()); lastKeyRef.current = null; clearViewLayout(); force((n) => n + 1); };
 
   // ---- mutations ----
   const patchNode = (id, patch) => commit((d) => ({ ...d, nodes: d.nodes.map((n) => n.id === id ? { ...n, ...patch } : n) }),
@@ -330,10 +342,12 @@ export default function App() {
   // so undo/redo semantics are identical. `eng` lets the engine toggle lay out with
   // the NEW engine before its setState has flushed. A token guards against the ELK
   // async race: if a newer layout starts mid-await, the stale result is dropped.
-  const layoutTokenRef = useRef(0);
   // `grp` !== "none" forces ELK nested layout (grouping needs hierarchy); else `eng`
   // chooses dagre/ELK-flat. Both `eng`/`grp` are explicit so the engine & grouping
-  // toggles can lay out with their NEW value before setState has flushed.
+  // toggles can lay out with their NEW value before setState has flushed. Two guards on
+  // the async ELK path: `token` drops a result superseded by a newer layout (and owns the
+  // loading veil); `epoch` drops a result whose source `doc` was mutated mid-await by a
+  // concurrent drag / undo / edit / open — so layout never clobbers the user's change.
   const applyLayout = async (dir, eng = engine, grp = grouping, cg = collapsedGroups) => {
     const { hidden: hid } = computeHidden(doc, collapsed);
     const vis = {
@@ -341,6 +355,7 @@ export default function App() {
       edges: doc.edges.filter((e) => !hid.has(e.from) && !hid.has(e.to)),
     };
     const token = ++layoutTokenRef.current;
+    const epoch = docEpochRef.current;
     const useElk = grp !== "none" || eng === "elk";
     if (useElk) {
       setLayouting(true);
@@ -348,13 +363,15 @@ export default function App() {
         let gOf = null, groups = null;
         if (grp !== "none") { const r = computeGroupOf(vis, grp); gOf = r.groupOf; groups = r.groups; }
         const { pos, routes, containers } = await layoutGraphElk(vis, { rankdir: dir, groupOf: gOf, groups, collapsedGroups: cg });
-        if (token !== layoutTokenRef.current) return; // superseded by a newer layout
-        commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
-        setElkRoutes(routes);
-        setGroupOf(grp !== "none" ? gOf : null);
-        setGroupBoxes(grp !== "none" ? containers : null);
+        // apply only if no newer layout AND the doc hasn't changed under us
+        if (token === layoutTokenRef.current && epoch === docEpochRef.current) {
+          commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
+          setElkRoutes(routes);
+          setGroupOf(grp !== "none" ? gOf : null);
+          setGroupBoxes(grp !== "none" ? containers : null);
+        }
       } finally {
-        if (token === layoutTokenRef.current) setLayouting(false);
+        if (token === layoutTokenRef.current) setLayouting(false); // latest run clears the veil
       }
     } else {
       const pos = layoutGraph(vis, { rankdir: dir });
@@ -404,11 +421,12 @@ export default function App() {
   // re-shown members clamped inside the stale compact box). Pass the next set explicitly
   // since setState hasn't flushed yet.
   const onToggleGroup = useCb((gid) => {
-    const next = new Set(collapsedGroups);
+    const next = new Set(collapsedGroupsRef.current); // latest set, robust to rapid toggles
     if (next.has(gid)) next.delete(gid); else next.add(gid);
+    collapsedGroupsRef.current = next; // so a second same-frame toggle builds on this
     setCollapsedGroups(next);
     applyLayout(rankdir, "elk", grouping, next);
-  }, [collapsedGroups, rankdir, grouping, engine, collapsed, doc]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rankdir, grouping, collapsed, doc]); // eslint-disable-line react-hooks/exhaustive-deps
   // Collapse / expand are PURE view ops: they only touch the `collapsed` set and
   // re-fit. They never commit to undo, never mutate node coords — folding a subtree
   // is not a document edit. Run 自动布局 to re-pack the visible subgraph after.

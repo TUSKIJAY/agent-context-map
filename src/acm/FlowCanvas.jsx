@@ -213,7 +213,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
       if (hidden?.has(n.id)) continue;   // collapse: drop nodes folded under a collapsed ancestor
       const filtered = typeFilter != null && n.type !== typeFilter;
       const faded = focus ? !focus.nodes.has(n.id) : false;
-      const gid = grouped ? groupOf[n.id] : null;
+      const gid = grouped ? (groupOf?.[n.id] ?? null) : null; // undefined → ungrouped (top level)
       const box = gid ? groupBoxes[gid] : null;
       // Members store ABSOLUTE coords in the doc; React Flow wants a parented child's
       // position RELATIVE to its frame → subtract the frame origin here (and add it back

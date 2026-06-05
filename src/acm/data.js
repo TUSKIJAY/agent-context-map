@@ -664,10 +664,13 @@ export async function layoutGraphElk(doc, opts = {}) {
     }
   };
   walk(res, 0, 0);
-  // anything ELK dropped → tuck into a grid below (parity with dagre's isolated-node net)
+  // anything ELK genuinely dropped → tuck into a grid below (parity with dagre's
+  // isolated-node net). Members of a COLLAPSED group are intentionally absent from the
+  // ELK input, so skip them here — otherwise they'd be reassigned garbage grid coords
+  // (committed to the doc) and lose their real position until the group re-expands.
   let maxY = 0; for (const p of Object.values(pos)) maxY = Math.max(maxY, p.y);
   let gx = 0;
-  for (const n of nodes) if (!pos[n.id] && !groupIds.has(n.id)) { pos[n.id] = { x: 60 + gx * (NODE_W + 40), y: maxY + NODE_H + 120 }; gx++; }
+  for (const n of nodes) if (!pos[n.id] && !groupIds.has(n.id) && !memberHidden(n.id)) { pos[n.id] = { x: 60 + gx * (NODE_W + 40), y: maxY + NODE_H + 120 }; gx++; }
   return { pos, routes, containers };
 }
 
