@@ -7,6 +7,7 @@
 ![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646cff?logo=vite&logoColor=white)
 ![React Flow](https://img.shields.io/badge/React_Flow-12-ff0072)
+![Layout](https://img.shields.io/badge/layout-dagre_%2B_elkjs-f59e0b)
 ![Tauri](https://img.shields.io/badge/Tauri-2-24c8db?logo=tauri&logoColor=white)
 ![ACM-MD](https://img.shields.io/badge/protocol-ACM--MD_v0.1-7c5cff)
 ![Local First](https://img.shields.io/badge/local--first-no_backend-22c55e)
@@ -19,7 +20,7 @@ Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器�
 
 ![Agent Context Map 演示](assets/screenshots/demo.gif)
 
-> 拖拽节点圆点即可连线、自动推断关系（suggested → 待确认）· 拖动节点实时跟手 · 一键自动布局 · 选中即可逐节点编辑 · 一键导出 ACM-MD / Agent Diff / Mermaid
+> 拖拽节点圆点即可连线、自动推断关系（suggested → 待确认）· 拖动节点实时跟手 · dagre / ELK 双引擎自动布局 + 分组容器 · 选中即可逐节点编辑 · 一键导出 ACM-MD / Agent Diff / Mermaid
 
 完整编辑器界面：
 
@@ -50,6 +51,8 @@ Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器�
 
 - 可视化编辑 Agent 需求图谱，支持节点拖拽、画布平移、缩放和关系连线。
 - 支持目标、模块、功能、约束、资源、风险、交付物等节点类型。
+- **双布局引擎**：dagre（分层，快速，默认）与 elkjs（ELK 正交边路由、绕开节点、少交叉、嵌套布局），工具栏一键互切。
+- **复杂图谱可读性**：按内容估算节点尺寸；子树折叠 / 展开按需下钻；按模块 / 类型把节点装入带标题的分组容器；整组折叠降噪。
 - 连线时根据节点类型推断关系，并区分建议关系与已确认关系。
 - 实时生成 Agent Diff，记录字段变更、布局变更和给后续 Agent 的执行提示。
 - 内置校验规则，可检查悬空边、重复 ID、未确认关系、缺少归属模块等问题。
@@ -130,7 +133,8 @@ skills/acm-md/
 
 - React 18 + Vite 5
 - React Flow（@xyflow/react）画布与连线
-- Dagre 自动布局、html-to-image 画布导出
+- 双布局引擎：Dagre（默认，同步）+ elkjs（ELK 嵌套布局 / 正交边路由，按需动态加载、不增重默认包）
+- html-to-image 画布导出（PNG / SVG）
 - Tauri 2 桌面打包（绿色版 exe，SQLite 本地持久化）
 - 原生 CSS / 内联样式，纯前端本地状态管理
 
