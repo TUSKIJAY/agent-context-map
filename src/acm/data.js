@@ -450,7 +450,22 @@ export function toMermaid(doc) {
 // do. We feed approximate node sizes and read back top-left corners for the canvas.
 // `rankdir` "LR" puts roots on the left and flows rightward (a mind-map feel).
 // Returns { [nodeId]: { x, y } }. Used by both ACM-MD import and the toolbar button.
-const NODE_W = 220, NODE_H = 104;   // approx card size; canvas measures the real size at render
+const NODE_W = 210, NODE_H = 104;   // fallback card size; real height is estimated per node below
+
+// Estimate a card's rendered size from its content so dagre reserves the right
+// vertical space. Inner card width is fixed at 210 (AcmNode in FlowCanvas); height
+// grows with the title's wrapped line count plus the optional priority/confidence
+// row. Without this, dagre assumes every node is 104px tall and adjacent ranks
+// overlap once titles wrap. Pure function of the node — no DOM, no async.
+function estimateNodeSize(n) {
+  const W = 210;
+  const titleLen = (n?.title || "").length;
+  const titleLines = Math.min(3, Math.max(1, Math.ceil(titleLen / 13))); // ~13 全角字/行 近似
+  const hasMetaRow = !!(n?.priority || n?.confidence != null);
+  const H = 20 /*padding*/ + 22 /*type pill*/ + titleLines * 19 /*title*/ + (hasMetaRow ? 26 : 0) /*meta row*/ + 14 /*buffer*/;
+  return { width: W, height: H };
+}
+
 export function layoutGraph(doc, opts = {}) {
   const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
   const edges = Array.isArray(doc?.edges) ? doc.edges : [];
@@ -459,15 +474,17 @@ export function layoutGraph(doc, opts = {}) {
     const g = new dagre.graphlib.Graph({ multigraph: true });
     g.setGraph({
       rankdir: opts.rankdir || "LR",
-      ranksep: opts.ranksep ?? 120,   // gap between depth layers
-      nodesep: opts.nodesep ?? 40,    // gap between siblings within a layer
+      // layer / sibling gaps grow with graph size so dense graphs breathe instead
+      // of clumping; small graphs keep the original tight spacing
+      ranksep: opts.ranksep ?? (nodes.length > 60 ? 160 : nodes.length > 30 ? 140 : 120),
+      nodesep: opts.nodesep ?? (nodes.length > 60 ? 64 : nodes.length > 30 ? 52 : 40),
       edgesep: 24,
       marginx: 60, marginy: 60,
       ranker: "network-simplex",
     });
     g.setDefaultEdgeLabel(() => ({}));
     const idSet = new Set(nodes.map((n) => n.id));
-    for (const n of nodes) g.setNode(n.id, { width: NODE_W, height: NODE_H });
+    for (const n of nodes) g.setNode(n.id, estimateNodeSize(n));
     for (const e of edges) {
       if (!idSet.has(e.from) || !idSet.has(e.to) || e.from === e.to) continue;
       g.setEdge(e.from, e.to, {}, e.id);   // edge id as name → tolerates parallel edges
@@ -476,8 +493,10 @@ export function layoutGraph(doc, opts = {}) {
     const pos = {};
     for (const n of nodes) {
       const gn = g.node(n.id);
-      // dagre returns the node CENTER; the canvas positions by the TOP-LEFT corner
-      if (gn && isFinite(gn.x) && isFinite(gn.y)) pos[n.id] = { x: Math.round(gn.x - NODE_W / 2), y: Math.round(gn.y - NODE_H / 2) };
+      // dagre returns the node CENTER; the canvas positions by the TOP-LEFT corner.
+      // Offset by each node's OWN reserved size (dagre preserves what we set above)
+      // so a tall card isn't shifted by the wrong half-height.
+      if (gn && isFinite(gn.x) && isFinite(gn.y)) pos[n.id] = { x: Math.round(gn.x - gn.width / 2), y: Math.round(gn.y - gn.height / 2) };
     }
     // any fully-isolated node dagre dropped → tuck into a grid below the graph
     let maxY = 0; for (const p of Object.values(pos)) maxY = Math.max(maxY, p.y);
