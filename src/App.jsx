@@ -672,7 +672,12 @@ function ExportModal({ doc, base, diff, tab, setTab, onClose, showToast }) {
         </div>
         <div style={{ display: "flex", gap: 4, padding: "10px 16px 0" }}>
           {tabs.map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)} style={{ padding: "7px 13px", border: "1px solid " + (tab === id ? "#dfe1e6" : "transparent"),
+            <button key={id} onClick={() => setTab(id)} style={{ padding: "7px 13px",
+              // all-longhand borders: mixing `border` shorthand with `borderBottom` makes
+              // React warn on rerender (shorthand vs non-shorthand for the same value).
+              borderTop: "1px solid " + (tab === id ? "#dfe1e6" : "transparent"),
+              borderLeft: "1px solid " + (tab === id ? "#dfe1e6" : "transparent"),
+              borderRight: "1px solid " + (tab === id ? "#dfe1e6" : "transparent"),
               borderBottom: "none", background: tab === id ? "#f7f8fa" : "transparent", borderRadius: "8px 8px 0 0", fontSize: 12.5,
               fontWeight: 600, color: tab === id ? "#1d2433" : "#98a2b3", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>{label}</button>
           ))}
