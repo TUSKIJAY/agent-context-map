@@ -71,6 +71,10 @@ export default function App() {
   // default) | "elk" (async, orthogonal-routed edges & — in 阶段 D — nested containers).
   const [engine, setEngine] = useState("dagre");
   const [layouting, setLayouting] = useState(false); // ELK is async → show a loading veil
+  // ELK orthogonal edge routes: { [edgeId]: [{x,y}…] } for the custom elkEdge. PURE view
+  // state — regenerated on each ELK layout, never written into doc/export, and dropped
+  // (→ smoothstep fallback) whenever node positions could have shifted (drag/undo/dagre).
+  const [elkRoutes, setElkRoutes] = useState(null);
   // Folded `contains` subtrees. PURE view state — same level as profile / viewport:
   // never written into doc, undo, layout or any export (ACM-MD v0.1 stays untouched).
   const [collapsed, setCollapsed] = useState(() => new Set()); // Set<nodeId>
@@ -109,6 +113,7 @@ export default function App() {
     setDocId(rec.doc_id);
     setSelection(null);
     setCollapsed(new Set()); // collapse is per-document view state — reset on open/switch
+    setElkRoutes(null);      // edge routes belong to the previous doc's coords — clear
     undoRef.current = []; redoRef.current = []; lastKeyRef.current = null;
     setView("editor");
     if (savedVp && typeof savedVp.scale === "number") setVp(savedVp);       // restore working viewport
@@ -188,15 +193,26 @@ export default function App() {
     force((n) => n + 1);
   }, []);
 
-  const undo = () => { if (!undoRef.current.length) return; redoRef.current.push(doc); setDoc(undoRef.current.pop()); lastKeyRef.current = null; force((n) => n + 1); };
-  const redo = () => { if (!redoRef.current.length) return; undoRef.current.push(doc); setDoc(redoRef.current.pop()); lastKeyRef.current = null; force((n) => n + 1); };
+  // undo/redo can restore different node coords → stale ELK routes; drop them (smoothstep).
+  const undo = () => { if (!undoRef.current.length) return; redoRef.current.push(doc); setDoc(undoRef.current.pop()); lastKeyRef.current = null; setElkRoutes(null); force((n) => n + 1); };
+  const redo = () => { if (!redoRef.current.length) return; undoRef.current.push(doc); setDoc(redoRef.current.pop()); lastKeyRef.current = null; setElkRoutes(null); force((n) => n + 1); };
 
   // ---- mutations ----
   const patchNode = (id, patch) => commit((d) => ({ ...d, nodes: d.nodes.map((n) => n.id === id ? { ...n, ...patch } : n) }),
     "node:" + id + ":" + Object.keys(patch).join(","));
   const patchEdge = (id, patch) => commit((d) => ({ ...d, edges: d.edges.map((e) => e.id === id ? { ...e, ...patch } : e) }),
     "edge:" + id + ":" + Object.keys(patch).join(","));
-  const moveNode = (id, x, y) => commit((d) => ({ ...d, nodes: d.nodes.map((n) => n.id === id ? { ...n, x, y } : n) }), "move:" + id);
+  const moveNode = (id, x, y) => {
+    commit((d) => ({ ...d, nodes: d.nodes.map((n) => n.id === id ? { ...n, x, y } : n) }), "move:" + id);
+    // A dragged node invalidates the ELK routes of its incident edges (their orthogonal
+    // polyline no longer meets the node) → drop just those so they revert to smoothstep.
+    setElkRoutes((r) => {
+      if (!r) return r;
+      let touched = false; const next = { ...r };
+      for (const e of doc.edges) if ((e.from === id || e.to === id) && next[e.id]) { delete next[e.id]; touched = true; }
+      return touched ? next : r;
+    });
+  };
 
   const addNode = (type) => {
     commit((d) => {
@@ -303,15 +319,17 @@ export default function App() {
     if (eng === "elk") {
       setLayouting(true);
       try {
-        const { pos } = await layoutGraphElk(vis, { rankdir: dir });
+        const { pos, routes } = await layoutGraphElk(vis, { rankdir: dir });
         if (token !== layoutTokenRef.current) return; // superseded by a newer layout
         commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
+        setElkRoutes(routes);
       } finally {
         if (token === layoutTokenRef.current) setLayouting(false);
       }
     } else {
       const pos = layoutGraph(vis, { rankdir: dir });
       commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
+      setElkRoutes(null); // dagre has no orthogonal routes → drop any stale ELK polylines
     }
     setTimeout(() => setFitSignal((s) => s + 1), 30);
   };
@@ -397,7 +415,8 @@ export default function App() {
         <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
           <GraphCanvas doc={doc} selection={selection} onSelect={setSelection} onMoveNode={moveNode}
             onCreateEdge={createEdge} rankdir={rankdir} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter}
-            hidden={hidden} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse} />
+            hidden={hidden} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse}
+            engine={engine} elkRoutes={elkRoutes} />
           <CanvasHint />
           {layouting && <LayoutVeil />}
         </div>

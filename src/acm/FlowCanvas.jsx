@@ -12,6 +12,7 @@ import React, { useMemo, useEffect, useState, useRef, useCallback } from "react"
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Panel,
   Handle, Position, MarkerType, useReactFlow, useNodesState, getNodesBounds, getViewportForBounds,
+  BaseEdge, getStraightPath,
 } from "@xyflow/react";
 import { toPng, toSvg } from "html-to-image";
 import "@xyflow/react/dist/style.css";
@@ -76,13 +77,59 @@ function AcmNode({ data, selected }) {
 }
 const nodeTypes = { acm: AcmNode };
 
+// Point at half the arc-length of a polyline — where the relation label sits so it
+// rides the middle of the routed (possibly multi-bend) edge, not a chord midpoint.
+function polyMidpoint(pts) {
+  const segs = []; let total = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const len = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    segs.push(len); total += len;
+  }
+  let half = total / 2;
+  for (let i = 1; i < pts.length; i++) {
+    if (half <= segs[i - 1] || i === pts.length - 1) {
+      const t = segs[i - 1] ? half / segs[i - 1] : 0.5;
+      return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t };
+    }
+    half -= segs[i - 1];
+  }
+  return pts[pts.length - 1];
+}
+
+// Custom edge that draws ELK's ORTHOGONAL route — the right-angle polyline through the
+// bend points ELK computed (absolute canvas coords in `data.points`). We only ever
+// assign this type when a route exists; the straight-path branch is a defensive guard.
+// Every visual prop (color/width/dash via `style`, arrowhead via `markerEnd`, the
+// relation label + its bg) is forwarded straight to BaseEdge, so elkEdge is visually
+// identical to the default/smoothstep edges apart from the routing. Endpoints come from
+// ELK, so after a node drag App drops that edge's route and it falls back to smoothstep.
+function ElkEdge({ data, style, markerEnd, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, sourceX, sourceY, targetX, targetY }) {
+  const pts = data?.points;
+  let path, lx, ly;
+  if (pts && pts.length >= 2) {
+    path = "M " + pts.map((p) => `${p.x} ${p.y}`).join(" L ");
+    const mid = polyMidpoint(pts);
+    lx = mid.x; ly = mid.y;
+  } else {
+    [path, lx, ly] = getStraightPath({ sourceX, sourceY, targetX, targetY });
+  }
+  return (
+    <BaseEdge path={path} markerEnd={markerEnd}
+      style={{ ...style, strokeLinejoin: "round", strokeLinecap: "round" }}
+      label={label} labelX={lx} labelY={ly} labelStyle={labelStyle}
+      labelShowBg={labelShowBg} labelBgStyle={labelBgStyle}
+      labelBgPadding={labelBgPadding} labelBgBorderRadius={labelBgBorderRadius} />
+  );
+}
+const edgeTypes = { elkEdge: ElkEdge };
+
 function download(dataUrl, name) {
   const a = document.createElement("a");
   a.download = name; a.href = dataUrl; a.click();
 }
 
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
-  hidden, collapsed, descCount, hasChildren, onToggleCollapse }) {
+  hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -141,8 +188,14 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     const onPath = focus ? focus.edges.has(e.id) : null;
     const faded = (focus && !onPath) || (!focus && typeFilter != null);
     const strong = sel || onPath;
+    // ELK mode: use the orthogonal route when we have one (elkEdge), else fall back to
+    // smoothstep (right-angle, same family) so a re-layout-pending edge still looks
+    // orthogonal. dagre mode: honour the local 曲线/直角 toggle exactly as before.
+    const route = engine === "elk" ? elkRoutes?.[e.id] : null;
+    const type = route ? "elkEdge" : (engine === "elk" ? "smoothstep" : (edgeStyle === "smoothstep" ? "smoothstep" : "default"));
     return {
-      id: e.id, source: e.from, target: e.to, type: edgeStyle === "smoothstep" ? "smoothstep" : "default",
+      id: e.id, source: e.from, target: e.to, type,
+      data: route ? { points: route } : undefined,
       label: faded ? undefined : rm.label, selected: sel, animated: sug && !faded,
       markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: rm.c },
       style: { stroke: rm.c, strokeWidth: strong ? 2.6 : 1.4, strokeDasharray: sug ? "6 4" : undefined, opacity: faded ? 0.08 : 0.9 },
@@ -150,7 +203,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
       labelBgStyle: { fill: "#fff", fillOpacity: 0.9 }, labelBgPadding: [4, 2], labelBgBorderRadius: 4,
       zIndex: strong ? 10 : 0,
     };
-  }), [doc.edges, selection, typeFilter, focus, edgeStyle, hidden]);
+  }), [doc.edges, selection, typeFilter, focus, edgeStyle, hidden, engine, elkRoutes]);
 
   useEffect(() => {
     if (!fitSignal) return;
@@ -203,7 +256,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     <div ref={wrapRef} style={{ position: "absolute", inset: 0 }}>
       <style>{`.react-flow__node.selected{box-shadow:none!important}.react-flow__attribution{display:none}`}</style>
       <ReactFlow
-        nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange}
+        nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} onNodesChange={onNodesChange}
         onNodeDragStop={onNodeDragStop} onNodeClick={onNodeClick} onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick} onConnect={onConnect}
         fitView fitViewOptions={{ padding: 0.18, maxZoom: 1.5 }}
@@ -215,10 +268,16 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
         <MiniMap pannable zoomable nodeStrokeWidth={2} maskColor="rgba(247,248,250,.7)"
           nodeColor={(nd) => NODE_TYPE_META[nd.data?.node?.type]?.c || "#cbd5e1"} />
         <Panel position="top-right" style={{ display: "flex", gap: 6 }}>
-          <button style={pillBtn} title="切换连线样式：曲线（默认，自动分散避免重叠）/ 直角"
-            onClick={() => setEdgeStyle((s) => (s === "bezier" ? "smoothstep" : "bezier"))}>
-            {edgeStyle === "bezier" ? "～ 曲线" : "⌐ 直角"}
-          </button>
+          {engine !== "elk" && (
+            <button style={pillBtn} title="切换连线样式：曲线（默认，自动分散避免重叠）/ 直角"
+              onClick={() => setEdgeStyle((s) => (s === "bezier" ? "smoothstep" : "bezier"))}>
+              {edgeStyle === "bezier" ? "～ 曲线" : "⌐ 直角"}
+            </button>
+          )}
+          {engine === "elk" && (
+            <span style={{ ...pillBtn, cursor: "default", color: "#667085", display: "flex", alignItems: "center" }}
+              title="ELK 引擎下连线由布局自动正交路由（绕开节点，减少交叉）">⌐ 正交（ELK）</span>
+          )}
           <button style={pillBtn} disabled={exporting} title="导出当前图谱为 PNG" onClick={() => exportImage("png")}>
             {exporting ? "导出中…" : "⤓ PNG"}
           </button>
