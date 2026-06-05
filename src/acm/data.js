@@ -144,7 +144,7 @@ export function sampleDoc() {
     N("feature_006", "Feature", "Agent Diff 导出", 700, 820, { priority: "P2", description: "ChangeSet + 确定性模板生成的 summary / instructions。", confidence: 0.87 }),
 
     N("api_001", "API", "Tauri FS API", 1040, 40, { description: "本地文件读写。", confidence: 0.86 }),
-    N("entity_001", "DataEntity", "GraphDocument", 1040, 180, { description: "schema_version / doc_id / meta / nodes / edges / layout。", confidence: 0.92 }),
+    N("data_001", "DataEntity", "GraphDocument", 1040, 180, { description: "schema_version / doc_id / meta / nodes / edges / layout。", confidence: 0.92 }),
     N("constraint_001", "Constraint", "ACM-MD v0.1 协议", 1040, 320, { priority: "P0", description: "唯一数据契约来源；受控词表不得偏离规范。", confidence: 0.97 }),
     N("risk_001", "Risk", "协议漂移导致往返不忠实", 1040, 470, { description: "工具内部类型与规范不一致，合法文档被判非法。", confidence: 0.8 }),
     N("question_001", "Question", "大图是否需要虚拟化", 1040, 620, { status: "needs_validation", description: "超过 100 节点 / 200 边时 React Flow 性能是否足够。", confidence: 0.6 }),
@@ -164,7 +164,7 @@ export function sampleDoc() {
     E("edge_010", "module_004", "feature_005", "contains"),
     E("edge_011", "module_005", "feature_006", "contains"),
     E("edge_012", "feature_001", "api_001", "depends_on"),
-    E("edge_013", "feature_001", "entity_001", "references"),
+    E("edge_013", "feature_001", "data_001", "references"),
     E("edge_014", "constraint_001", "module_002", "constrains"),
     E("edge_015", "constraint_001", "feature_002", "constrains", { status: "suggested", confidence: 0.78 }),
     E("edge_016", "risk_001", "feature_002", "impacts"),
@@ -202,7 +202,7 @@ export function nextId(prefix, existing) {
 }
 export const TYPE_PREFIX = {
   Goal: "goal", Module: "module", Feature: "feature", Page: "page",
-  DataEntity: "entity", API: "api", Constraint: "constraint", Risk: "risk",
+  DataEntity: "data", API: "api", Constraint: "constraint", Risk: "risk",
   Assumption: "assumption", Question: "question", Decision: "decision", Task: "task",
 };
 
@@ -212,50 +212,72 @@ export function validateDoc(doc) {
   const err = (msg, ref) => issues.push({ level: "error", msg, ref });
   const warn = (msg, ref) => issues.push({ level: "warning", msg, ref });
 
+  if (!doc || typeof doc !== "object") {
+    err("图谱文档必须是对象");
+    return issues;
+  }
+
   if (!doc.schema_version) err("缺少 schema_version");
+  else if (!["acm-md/0.1", "0.1"].includes(doc.schema_version)) err(`不支持的 schema_version：${doc.schema_version}`);
+  else if (doc.schema_version === "0.1") warn("旧版 schema_version：导出时应使用 acm-md/0.1");
   if (!doc.doc_id) err("缺少 doc_id");
+  if (!doc.meta || typeof doc.meta !== "object") err("缺少 meta 对象");
+  else if (!doc.meta.title || !String(doc.meta.title).trim()) err("缺少 meta.title");
+  const nodes = Array.isArray(doc.nodes) ? doc.nodes : [];
+  const edges = Array.isArray(doc.edges) ? doc.edges : [];
+  if (!Array.isArray(doc.nodes)) err("nodes 必须是数组");
+  if (!Array.isArray(doc.edges)) err("edges 必须是数组");
 
   const nodeIds = new Set();
-  for (const n of doc.nodes) {
-    if (nodeIds.has(n.id)) err(`节点 id 重复：${n.id}`, n.id);
-    nodeIds.add(n.id);
-    if (!NODE_TYPES.includes(n.type)) err(`非法节点类型：${n.type}`, n.id);
-    if (!NODE_STATUSES.includes(n.status)) err(`非法节点状态：${n.status}`, n.id);
-    if (!n.title || !n.title.trim()) err(`节点标题为空：${n.id}`, n.id);
+  for (const n of nodes) {
+    if (!n || typeof n !== "object") { err("节点必须是对象"); continue; }
+    for (const field of ["id", "type", "title", "status"]) if (!n[field] || !String(n[field]).trim()) err(`节点缺少必填字段 ${field}`, n.id);
+    if (n.id) {
+      if (nodeIds.has(n.id)) err(`节点 id 重复：${n.id}`, n.id);
+      nodeIds.add(n.id);
+    }
+    if (n.type && !NODE_TYPES.includes(n.type)) err(`非法节点类型：${n.type}`, n.id);
+    if (n.status && !NODE_STATUSES.includes(n.status)) err(`非法节点状态：${n.status}`, n.id);
     if (n.confidence != null && (n.confidence < 0 || n.confidence > 1)) err(`confidence 超出 0–1：${n.id}`, n.id);
   }
 
   const edgeIds = new Set();
-  for (const e of doc.edges) {
-    if (edgeIds.has(e.id)) err(`边 id 重复：${e.id}`, e.id);
-    edgeIds.add(e.id);
-    if (!RELATION_TYPES.includes(e.type)) err(`非法关系类型：${e.type}`, e.id);
-    if (!NODE_STATUSES.includes(e.status)) err(`非法边状态：${e.status}`, e.id);
-    if (!nodeIds.has(e.from)) err(`悬空边：${e.id} 的来源 ${e.from} 不存在`, e.id);
-    if (!nodeIds.has(e.to)) err(`悬空边：${e.id} 的目标 ${e.to} 不存在`, e.id);
+  for (const e of edges) {
+    if (!e || typeof e !== "object") { err("边必须是对象"); continue; }
+    for (const field of ["id", "from", "to", "type", "status"]) if (!e[field] || !String(e[field]).trim()) err(`边缺少必填字段 ${field}`, e.id);
+    if (e.id) {
+      if (edgeIds.has(e.id)) err(`边 id 重复：${e.id}`, e.id);
+      edgeIds.add(e.id);
+    }
+    if (e.type && !RELATION_TYPES.includes(e.type)) err(`非法关系类型：${e.type}`, e.id);
+    if (e.status && !NODE_STATUSES.includes(e.status)) err(`非法边状态：${e.status}`, e.id);
+    if (e.from && !nodeIds.has(e.from)) err(`悬空边：${e.id} 的来源 ${e.from} 不存在`, e.id);
+    if (e.to && !nodeIds.has(e.to)) err(`悬空边：${e.id} 的目标 ${e.to} 不存在`, e.id);
     if (e.confidence != null && (e.confidence < 0 || e.confidence > 1)) err(`confidence 超出 0–1：${e.id}`, e.id);
   }
 
   // Warning rules
-  const outFrom = (id) => doc.edges.filter((e) => e.from === id);
-  const anyEdge = (id) => doc.edges.filter((e) => e.from === id || e.to === id);
-  const goals = doc.nodes.filter((n) => n.type === "Goal");
+  const validNodes = nodes.filter((n) => n && typeof n === "object");
+  const validEdges = edges.filter((e) => e && typeof e === "object");
+  const outFrom = (id) => validEdges.filter((e) => e.from === id);
+  const anyEdge = (id) => validEdges.filter((e) => e.from === id || e.to === id);
+  const goals = validNodes.filter((n) => n.type === "Goal");
   for (const g of goals) if (outFrom(g.id).length === 0) warn(`核心目标无出边：${g.title}`, g.id);
   if (goals.length > 1) {
-    const linked = doc.edges.some((e) => goals.find((g) => g.id === e.from) && goals.find((g) => g.id === e.to));
+    const linked = validEdges.some((e) => goals.find((g) => g.id === e.from) && goals.find((g) => g.id === e.to));
     if (!linked) warn("存在多个 Goal 但未建立关系");
   }
-  for (const n of doc.nodes) {
+  for (const n of validNodes) {
     if (n.type === "Risk" && !outFrom(n.id).some((e) => e.type === "impacts")) warn(`风险无影响对象：${n.title}`, n.id);
     if (n.type === "Question" && anyEdge(n.id).length === 0) warn(`问题无待验证对象：${n.title}`, n.id);
     if (n.type === "Feature") {
-      const inModule = doc.edges.some((e) => e.to === n.id && e.type === "contains" && doc.nodes.find((m) => m.id === e.from && m.type === "Module"));
+      const inModule = validEdges.some((e) => e.to === n.id && e.type === "contains" && validNodes.find((m) => m.id === e.from && m.type === "Module"));
       if (!inModule) warn(`功能无所属模块：${n.title}`, n.id);
     }
     if (n.confidence == null) warn(`节点缺少 confidence：${n.title}`, n.id);
     if (!n.source) warn(`节点缺少 source：${n.title}`, n.id);
   }
-  for (const e of doc.edges) if (e.status === "suggested") warn(`存在未确认的 suggested 关系：${RELATION_META[e.type]?.label || e.type}`, e.id);
+  for (const e of validEdges) if (e.status === "suggested") warn(`存在未确认的 suggested 关系：${RELATION_META[e.type]?.label || e.type}`, e.id);
 
   return issues;
 }
