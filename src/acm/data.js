@@ -512,6 +512,87 @@ export function layoutGraph(doc, opts = {}) {
   }
 }
 
+// ---- Auto-layout via elkjs (orthogonal-routed layered layout) ----
+// ELK ("Eclipse Layout Kernel") is an industrial layered-layout engine. Versus dagre
+// it adds ORTHOGONAL edge routing (right-angle bends that avoid nodes) and — later in
+// 阶段 D — true nested/container layout. Same job as layoutGraph (assign {x,y} per
+// node) but ASYNC: elk.layout() returns a Promise, so applyLayout must await it and
+// show a loading state. Reuses estimateNodeSize so card sizing matches dagre exactly.
+//
+// Returns { pos, routes }:
+//   pos    — { [id]: {x,y} } node TOP-LEFT corners, already in canvas coords
+//            (ELK reports top-left, not center, so no half-size offset like dagre).
+//   routes — { [edgeId]: [{x,y}…] } per-edge orthogonal polyline (start + bendPoints +
+//            end), absolute coords, consumed by 阶段 C-3's custom elkEdge. Stays a
+//            plain object so it can live in React state and survive structured-clone.
+// elkjs (~1.4 MB) is DYNAMICALLY imported on first ELK layout, so the default dagre
+// path never downloads or instantiates it — ELK is fully opt-in, code-split into its
+// own chunk by Vite. The module + instance are cached after the first call.
+let _elkMod = null, _elk = null;
+async function getElk() {
+  if (!_elk) {
+    _elkMod = _elkMod || (await import("elkjs/lib/elk.bundled.js"));
+    _elk = new _elkMod.default();
+  }
+  return _elk;
+}
+
+export async function layoutGraphElk(doc, opts = {}) {
+  const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
+  const edges = Array.isArray(doc?.edges) ? doc.edges : [];
+  if (!nodes.length) return { pos: {}, routes: {} };
+  const dir = (opts.rankdir || "LR") === "TB" ? "DOWN" : "RIGHT";
+  const idSet = new Set(nodes.map((n) => n.id));
+  // spacing scales with graph size, mirroring layoutGraph's adaptive gaps so the
+  // dagre↔ELK toggle keeps a consistent density.
+  const big = nodes.length > 60, mid = nodes.length > 30;
+  const children = nodes.map((n) => ({ id: n.id, ...estimateNodeSize(n) })); // reuse B 的尺寸估算
+  const elkEdges = edges
+    .filter((e) => e && idSet.has(e.from) && idSet.has(e.to) && e.from !== e.to)
+    .map((e) => ({ id: e.id, sources: [e.from], targets: [e.to] }));
+  const g = {
+    id: "root",
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": dir,
+      "elk.edgeRouting": "ORTHOGONAL",
+      "elk.layered.spacing.nodeNodeBetweenLayers": String(big ? 160 : mid ? 140 : 120),
+      "elk.spacing.nodeNode": String(big ? 64 : mid ? 52 : 44),
+      "elk.spacing.edgeNode": "24",
+      "elk.layered.crossingMinimization.semiInteractive": "true",
+    },
+    children,
+    edges: elkEdges,
+  };
+  let res;
+  try {
+    const elk = await getElk();
+    res = await elk.layout(g);
+  } catch (err) {
+    // Never let an ELK failure strand the canvas — fall back to the sync dagre layout.
+    console.warn("[acm] elk layout failed, falling back to dagre", err);
+    return { pos: layoutGraph(doc, opts), routes: {} };
+  }
+  const pos = {};
+  for (const c of res.children || []) {
+    if (isFinite(c.x) && isFinite(c.y)) pos[c.id] = { x: Math.round(c.x), y: Math.round(c.y) };
+  }
+  // anything ELK dropped → tuck into a grid below (parity with dagre's isolated-node net)
+  let maxY = 0; for (const p of Object.values(pos)) maxY = Math.max(maxY, p.y);
+  let gx = 0;
+  for (const n of nodes) if (!pos[n.id]) { pos[n.id] = { x: 60 + gx * (NODE_W + 40), y: maxY + NODE_H + 120 }; gx++; }
+  const routes = {};
+  for (const e of res.edges || []) {
+    const sec = (e.sections || [])[0];
+    if (!sec) continue;
+    const pts = [sec.startPoint, ...(sec.bendPoints || []), sec.endPoint]
+      .filter((p) => p && isFinite(p.x) && isFinite(p.y))
+      .map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+    if (pts.length >= 2) routes[e.id] = pts;
+  }
+  return { pos, routes };
+}
+
 // ---- Collapse / expand subtrees (PURE VIEW STATE — never written into ACM-MD) ----
 // `collapsed` is a Set<nodeId> of nodes whose `contains` subtree is folded away. It
 // lives at the same level as the active profile / viewport: derived UI state that is

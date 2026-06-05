@@ -5,7 +5,7 @@ import {
   NODE_TYPES, NODE_TYPE_META, RELATION_META,
   sampleDoc, nextId, TYPE_PREFIX,
   validateDoc, diffDoc, diffCount, buildChangeSet,
-  toExportDoc, toAcmMd, toMermaid, toYaml, inferRelation, parseAcmMd, layoutGraph,
+  toExportDoc, toAcmMd, toMermaid, toYaml, inferRelation, parseAcmMd, layoutGraph, layoutGraphElk,
   computeHidden, containsChildren, collapseToDepth,
   DOMAIN_PROFILES, DOMAIN_PROFILE_META, PROFILE_LABELS, setActiveProfile, typeLabel,
 } from "./acm/data.js";
@@ -66,7 +66,11 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const [rankdir, setRankdir] = useState("LR"); // dagre layout direction: LR (横向) | TB (纵向)
+  const [rankdir, setRankdir] = useState("LR"); // layout direction: LR (横向) | TB (纵向)
+  // Layout engine — PURE view state (never part of doc/export): "dagre" (sync, fast,
+  // default) | "elk" (async, orthogonal-routed edges & — in 阶段 D — nested containers).
+  const [engine, setEngine] = useState("dagre");
+  const [layouting, setLayouting] = useState(false); // ELK is async → show a loading veil
   // Folded `contains` subtrees. PURE view state — same level as profile / viewport:
   // never written into doc, undo, layout or any export (ACM-MD v0.1 stays untouched).
   const [collapsed, setCollapsed] = useState(() => new Set()); // Set<nodeId>
@@ -282,25 +286,49 @@ export default function App() {
   // Hierarchical tree auto-layout (shared with import). The `contains` tree is the
   // backbone; parents are centered over their children; annotation nodes sit to the
   // right of what they touch; disconnected clusters are laid out and stacked apart.
-  const applyLayout = (dir) => {
-    commit((d) => {
-      // Lay out only the VISIBLE subgraph; nodes folded away keep their current
-      // coords (collapse is a view filter, so hidden nodes shouldn't reserve space).
-      const { hidden: hid } = computeHidden(d, collapsed);
-      const vis = {
-        nodes: d.nodes.filter((n) => !hid.has(n.id)),
-        edges: d.edges.filter((e) => !hid.has(e.from) && !hid.has(e.to)),
-      };
+  // Lay out only the VISIBLE subgraph; nodes folded away keep their current coords
+  // (collapse is a view filter, so hidden nodes shouldn't reserve space). dagre is
+  // synchronous; ELK is async (await + a loading veil) — both end in a SINGLE commit
+  // so undo/redo semantics are identical. `eng` lets the engine toggle lay out with
+  // the NEW engine before its setState has flushed. A token guards against the ELK
+  // async race: if a newer layout starts mid-await, the stale result is dropped.
+  const layoutTokenRef = useRef(0);
+  const applyLayout = async (dir, eng = engine) => {
+    const { hidden: hid } = computeHidden(doc, collapsed);
+    const vis = {
+      nodes: doc.nodes.filter((n) => !hid.has(n.id)),
+      edges: doc.edges.filter((e) => !hid.has(e.from) && !hid.has(e.to)),
+    };
+    const token = ++layoutTokenRef.current;
+    if (eng === "elk") {
+      setLayouting(true);
+      try {
+        const { pos } = await layoutGraphElk(vis, { rankdir: dir });
+        if (token !== layoutTokenRef.current) return; // superseded by a newer layout
+        commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
+      } finally {
+        if (token === layoutTokenRef.current) setLayouting(false);
+      }
+    } else {
       const pos = layoutGraph(vis, { rankdir: dir });
-      return { ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) };
-    });
+      commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
+    }
     setTimeout(() => setFitSignal((s) => s + 1), 30);
   };
-  const autoLayout = () => { applyLayout(rankdir); showToast("已自动布局（dagre 分层，⌘Z 可撤销）"); };
+  const autoLayout = () => { applyLayout(rankdir); showToast(engine === "elk" ? "正在用 ELK 布局（正交路由，⌘Z 可撤销）" : "已自动布局（dagre 分层，⌘Z 可撤销）"); };
   const toggleDir = () => {
     const nd = rankdir === "LR" ? "TB" : "LR";
     setRankdir(nd); applyLayout(nd);
     showToast(nd === "LR" ? "已切换为横向布局（LR · 根在左）" : "已切换为纵向布局（TB · 根在上）");
+  };
+  // Toggle dagre↔ELK and immediately re-lay out with the new engine (state hasn't
+  // flushed yet, so pass it explicitly). ELK adds orthogonal routing & nesting; dagre
+  // stays the fast default and the回退 path if ELK ever fails.
+  const toggleEngine = () => {
+    const ne = engine === "dagre" ? "elk" : "dagre";
+    setEngine(ne);
+    applyLayout(rankdir, ne);
+    showToast(ne === "elk" ? "已切换布局引擎：ELK（正交边·避让，异步布局）" : "已切换布局引擎：dagre（分层·快速·同步）");
   };
   // Collapse / expand are PURE view ops: they only touch the `collapsed` set and
   // re-fit. They never commit to undo, never mutate node coords — folding a subtree
@@ -350,6 +378,7 @@ export default function App() {
       ) : (
       <>
       <Toolbar {...{ onHome: goHome, onNew, onImport, onSave, onRename: renameDoc, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount,
+        engine, onToggleEngine: toggleEngine, layouting,
         onCollapseAll, collapseAll: collapsed.size > 0, collapseAble: hasChildren.size > 0,
         title: (doc.meta && doc.meta.title) || "",
         canUndo: undoRef.current.length > 0, canRedo: redoRef.current.length > 0,
@@ -370,6 +399,7 @@ export default function App() {
             onCreateEdge={createEdge} rankdir={rankdir} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter}
             hidden={hidden} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse} />
           <CanvasHint />
+          {layouting && <LayoutVeil />}
         </div>
         {rightPanelOpen ? (
           <div style={{ position: "relative", flex: "0 0 auto", minHeight: 0 }}>
@@ -402,7 +432,7 @@ export default function App() {
   );
 }
 
-function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent, title, onCollapseAll, collapseAll, collapseAble }) {
+function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent, title, onCollapseAll, collapseAll, collapseAble, engine, onToggleEngine, layouting }) {
   const Btn = ({ onClick, disabled, children, title }) => (
     <button onClick={onClick} disabled={disabled} title={title}
       style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #e7e9ee", background: "#fff",
@@ -428,9 +458,13 @@ function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLa
       <Btn onClick={undo} disabled={!canUndo} title="撤销 (⌘Z)">↶</Btn>
       <Btn onClick={redo} disabled={!canRedo} title="重做 (⇧⌘Z)">↷</Btn>
       <Div />
-      <Btn onClick={autoLayout} title="自动布局（dagre 分层）">⊞ 自动布局</Btn>
-      <Btn onClick={toggleDir} title="切换布局方向：LR 横向（根在左）/ TB 纵向（根在上）">
+      <Btn onClick={autoLayout} disabled={layouting} title={engine === "elk" ? "自动布局（ELK 分层 · 正交边）" : "自动布局（dagre 分层）"}>⊞ 自动布局</Btn>
+      <Btn onClick={toggleDir} disabled={layouting} title="切换布局方向：LR 横向（根在左）/ TB 纵向（根在上）">
         {rankdir === "LR" ? "⇄ 横向" : "⇅ 纵向"}
+      </Btn>
+      <Btn onClick={onToggleEngine} disabled={layouting}
+        title={engine === "elk" ? "布局引擎：ELK（正交边·避让·嵌套，异步）— 点击切回 dagre" : "布局引擎：dagre（分层·快速·同步）— 点击切到 ELK 正交边"}>
+        {layouting ? "✦ 布局中…" : engine === "elk" ? "✦ ELK" : "⊞ dagre"}
       </Btn>
       <Btn onClick={onCollapseAll} disabled={!collapseAble}
         title={collapseAll ? "展开所有折叠的子树" : "折叠子树到第一层（仅视图状态，不写入文档/导出）"}>
@@ -606,6 +640,24 @@ function CanvasHint() {
     <div style={{ position: "absolute", right: 16, bottom: 16, fontSize: 10.5, color: "#b3bac6", fontFamily: "var(--mono)",
       background: "#ffffffd0", border: "1px solid #eef0f3", borderRadius: 8, padding: "5px 9px", pointerEvents: "none" }}>
       拖动空白平移 · 滚轮缩放 · 拖节点圆点连线
+    </div>
+  );
+}
+
+// Lightweight loading veil shown while ELK lays out (a large graph can take ~a second).
+// Non-blocking visually but covers the canvas so the mid-layout jump isn't jarring.
+function LayoutVeil() {
+  return (
+    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", zIndex: 25,
+      background: "rgba(247,248,250,.55)", backdropFilter: "blur(1px)", pointerEvents: "none" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#fff", color: "#475467",
+        border: "1px solid #e7e9ee", borderRadius: 999, padding: "7px 15px", fontSize: 12.5, fontWeight: 600,
+        boxShadow: "0 10px 30px -12px rgba(16,24,40,.35)" }}>
+        <span style={{ width: 13, height: 13, borderRadius: 999, border: "2px solid #c7cdda", borderTopColor: "#6366f1",
+          display: "inline-block", animation: "acmspin .7s linear infinite" }} />
+        ELK 正在布局…
+      </div>
+      <style>{`@keyframes acmspin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
