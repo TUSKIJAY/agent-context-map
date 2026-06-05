@@ -519,12 +519,19 @@ export function layoutGraph(doc, opts = {}) {
 // node) but ASYNC: elk.layout() returns a Promise, so applyLayout must await it and
 // show a loading state. Reuses estimateNodeSize so card sizing matches dagre exactly.
 //
-// Returns { pos, routes }:
-//   pos    — { [id]: {x,y} } node TOP-LEFT corners, already in canvas coords
-//            (ELK reports top-left, not center, so no half-size offset like dagre).
-//   routes — { [edgeId]: [{x,y}…] } per-edge orthogonal polyline (start + bendPoints +
-//            end), absolute coords, consumed by 阶段 C-3's custom elkEdge. Stays a
-//            plain object so it can live in React state and survive structured-clone.
+// Returns { pos, routes, containers }:
+//   pos        — { [id]: {x,y} } LEAF-node TOP-LEFT corners in ABSOLUTE canvas coords
+//                (ELK reports top-left, not center; for grouped members we add the
+//                container origin so the doc keeps storing ABSOLUTE coords as always).
+//   routes     — { [edgeId]: [{x,y}…] } per-edge orthogonal polyline (start + bendPoints
+//                + end) in ABSOLUTE coords, consumed by C-3's custom elkEdge.
+//   containers — { [groupId]: {x,y,width,height,label,count,type} } titled frames for
+//                阶段 D (empty {} in flat mode). Absolute coords; PURE view state.
+// Grouping (阶段 D) is opt-in via opts.groupOf ({nodeId:groupId}) + opts.groups (labels):
+// each group becomes a nested ELK subgraph, ELK lays out members WITHIN each frame and
+// frames against each other (hierarchyHandling INCLUDE_CHILDREN routes cross-group edges
+// orthogonally). A recursive walk flattens ELK's relative coords back to absolute, so
+// containers/groups never touch doc/layout/export — the ACM-MD contract is untouched.
 // elkjs (~1.4 MB) is DYNAMICALLY imported on first ELK layout, so the default dagre
 // path never downloads or instantiates it — ELK is fully opt-in, code-split into its
 // own chunk by Vite. The module + instance are cached after the first call.
@@ -540,30 +547,72 @@ async function getElk() {
 export async function layoutGraphElk(doc, opts = {}) {
   const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
   const edges = Array.isArray(doc?.edges) ? doc.edges : [];
-  if (!nodes.length) return { pos: {}, routes: {} };
+  if (!nodes.length) return { pos: {}, routes: {}, containers: {} };
   const dir = (opts.rankdir || "LR") === "TB" ? "DOWN" : "RIGHT";
   const idSet = new Set(nodes.map((n) => n.id));
   // spacing scales with graph size, mirroring layoutGraph's adaptive gaps so the
   // dagre↔ELK toggle keeps a consistent density.
   const big = nodes.length > 60, mid = nodes.length > 30;
-  const children = nodes.map((n) => ({ id: n.id, ...estimateNodeSize(n) })); // reuse B 的尺寸估算
-  const elkEdges = edges
-    .filter((e) => e && idSet.has(e.from) && idSet.has(e.to) && e.from !== e.to)
-    .map((e) => ({ id: e.id, sources: [e.from], targets: [e.to] }));
-  const g = {
-    id: "root",
-    layoutOptions: {
-      "elk.algorithm": "layered",
-      "elk.direction": dir,
-      "elk.edgeRouting": "ORTHOGONAL",
-      "elk.layered.spacing.nodeNodeBetweenLayers": String(big ? 160 : mid ? 140 : 120),
-      "elk.spacing.nodeNode": String(big ? 64 : mid ? 52 : 44),
-      "elk.spacing.edgeNode": "24",
-      "elk.layered.crossingMinimization.semiInteractive": "true",
-    },
-    children,
-    edges: elkEdges,
-  };
+  const sizeOf = (n) => ({ id: n.id, ...estimateNodeSize(n) }); // reuse B 的尺寸估算
+  const validEdges = edges.filter((e) => e && idSet.has(e.from) && idSet.has(e.to) && e.from !== e.to);
+  const groupOf = opts.groupOf && Object.keys(opts.groupOf).length ? opts.groupOf : null;
+  const groupMeta = {}; for (const gm of opts.groups || []) groupMeta[gm.id] = gm;
+  const groupIds = new Set(groupOf ? Object.values(groupOf) : []);
+
+  let g;
+  if (groupOf) {
+    // --- NESTED: one ELK subgraph per group; ungrouped nodes stay at root ---
+    const groupsMap = new Map(); const rootChildren = [];
+    for (const n of nodes) {
+      const gid = groupOf[n.id];
+      if (gid) {
+        if (!groupsMap.has(gid)) groupsMap.set(gid, {
+          id: gid, children: [], edges: [],
+          layoutOptions: {
+            "elk.algorithm": "layered", "elk.direction": dir,
+            "elk.padding": "[top=40,left=16,bottom=16,right=16]", // top band reserved for our title
+            "elk.spacing.nodeNode": String(mid ? 40 : 32),
+            "elk.layered.spacing.nodeNodeBetweenLayers": String(mid ? 96 : 76),
+          },
+        });
+        groupsMap.get(gid).children.push(sizeOf(n));
+      } else rootChildren.push(sizeOf(n));
+    }
+    const rootEdges = [];
+    for (const e of validEdges) {
+      const ge = { id: e.id, sources: [e.from], targets: [e.to] };
+      const ga = groupOf[e.from], gb = groupOf[e.to];
+      if (ga && ga === gb) groupsMap.get(ga).edges.push(ge); // intra-group → inside the frame
+      else rootEdges.push(ge);                                // cross-group / ungrouped → root
+    }
+    g = {
+      id: "root",
+      layoutOptions: {
+        "elk.algorithm": "layered", "elk.direction": dir,
+        "elk.edgeRouting": "ORTHOGONAL", "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+        "elk.layered.spacing.nodeNodeBetweenLayers": String(big ? 180 : 150),
+        "elk.spacing.nodeNode": String(big ? 80 : 64),
+        "elk.spacing.componentComponent": "64",
+      },
+      children: [...groupsMap.values(), ...rootChildren],
+      edges: rootEdges,
+    };
+  } else {
+    // --- FLAT: every node at root (阶段 C) ---
+    g = {
+      id: "root",
+      layoutOptions: {
+        "elk.algorithm": "layered", "elk.direction": dir, "elk.edgeRouting": "ORTHOGONAL",
+        "elk.layered.spacing.nodeNodeBetweenLayers": String(big ? 160 : mid ? 140 : 120),
+        "elk.spacing.nodeNode": String(big ? 64 : mid ? 52 : 44),
+        "elk.spacing.edgeNode": "24",
+        "elk.layered.crossingMinimization.semiInteractive": "true",
+      },
+      children: nodes.map(sizeOf),
+      edges: validEdges.map((e) => ({ id: e.id, sources: [e.from], targets: [e.to] })),
+    };
+  }
+
   let res;
   try {
     const elk = await getElk();
@@ -571,26 +620,45 @@ export async function layoutGraphElk(doc, opts = {}) {
   } catch (err) {
     // Never let an ELK failure strand the canvas — fall back to the sync dagre layout.
     console.warn("[acm] elk layout failed, falling back to dagre", err);
-    return { pos: layoutGraph(doc, opts), routes: {} };
+    return { pos: layoutGraph(doc, opts), routes: {}, containers: {} };
   }
-  const pos = {};
-  for (const c of res.children || []) {
-    if (isFinite(c.x) && isFinite(c.y)) pos[c.id] = { x: Math.round(c.x), y: Math.round(c.y) };
-  }
+
+  // Recursively flatten ELK's (parent-relative) coords to absolute. A node WITH children
+  // is a group frame → record its box & recurse; a leaf → record its absolute corner.
+  // Each container's `edges` are relative to that container's origin (the walk's offset),
+  // so cross- and intra-group routes both come out absolute regardless of where ELK
+  // placed them under INCLUDE_CHILDREN.
+  const pos = {}, routes = {}, containers = {};
+  const walk = (node, ox, oy) => {
+    for (const c of node.children || []) {
+      const ax = ox + (c.x || 0), ay = oy + (c.y || 0);
+      if (groupIds.has(c.id)) {
+        const gm = groupMeta[c.id] || {};
+        containers[c.id] = {
+          x: Math.round(ax), y: Math.round(ay),
+          width: Math.round(c.width || 0), height: Math.round(c.height || 0),
+          label: gm.label || c.id, count: gm.count || (c.children ? c.children.length : 0), type: gm.type,
+        };
+        walk(c, ax, ay);
+      } else if (isFinite(ax) && isFinite(ay)) {
+        pos[c.id] = { x: Math.round(ax), y: Math.round(ay) };
+      }
+    }
+    for (const e of node.edges || []) {
+      const sec = (e.sections || [])[0];
+      if (!sec) continue;
+      const pts = [sec.startPoint, ...(sec.bendPoints || []), sec.endPoint]
+        .filter((p) => p && isFinite(p.x) && isFinite(p.y))
+        .map((p) => ({ x: Math.round(ox + p.x), y: Math.round(oy + p.y) }));
+      if (pts.length >= 2) routes[e.id] = pts;
+    }
+  };
+  walk(res, 0, 0);
   // anything ELK dropped → tuck into a grid below (parity with dagre's isolated-node net)
   let maxY = 0; for (const p of Object.values(pos)) maxY = Math.max(maxY, p.y);
   let gx = 0;
-  for (const n of nodes) if (!pos[n.id]) { pos[n.id] = { x: 60 + gx * (NODE_W + 40), y: maxY + NODE_H + 120 }; gx++; }
-  const routes = {};
-  for (const e of res.edges || []) {
-    const sec = (e.sections || [])[0];
-    if (!sec) continue;
-    const pts = [sec.startPoint, ...(sec.bendPoints || []), sec.endPoint]
-      .filter((p) => p && isFinite(p.x) && isFinite(p.y))
-      .map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }));
-    if (pts.length >= 2) routes[e.id] = pts;
-  }
-  return { pos, routes };
+  for (const n of nodes) if (!pos[n.id] && !groupIds.has(n.id)) { pos[n.id] = { x: 60 + gx * (NODE_W + 40), y: maxY + NODE_H + 120 }; gx++; }
+  return { pos, routes, containers };
 }
 
 // ---- Collapse / expand subtrees (PURE VIEW STATE — never written into ACM-MD) ----
@@ -667,6 +735,54 @@ export function collapseToDepth(doc, depth = 1) {
     for (const k of kids) if (!seen.has(k)) queue.push([k, d + 1]);
   }
   return out;
+}
+
+// ---- Grouping dimension (PURE VIEW STATE — never written into ACM-MD) ----
+// Derive how nodes cluster into titled containers for 阶段 D. Two modes:
+//   "type"   — one group per NodeType present (≤12). Deterministic, simplest.
+//   "module" — each first-level `contains` child of a contains-root (a Module under a
+//              Goal) is a group; every descendant joins its nearest module-ancestor.
+//              Contains-roots (Goals) and nodes unreachable from a module stay
+//              UNGROUPED (rendered at the top level). Closer to "project structure".
+// Returns { groupOf: { [nodeId]: groupId }, groups: [{ id, label, type, count }] }.
+// groupId is a synthetic, view-only id ("type:Risk" / "mod:module_003") — it never
+// touches doc / layout / export. Multi-parent contains nodes pick their FIRST parent.
+export function computeGroupOf(doc, mode) {
+  const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const groupOf = {};
+  const order = []; const meta = new Map(); // groupId -> { id, label, type, count }
+  const bump = (gid, label, type) => {
+    if (!meta.has(gid)) { meta.set(gid, { id: gid, label, type, count: 0 }); order.push(gid); }
+    meta.get(gid).count++;
+  };
+  if (mode === "type") {
+    for (const n of nodes) { const gid = "type:" + n.type; groupOf[n.id] = gid; bump(gid, typeLabel(n.type), n.type); }
+  } else if (mode === "module") {
+    const children = containsChildren(doc);
+    const parentOf = new Map(); // first contains-parent of each node
+    for (const [p, kids] of children) for (const k of kids) if (!parentOf.has(k)) parentOf.set(k, p);
+    const roots = nodes.filter((n) => !parentOf.has(n.id)).map((n) => n.id); // contains-orphans (Goals)
+    const rootSet = new Set(roots);
+    const moduleSet = new Set();
+    for (const r of roots) for (const k of (children.get(r) || [])) moduleSet.add(k); // first level = modules
+    // walk up to the nearest module ancestor (cycle-safe)
+    const moduleOf = (id) => {
+      let cur = id; const seen = new Set();
+      while (cur != null && !seen.has(cur)) { seen.add(cur); if (moduleSet.has(cur)) return cur; cur = parentOf.get(cur); }
+      return null;
+    };
+    for (const n of nodes) {
+      if (rootSet.has(n.id)) continue;       // Goals sit above modules → ungrouped
+      const m = moduleOf(n.id);
+      if (m == null) continue;               // unreachable from a module → ungrouped
+      const gid = "mod:" + m;
+      groupOf[n.id] = gid;
+      const mn = byId.get(m);
+      bump(gid, mn?.title || "模块", mn?.type);
+    }
+  }
+  return { groupOf, groups: order.map((id) => meta.get(id)) };
 }
 
 // ---- Import: parse an ACM-MD markdown file back into a runtime GraphDocument ----

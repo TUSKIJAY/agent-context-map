@@ -6,7 +6,7 @@ import {
   sampleDoc, nextId, TYPE_PREFIX,
   validateDoc, diffDoc, diffCount, buildChangeSet,
   toExportDoc, toAcmMd, toMermaid, toYaml, inferRelation, parseAcmMd, layoutGraph, layoutGraphElk,
-  computeHidden, containsChildren, collapseToDepth,
+  computeHidden, containsChildren, collapseToDepth, computeGroupOf,
   DOMAIN_PROFILES, DOMAIN_PROFILE_META, PROFILE_LABELS, setActiveProfile, typeLabel,
 } from "./acm/data.js";
 import { GraphCanvas } from "./acm/FlowCanvas.jsx";
@@ -75,6 +75,13 @@ export default function App() {
   // state — regenerated on each ELK layout, never written into doc/export, and dropped
   // (→ smoothstep fallback) whenever node positions could have shifted (drag/undo/dagre).
   const [elkRoutes, setElkRoutes] = useState(null);
+  // Grouping (阶段 D) — all PURE view state, never written into doc/export:
+  //   grouping   "none" | "module" | "type" — the active dimension (implies ELK nesting).
+  //   groupOf    { [nodeId]: groupId } so the canvas can parent members into their frame.
+  //   groupBoxes { [groupId]: {x,y,width,height,label,count,type} } container geometry.
+  const [grouping, setGrouping] = useState("none");
+  const [groupOf, setGroupOf] = useState(null);
+  const [groupBoxes, setGroupBoxes] = useState(null);
   // Folded `contains` subtrees. PURE view state — same level as profile / viewport:
   // never written into doc, undo, layout or any export (ACM-MD v0.1 stays untouched).
   const [collapsed, setCollapsed] = useState(() => new Set()); // Set<nodeId>
@@ -114,6 +121,7 @@ export default function App() {
     setSelection(null);
     setCollapsed(new Set()); // collapse is per-document view state — reset on open/switch
     setElkRoutes(null);      // edge routes belong to the previous doc's coords — clear
+    setGrouping("none"); setGroupOf(null); setGroupBoxes(null); // grouping is per-doc view state
     undoRef.current = []; redoRef.current = []; lastKeyRef.current = null;
     setView("editor");
     if (savedVp && typeof savedVp.scale === "number") setVp(savedVp);       // restore working viewport
@@ -193,9 +201,12 @@ export default function App() {
     force((n) => n + 1);
   }, []);
 
-  // undo/redo can restore different node coords → stale ELK routes; drop them (smoothstep).
-  const undo = () => { if (!undoRef.current.length) return; redoRef.current.push(doc); setDoc(undoRef.current.pop()); lastKeyRef.current = null; setElkRoutes(null); force((n) => n + 1); };
-  const redo = () => { if (!redoRef.current.length) return; undoRef.current.push(doc); setDoc(redoRef.current.pop()); lastKeyRef.current = null; setElkRoutes(null); force((n) => n + 1); };
+  // undo/redo can restore different node coords → stale ELK routes & group frames; drop
+  // them (edges → smoothstep, render flattens). The grouping MODE is kept so re-layout
+  // restores the frames. clearViewLayout centralises that "positions changed" reset.
+  const clearViewLayout = () => { setElkRoutes(null); setGroupOf(null); setGroupBoxes(null); };
+  const undo = () => { if (!undoRef.current.length) return; redoRef.current.push(doc); setDoc(undoRef.current.pop()); lastKeyRef.current = null; clearViewLayout(); force((n) => n + 1); };
+  const redo = () => { if (!redoRef.current.length) return; undoRef.current.push(doc); setDoc(redoRef.current.pop()); lastKeyRef.current = null; clearViewLayout(); force((n) => n + 1); };
 
   // ---- mutations ----
   const patchNode = (id, patch) => commit((d) => ({ ...d, nodes: d.nodes.map((n) => n.id === id ? { ...n, ...patch } : n) }),
@@ -309,44 +320,70 @@ export default function App() {
   // the NEW engine before its setState has flushed. A token guards against the ELK
   // async race: if a newer layout starts mid-await, the stale result is dropped.
   const layoutTokenRef = useRef(0);
-  const applyLayout = async (dir, eng = engine) => {
+  // `grp` !== "none" forces ELK nested layout (grouping needs hierarchy); else `eng`
+  // chooses dagre/ELK-flat. Both `eng`/`grp` are explicit so the engine & grouping
+  // toggles can lay out with their NEW value before setState has flushed.
+  const applyLayout = async (dir, eng = engine, grp = grouping) => {
     const { hidden: hid } = computeHidden(doc, collapsed);
     const vis = {
       nodes: doc.nodes.filter((n) => !hid.has(n.id)),
       edges: doc.edges.filter((e) => !hid.has(e.from) && !hid.has(e.to)),
     };
     const token = ++layoutTokenRef.current;
-    if (eng === "elk") {
+    const useElk = grp !== "none" || eng === "elk";
+    if (useElk) {
       setLayouting(true);
       try {
-        const { pos, routes } = await layoutGraphElk(vis, { rankdir: dir });
+        let gOf = null, groups = null;
+        if (grp !== "none") { const r = computeGroupOf(vis, grp); gOf = r.groupOf; groups = r.groups; }
+        const { pos, routes, containers } = await layoutGraphElk(vis, { rankdir: dir, groupOf: gOf, groups });
         if (token !== layoutTokenRef.current) return; // superseded by a newer layout
         commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
         setElkRoutes(routes);
+        setGroupOf(grp !== "none" ? gOf : null);
+        setGroupBoxes(grp !== "none" ? containers : null);
       } finally {
         if (token === layoutTokenRef.current) setLayouting(false);
       }
     } else {
       const pos = layoutGraph(vis, { rankdir: dir });
       commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
-      setElkRoutes(null); // dagre has no orthogonal routes → drop any stale ELK polylines
+      setElkRoutes(null); setGroupOf(null); setGroupBoxes(null); // dagre is flat — no routes/frames
     }
     setTimeout(() => setFitSignal((s) => s + 1), 30);
   };
-  const autoLayout = () => { applyLayout(rankdir); showToast(engine === "elk" ? "正在用 ELK 布局（正交路由，⌘Z 可撤销）" : "已自动布局（dagre 分层，⌘Z 可撤销）"); };
+  const autoLayout = () => {
+    applyLayout(rankdir);
+    showToast(grouping !== "none" ? "正在用 ELK 分组布局（容器+正交边，⌘Z 可撤销）"
+      : engine === "elk" ? "正在用 ELK 布局（正交路由，⌘Z 可撤销）" : "已自动布局（dagre 分层，⌘Z 可撤销）");
+  };
   const toggleDir = () => {
     const nd = rankdir === "LR" ? "TB" : "LR";
     setRankdir(nd); applyLayout(nd);
     showToast(nd === "LR" ? "已切换为横向布局（LR · 根在左）" : "已切换为纵向布局（TB · 根在上）");
   };
   // Toggle dagre↔ELK and immediately re-lay out with the new engine (state hasn't
-  // flushed yet, so pass it explicitly). ELK adds orthogonal routing & nesting; dagre
-  // stays the fast default and the回退 path if ELK ever fails.
+  // flushed yet, so pass it explicitly). dagre is flat-only, so switching to it also
+  // turns grouping off. ELK adds orthogonal routing & nesting; dagre stays the fast
+  // default and the回退 path if ELK ever fails.
   const toggleEngine = () => {
     const ne = engine === "dagre" ? "elk" : "dagre";
+    const ng = ne === "dagre" ? "none" : grouping;
     setEngine(ne);
-    applyLayout(rankdir, ne);
+    if (ng !== grouping) setGrouping(ng);
+    applyLayout(rankdir, ne, ng);
     showToast(ne === "elk" ? "已切换布局引擎：ELK（正交边·避让，异步布局）" : "已切换布局引擎：dagre（分层·快速·同步）");
+  };
+  // Cycle the grouping dimension 关闭→按模块→按类型→关闭. Grouping implies ELK nesting,
+  // so enabling it flips the engine to ELK; turning it off keeps whatever engine was set.
+  const cycleGrouping = () => {
+    const next = grouping === "none" ? "module" : grouping === "module" ? "type" : "none";
+    const ne = next !== "none" ? "elk" : engine;
+    setGrouping(next);
+    if (ne !== engine) setEngine(ne);
+    applyLayout(rankdir, ne, next);
+    showToast(next === "module" ? "已按模块分组（容器=Goal 下各模块）"
+      : next === "type" ? "已按类型分组（每种节点类型一组）" : "已关闭分组（回到扁平图）");
   };
   // Collapse / expand are PURE view ops: they only touch the `collapsed` set and
   // re-fit. They never commit to undo, never mutate node coords — folding a subtree
@@ -397,6 +434,7 @@ export default function App() {
       <>
       <Toolbar {...{ onHome: goHome, onNew, onImport, onSave, onRename: renameDoc, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount,
         engine, onToggleEngine: toggleEngine, layouting,
+        grouping, onCycleGrouping: cycleGrouping,
         onCollapseAll, collapseAll: collapsed.size > 0, collapseAble: hasChildren.size > 0,
         title: (doc.meta && doc.meta.title) || "",
         canUndo: undoRef.current.length > 0, canRedo: redoRef.current.length > 0,
@@ -416,7 +454,7 @@ export default function App() {
           <GraphCanvas doc={doc} selection={selection} onSelect={setSelection} onMoveNode={moveNode}
             onCreateEdge={createEdge} rankdir={rankdir} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter}
             hidden={hidden} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse}
-            engine={engine} elkRoutes={elkRoutes} />
+            engine={engine} elkRoutes={elkRoutes} groupOf={groupOf} groupBoxes={groupBoxes} />
           <CanvasHint />
           {layouting && <LayoutVeil />}
         </div>
@@ -451,7 +489,7 @@ export default function App() {
   );
 }
 
-function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent, title, onCollapseAll, collapseAll, collapseAble, engine, onToggleEngine, layouting }) {
+function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent, title, onCollapseAll, collapseAll, collapseAble, engine, onToggleEngine, layouting, grouping, onCycleGrouping }) {
   const Btn = ({ onClick, disabled, children, title }) => (
     <button onClick={onClick} disabled={disabled} title={title}
       style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #e7e9ee", background: "#fff",
@@ -484,6 +522,10 @@ function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLa
       <Btn onClick={onToggleEngine} disabled={layouting}
         title={engine === "elk" ? "布局引擎：ELK（正交边·避让·嵌套，异步）— 点击切回 dagre" : "布局引擎：dagre（分层·快速·同步）— 点击切到 ELK 正交边"}>
         {layouting ? "✦ 布局中…" : engine === "elk" ? "✦ ELK" : "⊞ dagre"}
+      </Btn>
+      <Btn onClick={onCycleGrouping} disabled={layouting}
+        title="分组容器：关闭 / 按模块（Goal 下各模块）/ 按类型（每种节点一组）。纯派生视图，不写入文档或导出">
+        {grouping === "module" ? "▦ 按模块" : grouping === "type" ? "▦ 按类型" : "▦ 分组"}
       </Btn>
       <Btn onClick={onCollapseAll} disabled={!collapseAble}
         title={collapseAll ? "展开所有折叠的子树" : "折叠子树到第一层（仅视图状态，不写入文档/导出）"}>

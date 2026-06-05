@@ -75,7 +75,38 @@ function AcmNode({ data, selected }) {
     </div>
   );
 }
-const nodeTypes = { acm: AcmNode };
+// Container frame (阶段 D) — a synthetic RENDER-ONLY node (never in doc/export) that
+// React Flow uses as the `parentId` for its members. FigJam-Frame look: dashed rounded
+// border, faint type-tinted fill, a title bar (group label + member count) in the top
+// padding band ELK reserved. The body is pointer-events:none so dragging empty frame
+// area still pans the canvas and member cards (separate DOM, rendered above) stay
+// clickable; only the title bar (and its collapse caret) is interactive.
+function AcmGroup({ data }) {
+  const accent = (data.type && NODE_TYPE_META[data.type]?.c) || "#6366f1";
+  const tint = `color-mix(in oklch, ${accent} 6%, white)`;
+  return (
+    <div style={{ width: "100%", height: "100%", boxSizing: "border-box", borderRadius: 14,
+      background: tint, border: `1.5px dashed ${accent}59`, pointerEvents: "none" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 30, display: "flex",
+        alignItems: "center", gap: 6, padding: "0 10px", pointerEvents: "auto" }}>
+        {data.onToggle && (
+          <button className="nodrag nopan" title={data.collapsed ? "展开整组" : "折叠整组"}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); data.onToggle(data.gid); }}
+            style={{ width: 18, height: 18, padding: 0, lineHeight: "16px", borderRadius: 6,
+              border: `1px solid ${accent}40`, background: "#fff", color: accent, cursor: "pointer",
+              fontFamily: "var(--mono)", fontSize: 11, display: "grid", placeItems: "center", flex: "0 0 18px" }}>
+            {data.collapsed ? "▸" : "▾"}
+          </button>
+        )}
+        <span style={{ fontSize: 12, fontWeight: 700, color: accent, whiteSpace: "nowrap",
+          overflow: "hidden", textOverflow: "ellipsis" }}>{data.label}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 700, fontFamily: "var(--mono)", color: `${accent}aa` }}>{data.count}</span>
+      </div>
+    </div>
+  );
+}
+const nodeTypes = { acm: AcmNode, group: AcmGroup };
 
 // Point at half the arc-length of a polyline — where the relation label sits so it
 // rides the middle of the routed (possibly multi-bend) edge, not a chord midpoint.
@@ -129,7 +160,7 @@ function download(dataUrl, name) {
 }
 
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
-  hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes }) {
+  hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -153,14 +184,37 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
   // it can apply live position changes while a node is being dragged — otherwise the
   // node only moves once onNodeDragStop persists to the doc and we re-derive, making
   // it jump to the end position with no in-between motion.
-  const derivedNodes = useMemo(() => doc.nodes
-    .filter((n) => !hidden?.has(n.id))   // collapse: drop nodes folded under a collapsed ancestor
-    .map((n) => {
+  // Grouping is active only when we have BOTH the membership map and box geometry; on a
+  // stale state (e.g. right after undo) groupBoxes is null → render flat.
+  const grouped = !!(groupOf && groupBoxes && Object.keys(groupBoxes).length);
+  const derivedNodes = useMemo(() => {
+    const out = [];
+    // Container frames MUST precede their members in the array (React Flow requires the
+    // parent before any child). They carry no `node` payload — purely synthetic.
+    if (grouped) {
+      for (const gid of Object.keys(groupBoxes)) {
+        const box = groupBoxes[gid];
+        out.push({
+          id: gid, type: "group", draggable: false, selectable: false, connectable: false,
+          position: { x: box.x, y: box.y }, style: { width: box.width, height: box.height },
+          data: { label: box.label, count: box.count, type: box.type },
+        });
+      }
+    }
+    for (const n of doc.nodes) {
+      if (hidden?.has(n.id)) continue;   // collapse: drop nodes folded under a collapsed ancestor
       const filtered = typeFilter != null && n.type !== typeFilter;
       const faded = focus ? !focus.nodes.has(n.id) : false;
-      return {
-        id: n.id, type: "acm",
-        position: { x: Number.isFinite(n.x) ? n.x : 0, y: Number.isFinite(n.y) ? n.y : 0 },
+      const gid = grouped ? groupOf[n.id] : null;
+      const box = gid ? groupBoxes[gid] : null;
+      // Members store ABSOLUTE coords in the doc; React Flow wants a parented child's
+      // position RELATIVE to its frame → subtract the frame origin here (and add it back
+      // on drag-stop). The doc therefore stays absolute — ACM-MD contract untouched.
+      const position = box
+        ? { x: (Number.isFinite(n.x) ? n.x : 0) - box.x, y: (Number.isFinite(n.y) ? n.y : 0) - box.y }
+        : { x: Number.isFinite(n.x) ? n.x : 0, y: Number.isFinite(n.y) ? n.y : 0 };
+      const node = {
+        id: n.id, type: "acm", position,
         selected: selection?.kind === "node" && selection.id === n.id,
         data: {
           node: n, isH, dimmed: filtered || faded,
@@ -171,7 +225,11 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
           onToggle: onToggleCollapse,
         },
       };
-    }), [doc.nodes, selection, isH, typeFilter, focus, hidden, collapsed, descCount, hasChildren, onToggleCollapse]);
+      if (box) { node.parentId = gid; node.extent = "parent"; } // confine member to its frame
+      out.push(node);
+    }
+    return out;
+  }, [doc.nodes, selection, isH, typeFilter, focus, hidden, collapsed, descCount, hasChildren, onToggleCollapse, grouped, groupOf, groupBoxes]);
 
   // React Flow's own node state; onNodesChange applies drag/select changes live.
   // We re-sync from derivedNodes whenever the doc or view state changes — none of
@@ -211,7 +269,14 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     return () => clearTimeout(t);
   }, [fitSignal]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const onNodeDragStop = useCallback((_, node) => onMoveNode(node.id, Math.round(node.position.x), Math.round(node.position.y)), [onMoveNode]);
+  // A parented node's position is RELATIVE to its frame; add the frame origin back so the
+  // doc keeps absolute coords (mirror of the relative subtraction in derivedNodes).
+  const onNodeDragStop = useCallback((_, node) => {
+    let x = node.position.x, y = node.position.y;
+    const box = node.parentId && groupBoxes ? groupBoxes[node.parentId] : null;
+    if (box) { x += box.x; y += box.y; }
+    onMoveNode(node.id, Math.round(x), Math.round(y));
+  }, [onMoveNode, groupBoxes]);
   const onNodeClick = useCallback((_, node) => onSelect({ kind: "node", id: node.id }), [onSelect]);
   const onEdgeClick = useCallback((_, edge) => onSelect({ kind: "edge", id: edge.id }), [onSelect]);
   const onPaneClick = useCallback(() => onSelect(null), [onSelect]);
