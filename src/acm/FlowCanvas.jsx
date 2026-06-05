@@ -27,6 +27,7 @@ function AcmNode({ data, selected }) {
   const hStyle = { width: 9, height: 9, background: "#fff", border: `2px solid ${meta.c}` };
   return (
     <div style={{
+      position: "relative",
       width: 210, background: "#fff", borderRadius: 12, overflow: "hidden",
       opacity: data.dimmed ? 0.18 : 1, transition: "opacity .15s, box-shadow .12s",
       border: `1px ${n.status === "suggested" ? "dashed" : "solid"} ${selected ? meta.c : data.related ? `${meta.c}99` : "#e7e9ee"}`,
@@ -42,6 +43,16 @@ function AcmNode({ data, selected }) {
             <span style={{ fontFamily: "var(--mono)" }}>{meta.glyph}</span>{typeLabel(n.type)}
           </span>
           <span style={{ flex: 1 }} />
+          {data.hasChildren && (
+            <button className="nodrag nopan" title={data.collapsed ? "展开子树" : "折叠子树"}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); data.onToggle && data.onToggle(n.id); }}
+              style={{ width: 18, height: 18, padding: 0, lineHeight: "16px", borderRadius: 6,
+                border: `1px solid ${meta.c}33`, background: tint, color: meta.c, cursor: "pointer",
+                fontFamily: "var(--mono)", fontSize: 11, display: "grid", placeItems: "center" }}>
+              {data.collapsed ? "▸" : "▾"}
+            </button>
+          )}
           <span title={st.label} style={{ width: 8, height: 8, borderRadius: 999, background: st.dot, boxShadow: `0 0 0 3px ${st.dot}22` }} />
         </div>
         <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3, color: "#1d2433", textDecoration: isDep ? "line-through" : "none" }}>{n.title}</div>
@@ -52,6 +63,13 @@ function AcmNode({ data, selected }) {
           </div>
         )}
       </div>
+      {data.collapsed && data.hiddenCount > 0 && (
+        <div title={`已折叠 ${data.hiddenCount} 个子节点`} style={{ position: "absolute", right: 8, bottom: 6,
+          fontSize: 10, fontWeight: 700, fontFamily: "var(--mono)", color: meta.c, background: tint,
+          border: `1px solid ${meta.c}33`, borderRadius: 6, padding: "1px 6px", pointerEvents: "none" }}>
+          ▸ {data.hiddenCount}
+        </div>
+      )}
       <Handle type="source" position={isH ? Position.Right : Position.Bottom} style={hStyle} />
     </div>
   );
@@ -63,7 +81,8 @@ function download(dataUrl, name) {
   a.download = name; a.href = dataUrl; a.click();
 }
 
-function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid }) {
+function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
+  hidden, collapsed, descCount, hasChildren, onToggleCollapse }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -87,16 +106,25 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
   // it can apply live position changes while a node is being dragged — otherwise the
   // node only moves once onNodeDragStop persists to the doc and we re-derive, making
   // it jump to the end position with no in-between motion.
-  const derivedNodes = useMemo(() => doc.nodes.map((n) => {
-    const filtered = typeFilter != null && n.type !== typeFilter;
-    const faded = focus ? !focus.nodes.has(n.id) : false;
-    return {
-      id: n.id, type: "acm",
-      position: { x: Number.isFinite(n.x) ? n.x : 0, y: Number.isFinite(n.y) ? n.y : 0 },
-      selected: selection?.kind === "node" && selection.id === n.id,
-      data: { node: n, isH, dimmed: filtered || faded, related: focus ? focus.nodes.has(n.id) && selection.id !== n.id : false },
-    };
-  }), [doc.nodes, selection, isH, typeFilter, focus]);
+  const derivedNodes = useMemo(() => doc.nodes
+    .filter((n) => !hidden?.has(n.id))   // collapse: drop nodes folded under a collapsed ancestor
+    .map((n) => {
+      const filtered = typeFilter != null && n.type !== typeFilter;
+      const faded = focus ? !focus.nodes.has(n.id) : false;
+      return {
+        id: n.id, type: "acm",
+        position: { x: Number.isFinite(n.x) ? n.x : 0, y: Number.isFinite(n.y) ? n.y : 0 },
+        selected: selection?.kind === "node" && selection.id === n.id,
+        data: {
+          node: n, isH, dimmed: filtered || faded,
+          related: focus ? focus.nodes.has(n.id) && selection.id !== n.id : false,
+          hasChildren: hasChildren?.has(n.id) || false,
+          collapsed: collapsed?.has(n.id) || false,
+          hiddenCount: descCount?.get(n.id) || 0,
+          onToggle: onToggleCollapse,
+        },
+      };
+    }), [doc.nodes, selection, isH, typeFilter, focus, hidden, collapsed, descCount, hasChildren, onToggleCollapse]);
 
   // React Flow's own node state; onNodesChange applies drag/select changes live.
   // We re-sync from derivedNodes whenever the doc or view state changes — none of
@@ -104,7 +132,9 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
   const [nodes, setNodes, onNodesChange] = useNodesState(derivedNodes);
   useEffect(() => { setNodes(derivedNodes); }, [derivedNodes, setNodes]);
 
-  const edges = useMemo(() => doc.edges.map((e) => {
+  const edges = useMemo(() => doc.edges
+    .filter((e) => !hidden?.has(e.from) && !hidden?.has(e.to))   // collapse: drop edges touching a hidden node
+    .map((e) => {
     const rm = RELATION_META[e.type] || { c: "#94a3b8", label: e.type };
     const sel = selection?.kind === "edge" && selection.id === e.id;
     const sug = e.status === "suggested";
@@ -120,7 +150,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
       labelBgStyle: { fill: "#fff", fillOpacity: 0.9 }, labelBgPadding: [4, 2], labelBgBorderRadius: 4,
       zIndex: strong ? 10 : 0,
     };
-  }), [doc.edges, selection, typeFilter, focus, edgeStyle]);
+  }), [doc.edges, selection, typeFilter, focus, edgeStyle, hidden]);
 
   useEffect(() => {
     if (!fitSignal) return;

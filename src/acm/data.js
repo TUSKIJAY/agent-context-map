@@ -512,6 +512,82 @@ export function layoutGraph(doc, opts = {}) {
   }
 }
 
+// ---- Collapse / expand subtrees (PURE VIEW STATE — never written into ACM-MD) ----
+// `collapsed` is a Set<nodeId> of nodes whose `contains` subtree is folded away. It
+// lives at the same level as the active profile / viewport: derived UI state that is
+// never part of `doc`, `layout`, or any export format. These helpers walk ONLY the
+// `contains` forest (Goal → Module → Feature) — the layout backbone — never the
+// cross relations (depends_on / impacts / references …).
+
+// parentId -> [childId] over `contains` edges (skips dangling ends & self-loops).
+export function containsChildren(doc) {
+  const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
+  const edges = Array.isArray(doc?.edges) ? doc.edges : [];
+  const ids = new Set(nodes.map((n) => n.id));
+  const children = new Map();
+  for (const e of edges) {
+    if (!e || e.type !== "contains") continue;
+    if (!ids.has(e.from) || !ids.has(e.to) || e.from === e.to) continue;
+    if (!children.has(e.from)) children.set(e.from, []);
+    children.get(e.from).push(e.to);
+  }
+  return children;
+}
+
+// From the collapsed set, derive which nodes are hidden and how many descendants
+// hide under each collapsed node (for the "▸ N" badge). v1 rule: a node hides if
+// ANY of its contains-ancestors is collapsed — simple and predictable; multi-parent
+// nodes hide if any containing path is folded (a documented simplification).
+export function computeHidden(doc, collapsed) {
+  const children = containsChildren(doc);
+  const collapsedSet = collapsed instanceof Set ? collapsed : new Set(collapsed || []);
+  const hidden = new Set();
+  const descCount = new Map();
+  for (const root of collapsedSet) {
+    // Seed `seen` with the root so a contains-cycle (a→…→a) can never hide the
+    // collapsed root itself (which would make its expand button vanish) or count it.
+    const seen = new Set([root]);
+    let count = 0;
+    const queue = [...(children.get(root) || [])];
+    while (queue.length) {
+      const id = queue.shift();
+      if (seen.has(id)) continue;
+      seen.add(id);
+      hidden.add(id);
+      count++;
+      for (const c of children.get(id) || []) if (!seen.has(c)) queue.push(c);
+    }
+    descCount.set(root, count);
+  }
+  return { hidden, descCount };
+}
+
+// Returns the set of nodes to FOLD so only contains-depth ≤ `depth` stays visible.
+// Every node at depth ≥ `depth` that has children is added to the collapsed set — the
+// node itself stays visible, only its deeper subtree folds away. So
+// collapseToDepth(doc, 1) keeps roots + their direct children and folds everything
+// below; expanding one node then reveals exactly the next level. Roots are the
+// contains-orphans (no incoming `contains` edge).
+export function collapseToDepth(doc, depth = 1) {
+  const nodes = Array.isArray(doc?.nodes) ? doc.nodes : [];
+  const children = containsChildren(doc);
+  const childIds = new Set();
+  for (const kids of children.values()) for (const k of kids) childIds.add(k);
+  const roots = nodes.filter((n) => !childIds.has(n.id)).map((n) => n.id);
+  const out = new Set();
+  const seen = new Set();
+  const queue = roots.map((id) => [id, 0]);
+  while (queue.length) {
+    const [id, d] = queue.shift();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const kids = children.get(id) || [];
+    if (d >= depth && kids.length) out.add(id);
+    for (const k of kids) if (!seen.has(k)) queue.push([k, d + 1]);
+  }
+  return out;
+}
+
 // ---- Import: parse an ACM-MD markdown file back into a runtime GraphDocument ----
 // Inverse of toAcmMd: pull the ```acm fenced YAML, merge layout into node x/y, and
 // preserve protocol fields (validation / changes) for lossless round-trip.

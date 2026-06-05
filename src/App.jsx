@@ -6,6 +6,7 @@ import {
   sampleDoc, nextId, TYPE_PREFIX,
   validateDoc, diffDoc, diffCount, buildChangeSet,
   toExportDoc, toAcmMd, toMermaid, toYaml, inferRelation, parseAcmMd, layoutGraph,
+  computeHidden, containsChildren, collapseToDepth,
   DOMAIN_PROFILES, DOMAIN_PROFILE_META, PROFILE_LABELS, setActiveProfile, typeLabel,
 } from "./acm/data.js";
 import { GraphCanvas } from "./acm/FlowCanvas.jsx";
@@ -66,6 +67,9 @@ export default function App() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [rankdir, setRankdir] = useState("LR"); // dagre layout direction: LR (横向) | TB (纵向)
+  // Folded `contains` subtrees. PURE view state — same level as profile / viewport:
+  // never written into doc, undo, layout or any export (ACM-MD v0.1 stays untouched).
+  const [collapsed, setCollapsed] = useState(() => new Set()); // Set<nodeId>
 
   const undoRef = useRef([]); const redoRef = useRef([]);
   const lastKeyRef = useRef(null);
@@ -76,6 +80,16 @@ export default function App() {
   const diff = useMemo(() => diffDoc(base, doc), [base, doc]);
   const dirty = diffCount(diff) > 0 || diff.layout_changes.length > 0;
   const errCount = useMemo(() => validateDoc(doc).filter((i) => i.level === "error").length, [doc]);
+
+  // Derived collapse view: which nodes have a `contains` subtree (toggle target),
+  // which are currently hidden, and the per-node hidden-descendant count (badge).
+  const childrenMap = useMemo(() => containsChildren(doc), [doc.nodes, doc.edges]);
+  const hasChildren = useMemo(() => {
+    const s = new Set();
+    for (const [pid, kids] of childrenMap) if (kids && kids.length) s.add(pid);
+    return s;
+  }, [childrenMap]);
+  const { hidden, descCount } = useMemo(() => computeHidden(doc, collapsed), [doc.nodes, doc.edges, collapsed]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 1900); };
 
@@ -90,6 +104,7 @@ export default function App() {
     setBase(rec.base_snapshot ? rec.base_snapshot : clone(rec.body));
     setDocId(rec.doc_id);
     setSelection(null);
+    setCollapsed(new Set()); // collapse is per-document view state — reset on open/switch
     undoRef.current = []; redoRef.current = []; lastKeyRef.current = null;
     setView("editor");
     if (savedVp && typeof savedVp.scale === "number") setVp(savedVp);       // restore working viewport
@@ -269,7 +284,14 @@ export default function App() {
   // right of what they touch; disconnected clusters are laid out and stacked apart.
   const applyLayout = (dir) => {
     commit((d) => {
-      const pos = layoutGraph(d, { rankdir: dir });
+      // Lay out only the VISIBLE subgraph; nodes folded away keep their current
+      // coords (collapse is a view filter, so hidden nodes shouldn't reserve space).
+      const { hidden: hid } = computeHidden(d, collapsed);
+      const vis = {
+        nodes: d.nodes.filter((n) => !hid.has(n.id)),
+        edges: d.edges.filter((e) => !hid.has(e.from) && !hid.has(e.to)),
+      };
+      const pos = layoutGraph(vis, { rankdir: dir });
       return { ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) };
     });
     setTimeout(() => setFitSignal((s) => s + 1), 30);
@@ -279,6 +301,17 @@ export default function App() {
     const nd = rankdir === "LR" ? "TB" : "LR";
     setRankdir(nd); applyLayout(nd);
     showToast(nd === "LR" ? "已切换为横向布局（LR · 根在左）" : "已切换为纵向布局（TB · 根在上）");
+  };
+  // Collapse / expand are PURE view ops: they only touch the `collapsed` set and
+  // re-fit. They never commit to undo, never mutate node coords — folding a subtree
+  // is not a document edit. Run 自动布局 to re-pack the visible subgraph after.
+  const onToggleCollapse = useCb((id) => {
+    setCollapsed((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+    setTimeout(() => setFitSignal((s) => s + 1), 30);
+  }, []);
+  const onCollapseAll = () => {
+    setCollapsed((prev) => (prev.size > 0 ? new Set() : collapseToDepth(doc, 1)));
+    setTimeout(() => setFitSignal((s) => s + 1), 30);
   };
 
   const nameOf = (id) => (doc.nodes.find((n) => n.id === id) || base.nodes.find((n) => n.id === id) || {}).title || id;
@@ -317,6 +350,7 @@ export default function App() {
       ) : (
       <>
       <Toolbar {...{ onHome: goHome, onNew, onImport, onSave, onRename: renameDoc, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount,
+        onCollapseAll, collapseAll: collapsed.size > 0, collapseAble: hasChildren.size > 0,
         title: (doc.meta && doc.meta.title) || "",
         canUndo: undoRef.current.length > 0, canRedo: redoRef.current.length > 0,
         onValidate: () => { setTab("validate"); setRightPanelOpen(true); }, onExport: () => setExportTab("acmmd"), accent }} />
@@ -333,7 +367,8 @@ export default function App() {
         )}
         <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
           <GraphCanvas doc={doc} selection={selection} onSelect={setSelection} onMoveNode={moveNode}
-            onCreateEdge={createEdge} rankdir={rankdir} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter} />
+            onCreateEdge={createEdge} rankdir={rankdir} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter}
+            hidden={hidden} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse} />
           <CanvasHint />
         </div>
         {rightPanelOpen ? (
@@ -367,7 +402,7 @@ export default function App() {
   );
 }
 
-function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent, title }) {
+function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount, canUndo, canRedo, onValidate, onExport, accent, title, onCollapseAll, collapseAll, collapseAble }) {
   const Btn = ({ onClick, disabled, children, title }) => (
     <button onClick={onClick} disabled={disabled} title={title}
       style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #e7e9ee", background: "#fff",
@@ -396,6 +431,10 @@ function Toolbar({ onHome, onNew, onImport, onSave, onRename, undo, redo, autoLa
       <Btn onClick={autoLayout} title="自动布局（dagre 分层）">⊞ 自动布局</Btn>
       <Btn onClick={toggleDir} title="切换布局方向：LR 横向（根在左）/ TB 纵向（根在上）">
         {rankdir === "LR" ? "⇄ 横向" : "⇅ 纵向"}
+      </Btn>
+      <Btn onClick={onCollapseAll} disabled={!collapseAble}
+        title={collapseAll ? "展开所有折叠的子树" : "折叠子树到第一层（仅视图状态，不写入文档/导出）"}>
+        {collapseAll ? "⊞ 展开全部" : "⊟ 折叠子树"}
       </Btn>
       <Btn onClick={onValidate} title="校验">
         ◇ 校验{errCount > 0 && <span style={{ fontSize: 10.5, fontWeight: 700, color: "#e11d48", background: "#fef2f2", padding: "0 5px", borderRadius: 999, fontFamily: "var(--mono)" }}>{errCount}</span>}
