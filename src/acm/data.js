@@ -558,6 +558,12 @@ export async function layoutGraphElk(doc, opts = {}) {
   const groupOf = opts.groupOf && Object.keys(opts.groupOf).length ? opts.groupOf : null;
   const groupMeta = {}; for (const gm of opts.groups || []) groupMeta[gm.id] = gm;
   const groupIds = new Set(groupOf ? Object.values(groupOf) : []);
+  // D-4: a collapsed group lays out as a small header-only box; its members are dropped
+  // from the layout (and their edges skipped), so re-layout compacts collapsed frames
+  // instead of reserving full space — the same "hidden nodes don't reserve space" rule A
+  // applies to folded subtrees.
+  const collapsedG = opts.collapsedGroups instanceof Set ? opts.collapsedGroups : new Set();
+  const memberHidden = (id) => { const gg = groupOf && groupOf[id]; return !!(gg && collapsedG.has(gg)); };
 
   let g;
   if (groupOf) {
@@ -565,21 +571,25 @@ export async function layoutGraphElk(doc, opts = {}) {
     const groupsMap = new Map(); const rootChildren = [];
     for (const n of nodes) {
       const gid = groupOf[n.id];
-      if (gid) {
-        if (!groupsMap.has(gid)) groupsMap.set(gid, {
-          id: gid, children: [], edges: [],
-          layoutOptions: {
-            "elk.algorithm": "layered", "elk.direction": dir,
-            "elk.padding": "[top=40,left=16,bottom=16,right=16]", // top band reserved for our title
-            "elk.spacing.nodeNode": String(mid ? 40 : 32),
-            "elk.layered.spacing.nodeNodeBetweenLayers": String(mid ? 96 : 76),
-          },
-        });
-        groupsMap.get(gid).children.push(sizeOf(n));
-      } else rootChildren.push(sizeOf(n));
+      if (!gid) { rootChildren.push(sizeOf(n)); continue; }
+      if (collapsedG.has(gid)) {                       // collapsed → header-only leaf, no members
+        if (!groupsMap.has(gid)) groupsMap.set(gid, { id: gid, width: 230, height: 40 });
+        continue;
+      }
+      if (!groupsMap.has(gid)) groupsMap.set(gid, {
+        id: gid, children: [], edges: [],
+        layoutOptions: {
+          "elk.algorithm": "layered", "elk.direction": dir,
+          "elk.padding": "[top=40,left=16,bottom=16,right=16]", // top band reserved for our title
+          "elk.spacing.nodeNode": String(mid ? 40 : 32),
+          "elk.layered.spacing.nodeNodeBetweenLayers": String(mid ? 96 : 76),
+        },
+      });
+      groupsMap.get(gid).children.push(sizeOf(n));
     }
     const rootEdges = [];
     for (const e of validEdges) {
+      if (memberHidden(e.from) || memberHidden(e.to)) continue; // edge to a collapsed member → drop
       const ge = { id: e.id, sources: [e.from], targets: [e.to] };
       const ga = groupOf[e.from], gb = groupOf[e.to];
       if (ga && ga === gb) groupsMap.get(ga).edges.push(ge); // intra-group → inside the frame

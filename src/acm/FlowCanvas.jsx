@@ -75,6 +75,8 @@ function AcmNode({ data, selected }) {
     </div>
   );
 }
+const GROUP_HEADER_H = 32; // collapsed-frame height (just the title bar)
+
 // Container frame (阶段 D) — a synthetic RENDER-ONLY node (never in doc/export) that
 // React Flow uses as the `parentId` for its members. FigJam-Frame look: dashed rounded
 // border, faint type-tinted fill, a title bar (group label + member count) in the top
@@ -160,7 +162,8 @@ function download(dataUrl, name) {
 }
 
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
-  hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes }) {
+  hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes,
+  collapsedGroups, onToggleGroup }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -194,10 +197,15 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     if (grouped) {
       for (const gid of Object.keys(groupBoxes)) {
         const box = groupBoxes[gid];
+        const gCollapsed = collapsedGroups?.has(gid) || false;
         out.push({
           id: gid, type: "group", draggable: false, selectable: false, connectable: false,
-          position: { x: box.x, y: box.y }, style: { width: box.width, height: box.height },
-          data: { label: box.label, count: box.count, type: box.type },
+          position: { x: box.x, y: box.y },
+          // collapsed → shrink to a header bar (members are hidden); a fresh re-layout
+          // already returns a small box, this also covers a fold toggled after layout.
+          style: { width: box.width, height: gCollapsed ? GROUP_HEADER_H : box.height },
+          data: { label: box.label, count: box.count, type: box.type,
+            collapsed: gCollapsed, onToggle: onToggleGroup, gid },
         });
       }
     }
@@ -229,7 +237,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
       out.push(node);
     }
     return out;
-  }, [doc.nodes, selection, isH, typeFilter, focus, hidden, collapsed, descCount, hasChildren, onToggleCollapse, grouped, groupOf, groupBoxes]);
+  }, [doc.nodes, selection, isH, typeFilter, focus, hidden, collapsed, descCount, hasChildren, onToggleCollapse, grouped, groupOf, groupBoxes, collapsedGroups, onToggleGroup]);
 
   // React Flow's own node state; onNodesChange applies drag/select changes live.
   // We re-sync from derivedNodes whenever the doc or view state changes — none of

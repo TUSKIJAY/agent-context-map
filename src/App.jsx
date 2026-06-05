@@ -82,6 +82,9 @@ export default function App() {
   const [grouping, setGrouping] = useState("none");
   const [groupOf, setGroupOf] = useState(null);
   const [groupBoxes, setGroupBoxes] = useState(null);
+  // D-4: whole-group fold. Set<groupId>; members of a collapsed group join the hidden set
+  // (reusing A's computeHidden render/layout pipeline) while the frame stays as a header.
+  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
   // Folded `contains` subtrees. PURE view state — same level as profile / viewport:
   // never written into doc, undo, layout or any export (ACM-MD v0.1 stays untouched).
   const [collapsed, setCollapsed] = useState(() => new Set()); // Set<nodeId>
@@ -105,6 +108,14 @@ export default function App() {
     return s;
   }, [childrenMap]);
   const { hidden, descCount } = useMemo(() => computeHidden(doc, collapsed), [doc.nodes, doc.edges, collapsed]);
+  // D-4: members of a collapsed group join A's hidden set, so the existing canvas filter
+  // hides them and their edges while the frame stays visible as a header (count badge).
+  const hiddenAll = useMemo(() => {
+    if (!groupOf || !collapsedGroups.size) return hidden;
+    const s = new Set(hidden);
+    for (const id in groupOf) if (collapsedGroups.has(groupOf[id])) s.add(id);
+    return s;
+  }, [hidden, groupOf, collapsedGroups]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 1900); };
 
@@ -121,7 +132,7 @@ export default function App() {
     setSelection(null);
     setCollapsed(new Set()); // collapse is per-document view state — reset on open/switch
     setElkRoutes(null);      // edge routes belong to the previous doc's coords — clear
-    setGrouping("none"); setGroupOf(null); setGroupBoxes(null); // grouping is per-doc view state
+    setGrouping("none"); setGroupOf(null); setGroupBoxes(null); setCollapsedGroups(new Set()); // grouping is per-doc view state
     undoRef.current = []; redoRef.current = []; lastKeyRef.current = null;
     setView("editor");
     if (savedVp && typeof savedVp.scale === "number") setVp(savedVp);       // restore working viewport
@@ -323,7 +334,7 @@ export default function App() {
   // `grp` !== "none" forces ELK nested layout (grouping needs hierarchy); else `eng`
   // chooses dagre/ELK-flat. Both `eng`/`grp` are explicit so the engine & grouping
   // toggles can lay out with their NEW value before setState has flushed.
-  const applyLayout = async (dir, eng = engine, grp = grouping) => {
+  const applyLayout = async (dir, eng = engine, grp = grouping, cg = collapsedGroups) => {
     const { hidden: hid } = computeHidden(doc, collapsed);
     const vis = {
       nodes: doc.nodes.filter((n) => !hid.has(n.id)),
@@ -336,7 +347,7 @@ export default function App() {
       try {
         let gOf = null, groups = null;
         if (grp !== "none") { const r = computeGroupOf(vis, grp); gOf = r.groupOf; groups = r.groups; }
-        const { pos, routes, containers } = await layoutGraphElk(vis, { rankdir: dir, groupOf: gOf, groups });
+        const { pos, routes, containers } = await layoutGraphElk(vis, { rankdir: dir, groupOf: gOf, groups, collapsedGroups: cg });
         if (token !== layoutTokenRef.current) return; // superseded by a newer layout
         commit((d) => ({ ...d, nodes: d.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) })) }));
         setElkRoutes(routes);
@@ -370,21 +381,34 @@ export default function App() {
     const ne = engine === "dagre" ? "elk" : "dagre";
     const ng = ne === "dagre" ? "none" : grouping;
     setEngine(ne);
-    if (ng !== grouping) setGrouping(ng);
+    if (ng !== grouping) { setGrouping(ng); setCollapsedGroups(new Set()); }
     applyLayout(rankdir, ne, ng);
     showToast(ne === "elk" ? "已切换布局引擎：ELK（正交边·避让，异步布局）" : "已切换布局引擎：dagre（分层·快速·同步）");
   };
   // Cycle the grouping dimension 关闭→按模块→按类型→关闭. Grouping implies ELK nesting,
   // so enabling it flips the engine to ELK; turning it off keeps whatever engine was set.
+  // The dimension change invalidates any per-group folds → reset them.
   const cycleGrouping = () => {
     const next = grouping === "none" ? "module" : grouping === "module" ? "type" : "none";
     const ne = next !== "none" ? "elk" : engine;
-    setGrouping(next);
+    setGrouping(next); setCollapsedGroups(new Set());
     if (ne !== engine) setEngine(ne);
     applyLayout(rankdir, ne, next);
     showToast(next === "module" ? "已按模块分组（容器=Goal 下各模块）"
       : next === "type" ? "已按类型分组（每种节点类型一组）" : "已关闭分组（回到扁平图）");
   };
+  // Whole-group fold (D-4): toggle the group in `collapsedGroups` and RE-LAYOUT with the
+  // new fold set. The re-layout is what makes both directions correct — collapsing
+  // compacts the frame to a header (members excluded from layout), expanding restores a
+  // full-size frame with its members properly re-placed (a render-only fold would leave
+  // re-shown members clamped inside the stale compact box). Pass the next set explicitly
+  // since setState hasn't flushed yet.
+  const onToggleGroup = useCb((gid) => {
+    const next = new Set(collapsedGroups);
+    if (next.has(gid)) next.delete(gid); else next.add(gid);
+    setCollapsedGroups(next);
+    applyLayout(rankdir, "elk", grouping, next);
+  }, [collapsedGroups, rankdir, grouping, engine, collapsed, doc]); // eslint-disable-line react-hooks/exhaustive-deps
   // Collapse / expand are PURE view ops: they only touch the `collapsed` set and
   // re-fit. They never commit to undo, never mutate node coords — folding a subtree
   // is not a document edit. Run 自动布局 to re-pack the visible subgraph after.
@@ -453,8 +477,9 @@ export default function App() {
         <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
           <GraphCanvas doc={doc} selection={selection} onSelect={setSelection} onMoveNode={moveNode}
             onCreateEdge={createEdge} rankdir={rankdir} showGrid={t.showGrid} fitSignal={fitSignal} typeFilter={legendFilter}
-            hidden={hidden} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse}
-            engine={engine} elkRoutes={elkRoutes} groupOf={groupOf} groupBoxes={groupBoxes} />
+            hidden={hiddenAll} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse}
+            engine={engine} elkRoutes={elkRoutes} groupOf={groupOf} groupBoxes={groupBoxes}
+            collapsedGroups={collapsedGroups} onToggleGroup={onToggleGroup} />
           <CanvasHint />
           {layouting && <LayoutVeil />}
         </div>
