@@ -18,7 +18,17 @@
     导出 ACM-MD / JSON 与本地持久化均**零 `collapsed` 泄漏**（ACM-MD v0.1 协议零污染）。
   - 工作区现已**干净**（无 `M src/acm/data.js` 在制品）。
 - 布局现状已被 B 改善：`layoutGraph()` 改为按 `estimateNodeSize` 估算尺寸、间距随节点数自适应；
-  A 引入 `collapsed`（纯视图态）+ `computeHidden` / `containsChildren` / `collapseToDepth` 折叠机制——这套尺寸估算与折叠机制将被任务 2 的 C+D 直接复用。
+  A 引入 `collapsed`（纯视图态）+ `computeHidden` / `containsChildren` / `collapseToDepth` 折叠机制——这套尺寸估算与折叠机制已被任务 2 的 C+D 直接复用。
+- **任务 2（重构层 C + D）已实现**，提交在分支 `claude/nice-cannon-841e78`，已开 PR [#1](https://github.com/TUSKIJAY/agent-context-map/pull/1) **待评审合并**（不直接进 `main`）。6 个独立 commit：
+  1. `build(deps): 引入 elkjs`（动态 `import()` 按需 code-split，默认 dagre 用户不下载该 1.4MB chunk）。
+  2. `feat(layout)` C-1/C-2：`layoutGraphElk` 异步布局 + `engine`（dagre 默认/elk）引擎切换 + loading 遮罩。
+  3. `feat(canvas)` C-3：自定义 `elkEdge` 正交边路由（消费 ELK 折点，沿用箭头/标签/虚线/高亮）。
+  4. `feat(layout)` D-1~D-3：`computeGroupOf`（按类型/模块）+ ELK 嵌套布局 + RF sub-flow 容器渲染（相对/绝对坐标换算）。
+  5. `feat(canvas)` D-4：组级折叠（`collapsedGroups` 并入 A 的 hidden 集，容器退化标题条，切换即重排）。
+  6. `fix(layout)`：多 Agent 对抗式评审加固（折叠坐标污染、异步 ELK 竞态 `docEpoch` 失效、闭包陈旧等）。
+  - `npm run build` 通过；37 节点大图实测：按模块 11 框 / 按类型 10 框零重叠、组折叠/展开正确、dagre↔ELK↔分组互切无报错无重渲染循环；导出 ACM-MD/JSON/Mermaid（含分组+折叠态）**零泄漏**（协议零污染，实测核对）。
+  - 偏离 plan：① elkjs 改动态 import 按需加载；② 组折叠改「切换即重排」（用 `collapsedGroups`，非字面塞进 A 的 `collapsed`，因后者语义是折叠每个成员的子树而非整组）。
+  - 引擎、分组维度、容器节点、边折点、组折叠**全部是派生视图状态**——不写入 `doc`/`layout`、不进任何导出。
 
 ## 2. 建议优先任务（已与用户敲定：串行推进）
 
@@ -26,21 +36,21 @@
 
 main 上三个独立 commit 均已落地并推送（hash 见 §1）：`fix(validate)` → `feat(layout)`（B）→ `feat(canvas)`（A）。
 
-### 任务 2 · 重构层（C + D） → **下一步**（见 `doc/03-复杂图谱可读性优化/plan/plan-02-CD-引擎与分组.md`）
+### 任务 2 · 重构层（C + D） → ✅ **已实现，待合并 PR [#1](https://github.com/TUSKIJAY/agent-context-map/pull/1)**（见 `doc/03-复杂图谱可读性优化/plan/plan-02-CD-引擎与分组.md`）
 
-从已含 B+A 的 main 切分支 `feat/elk-grouped-layout`：
+在含 B+A 的 main 上切分支 **`claude/nice-cannon-841e78`**（plan 里写的 `feat/elk-grouped-layout` 仅为示意，实际用 worktree 分支名）：
 
-- **C**：引入 `elkjs`，ELK 布局 + dagre/ELK 引擎切换 + 正交边路由。
-- **D**：按类型/模块的分组容器（React Flow sub-flow + ELK 嵌套布局），组级折叠**直接复用 A**。
-- 验证 OK 再 PR 合回 main。
+- **C**：引入 `elkjs`，ELK 布局 + dagre/ELK 引擎切换 + 正交边路由 —— ✅。
+- **D**：按类型/模块的分组容器（React Flow sub-flow + ELK 嵌套布局），组级折叠复用 A —— ✅。
+- 已通过 build + 浏览器实测 + 多 Agent 评审加固，PR 已开，**合并决定权在维护者**（commit 明细与实测见 §1）。
 
-> 串行原因：B 的 `estimateNodeSize`、A 的 `collapsed`/`computeHidden` 都会被 C+D 复用；先落 main 可零冲突复用，免去重复实现与 `data.js` 合并冲突。
+> 串行原因：B 的 `estimateNodeSize`、A 的 `collapsed`/`computeHidden` 都被 C+D 复用；先落 main 零冲突复用，免去重复实现与 `data.js` 合并冲突。
 
 ## 3. 暂缓事项
 
-- C+D 不要在 B+A 进 main 之前开工（会与共享代码冲突）。
-- 语义缩放（LOD）、邻居 N 跳"聚焦+隔离"视图、力导向布局：均为 C+D 之后的可选增量，暂不排期。
-- 不得为做布局而改动 `ACM-MD v0.1` 协议：折叠态、分组、容器都必须是**派生视图状态**，不写入 `doc`、不进任何导出格式。
+- C+D 已实现并开 PR #1，**待维护者评审合并**；合并前不要再在 `main` 上叠加依赖 C+D 的新功能。
+- 语义缩放（LOD：低缩放只画容器/簇、隐藏卡片细节）、邻居 N 跳"聚焦+隔离"视图、力导向布局（ELK `force`/`stress`）：均为 C+D 之后的可选增量，暂不排期（见 plan-02 §9）。
+- 不得为做布局而改动 `ACM-MD v0.1` 协议：折叠态、分组、容器、边折点、引擎选择都必须是**派生视图状态**，不写入 `doc`、不进任何导出格式。
 
 ## 4. 接手检查
 
