@@ -19,7 +19,7 @@
   - 工作区现已**干净**（无 `M src/acm/data.js` 在制品）。
 - 布局现状已被 B 改善：`layoutGraph()` 改为按 `estimateNodeSize` 估算尺寸、间距随节点数自适应；
   A 引入 `collapsed`（纯视图态）+ `computeHidden` / `containsChildren` / `collapseToDepth` 折叠机制——这套尺寸估算与折叠机制已被任务 2 的 C+D 直接复用。
-- **任务 2（重构层 C + D）已实现**，提交在分支 `claude/nice-cannon-841e78`，已开 PR [#1](https://github.com/TUSKIJAY/agent-context-map/pull/1) **待评审合并**（不直接进 `main`）。6 个独立 commit：
+- **任务 2（重构层 C + D）已完成并合并进 `main`**：PR [#1](https://github.com/TUSKIJAY/agent-context-map/pull/1) 已 **MERGED**，`main` 现为 `aa66fc3`（fast-forward 线性并入，无 merge commit）；临时 worktree 分支 `claude/nice-cannon-841e78` 的**远端已删除**（本地 worktree 暂保留）。核心 6 个独立 commit：
   1. `build(deps): 引入 elkjs`（动态 `import()` 按需 code-split，默认 dagre 用户不下载该 1.4MB chunk）。
   2. `feat(layout)` C-1/C-2：`layoutGraphElk` 异步布局 + `engine`（dagre 默认/elk）引擎切换 + loading 遮罩。
   3. `feat(canvas)` C-3：自定义 `elkEdge` 正交边路由（消费 ELK 折点，沿用箭头/标签/虚线/高亮）。
@@ -29,6 +29,8 @@
   - `npm run build` 通过；37 节点大图实测：按模块 11 框 / 按类型 10 框零重叠、组折叠/展开正确、dagre↔ELK↔分组互切无报错无重渲染循环；导出 ACM-MD/JSON/Mermaid（含分组+折叠态）**零泄漏**（协议零污染，实测核对）。
   - 偏离 plan：① elkjs 改动态 import 按需加载；② 组折叠改「切换即重排」（用 `collapsedGroups`，非字面塞进 A 的 `collapsed`，因后者语义是折叠每个成员的子树而非整组）。
   - 引擎、分组维度、容器节点、边折点、组折叠**全部是派生视图状态**——不写入 `doc`/`layout`、不进任何导出。
+  - 另有收尾 commit：`fix(export)` 修预存 ExportModal 边框混写告警、`docs(readme)` 补 README 双引擎/分组能力、`docs(handoff)` 本文件。
+  - **已产出绿色版 exe**：`output/portable/Agent Context Map/Agent Context Map.exe`（`npm run tauri:build -- --no-bundle`，约 17.3MB，依赖系统 WebView2，免安装双击即用；`output/` 为构建产物，不入库）。
 
 ## 2. 建议优先任务（已与用户敲定：串行推进）
 
@@ -36,20 +38,20 @@
 
 main 上三个独立 commit 均已落地并推送（hash 见 §1）：`fix(validate)` → `feat(layout)`（B）→ `feat(canvas)`（A）。
 
-### 任务 2 · 重构层（C + D） → ✅ **已实现，待合并 PR [#1](https://github.com/TUSKIJAY/agent-context-map/pull/1)**（见 `doc/03-复杂图谱可读性优化/plan/plan-02-CD-引擎与分组.md`）
+### 任务 2 · 重构层（C + D） → ✅ **已完成并合并进 `main`**（PR [#1](https://github.com/TUSKIJAY/agent-context-map/pull/1) MERGED；见 `doc/03-复杂图谱可读性优化/plan/plan-02-CD-引擎与分组.md`）
 
 在含 B+A 的 main 上切分支 **`claude/nice-cannon-841e78`**（plan 里写的 `feat/elk-grouped-layout` 仅为示意，实际用 worktree 分支名）：
 
 - **C**：引入 `elkjs`，ELK 布局 + dagre/ELK 引擎切换 + 正交边路由 —— ✅。
 - **D**：按类型/模块的分组容器（React Flow sub-flow + ELK 嵌套布局），组级折叠复用 A —— ✅。
-- 已通过 build + 浏览器实测 + 多 Agent 评审加固，PR 已开，**合并决定权在维护者**（commit 明细与实测见 §1）。
+- 已通过 build + 浏览器实测 + 多 Agent 评审加固，PR #1 **已合并进 `main`**（`aa66fc3`），远端临时分支已清理，并已打出 portable exe（commit 明细与实测见 §1）。
 
 > 串行原因：B 的 `estimateNodeSize`、A 的 `collapsed`/`computeHidden` 都被 C+D 复用；先落 main 零冲突复用，免去重复实现与 `data.js` 合并冲突。
 
 ## 3. 暂缓事项
 
-- C+D 已实现并开 PR #1，**待维护者评审合并**；合并前不要再在 `main` 上叠加依赖 C+D 的新功能。
-- 语义缩放（LOD：低缩放只画容器/簇、隐藏卡片细节）、邻居 N 跳"聚焦+隔离"视图、力导向布局（ELK `force`/`stress`）：均为 C+D 之后的可选增量，暂不排期（见 plan-02 §9）。
+- C+D 已合并进 `main`（PR #1 MERGED）。本地 worktree `claude/nice-cannon-841e78` 用完可删（`git worktree remove --force` + `git branch -d`，须在主目录、关掉占用进程后执行）。
+- **下一步可选方向（按需排期，见 plan-02 §9）**：语义缩放（LOD：低缩放只画容器/簇、隐藏卡片细节）、邻居 N 跳"聚焦+隔离"视图、力导向布局（ELK `force`/`stress`）——均为 C+D 之后的增量，目前未排期。
 - 不得为做布局而改动 `ACM-MD v0.1` 协议：折叠态、分组、容器、边折点、引擎选择都必须是**派生视图状态**，不写入 `doc`、不进任何导出格式。
 
 ## 4. 接手检查
