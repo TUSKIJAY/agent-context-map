@@ -170,7 +170,7 @@ async function callWindowAgy(payload) {
 async function callTauriAgy(payload) {
   const invoke = getGlobal().__TAURI__?.core?.invoke;
   if (typeof invoke !== "function") return null;
-  return invoke("request_agent_patch", payload);
+  return invoke("request_agent_patch", { payload });
 }
 
 async function callMcpAgy(payload) {
