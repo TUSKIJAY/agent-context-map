@@ -206,6 +206,204 @@ export const TYPE_PREFIX = {
   Assumption: "assumption", Question: "question", Decision: "decision", Task: "task",
 };
 
+// ---- Agent co-edit pending patch (PURE VIEW STATE; never exported until applied) ----
+const copy = (o) => JSON.parse(JSON.stringify(o));
+const pendingOps = (patch) => (patch?.operations || []).filter((op) => op.status === "pending");
+
+function nextFromType(type, used) {
+  const prefix = TYPE_PREFIX[type] || "node";
+  const id = nextId(prefix, used);
+  used.add(id);
+  return id;
+}
+
+function nextEdgeFrom(used) {
+  const id = nextId("edge", used);
+  used.add(id);
+  return id;
+}
+
+export function agentPatchStats(patch, status = "pending") {
+  const ops = (patch?.operations || []).filter((op) => status === "all" || op.status === status);
+  const nodes = ops.filter((op) => op.op === "add_node").length;
+  const edges = ops.filter((op) => op.op === "add_edge").length;
+  const questions = ops.filter((op) =>
+    (op.op === "add_node" && (op.node?.status === "needs_validation" || op.node?.type === "Question")) ||
+    (op.op === "add_edge" && op.edge?.status === "needs_validation") ||
+    op.op === "update_node"
+  ).length;
+  return { nodes, edges, questions, total: ops.length };
+}
+
+export function createMockAgentPatch(doc, baseNodeId, prompt = "") {
+  const base = doc.nodes.find((n) => n.id === baseNodeId) || doc.nodes.find((n) => n.type === "Module") || doc.nodes[0] || { id: null, x: 120, y: 180 };
+  const usedNodeIds = new Set((doc.nodes || []).map((n) => n.id));
+  const usedEdgeIds = new Set((doc.edges || []).map((e) => e.id));
+  const stamp = Date.now();
+  const bx = Number.isFinite(base.x) ? base.x : 120;
+  const by = Number.isFinite(base.y) ? base.y : 180;
+  const N = (type, title, dx, dy, extra = {}) => ({
+    id: nextFromType(type, usedNodeIds), type, title,
+    status: extra.status || "suggested",
+    description: extra.description || "",
+    priority: extra.priority || "",
+    source: "agent_mock",
+    confidence: extra.confidence ?? 0.72,
+    tags: extra.tags || ["agent_suggestion"],
+    notes: extra.notes || "",
+    x: Math.round(bx + dx), y: Math.round(by + dy),
+  });
+  const nodes = {
+    bulk: N("Feature", "批量导入需求文档", 330, -210, {
+      priority: "P1",
+      description: "支持一次选择多份需求文档进入解析流程，并保留导入批次上下文。",
+    }),
+    parser: N("Module", "文档解析器", 360, -40, {
+      description: "抽取 Word/PDF 中的标题、段落、表格与疑似需求项，生成待校正图谱草稿。",
+    }),
+    data: N("DataEntity", "Word/PDF 输入", 620, -10, {
+      description: "用户上传的 .docx / .pdf 需求文档原始输入。",
+    }),
+    risk: N("Risk", "解析失败风险", 380, 140, {
+      confidence: 0.64,
+      description: "版式复杂、扫描件、表格嵌套或编码异常可能导致解析质量下降。",
+    }),
+    correct: N("Feature", "人工校正入口", 340, 300, {
+      description: "让用户在采纳前修正 Agent 抽取的节点、字段与关系。",
+    }),
+    scan: N("Question", "是否支持图片扫描件", 630, 250, {
+      status: "needs_validation",
+      confidence: 0.5,
+      description: "需要确认是否支持 OCR 处理图片型 PDF / 扫描件。",
+    }),
+  };
+  const E = (from, to, type, extra = {}) => ({
+    id: nextEdgeFrom(usedEdgeIds), from, to, type,
+    status: extra.status || "suggested",
+    reason: extra.reason || "",
+    source: "agent_mock",
+    confidence: extra.confidence ?? 0.72,
+  });
+  const edges = [
+    E(base.id, nodes.bulk.id, "contains", { reason: "用户希望在当前模块下新增批量导入能力。" }),
+    E(base.id, nodes.parser.id, "contains", { reason: "批量导入需要一个解析子模块承载文档处理。" }),
+    E(nodes.parser.id, nodes.data.id, "depends_on", { reason: "解析器依赖用户提供的 Word/PDF 输入。" }),
+    E(nodes.risk.id, nodes.bulk.id, "impacts", { reason: "解析失败会影响批量导入体验与结果可信度。" }),
+    E(base.id, nodes.correct.id, "contains", { reason: "建议提供人工校正入口，避免 AI 建议直接污染正式图谱。" }),
+    E(nodes.scan.id, nodes.bulk.id, "needs_validation", { status: "needs_validation", confidence: 0.5, reason: "扫描件支持范围需要人工确认。" }),
+  ];
+  const operations = [
+    ...Object.values(nodes).map((node, i) => ({ id: `op_${stamp}_${String(i + 1).padStart(2, "0")}`, op: "add_node", status: "pending", node })),
+    ...edges.map((edge, i) => ({ id: `op_${stamp}_${String(i + 7).padStart(2, "0")}`, op: "add_edge", status: "pending", edge })),
+  ];
+  const stats = agentPatchStats({ operations }, "pending");
+  return {
+    id: "agent_patch_" + stamp.toString(36),
+    createdAt: new Date().toISOString(),
+    source: "agent_mock",
+    prompt,
+    summary: `建议新增 ${stats.nodes} 个节点和 ${stats.edges} 条关系，其中 ${stats.questions} 处需要人工确认。`,
+    baseNodeId: base.id,
+    operations,
+  };
+}
+
+export function previewAgentPatchDoc(doc, patch) {
+  if (!patch || !pendingOps(patch).length) return doc;
+  const baseNodeIds = new Set((doc.nodes || []).map((n) => n.id));
+  const addNodes = pendingOps(patch)
+    .filter((op) => op.op === "add_node" && op.node)
+    .map((op) => ({ ...copy(op.node), __agentPreview: true, __patchOpId: op.id }));
+  const previewNodeIds = new Set([...baseNodeIds, ...addNodes.map((n) => n.id)]);
+  const addEdges = pendingOps(patch)
+    .filter((op) => op.op === "add_edge" && op.edge && previewNodeIds.has(op.edge.from) && previewNodeIds.has(op.edge.to))
+    .map((op) => ({ ...copy(op.edge), __agentPreview: true, __patchOpId: op.id }));
+  return { ...doc, nodes: [...doc.nodes, ...addNodes], edges: [...doc.edges, ...addEdges] };
+}
+
+export function updateAgentPatchOperation(patch, opId, updater) {
+  if (!patch) return patch;
+  return {
+    ...patch,
+    operations: patch.operations.map((op) => {
+      if (op.id !== opId || op.status !== "pending") return op;
+      const next = typeof updater === "function" ? updater(copy(op)) : { ...copy(op), ...updater };
+      return { ...op, ...next, id: op.id, op: op.op, status: op.status };
+    }),
+  };
+}
+
+export function rejectAgentPatchOperations(patch, operationIds) {
+  if (!patch) return patch;
+  const ids = new Set(operationIds);
+  const rejectedNodeIds = new Set();
+  for (const op of patch.operations) if (ids.has(op.id) && op.op === "add_node" && op.node?.id) rejectedNodeIds.add(op.node.id);
+  return {
+    ...patch,
+    operations: patch.operations.map((op) => {
+      const blockedByNode = op.op === "add_edge" && (rejectedNodeIds.has(op.edge?.from) || rejectedNodeIds.has(op.edge?.to));
+      return ids.has(op.id) || blockedByNode ? { ...op, status: "rejected" } : op;
+    }),
+  };
+}
+
+export function applyAgentPatchOperations(doc, patch, operationIds) {
+  if (!patch) return { doc, appliedIds: [] };
+  const requested = new Set(operationIds);
+  const ops = patch.operations || [];
+  const include = new Set(requested);
+  const pendingAddNodeByNodeId = new Map();
+  for (const op of ops) if (op.status === "pending" && op.op === "add_node" && op.node?.id) pendingAddNodeByNodeId.set(op.node.id, op);
+  for (const op of ops) {
+    if (!include.has(op.id) || op.status !== "pending" || op.op !== "add_edge") continue;
+    for (const endpoint of [op.edge?.from, op.edge?.to]) {
+      const dep = pendingAddNodeByNodeId.get(endpoint);
+      if (dep) include.add(dep.id);
+    }
+  }
+
+  let next = copy(doc);
+  const nodeIds = new Set(next.nodes.map((n) => n.id));
+  const edgeIds = new Set(next.edges.map((e) => e.id));
+  const appliedIds = [];
+  const cleanPreview = (o) => {
+    const out = { ...o };
+    delete out.__agentPreview;
+    delete out.__patchOpId;
+    return out;
+  };
+
+  for (const op of ops) {
+    if (!include.has(op.id) || op.status !== "pending") continue;
+    if (op.op === "add_node" && op.node && !nodeIds.has(op.node.id)) {
+      const n = cleanPreview(op.node);
+      next.nodes.push(n);
+      nodeIds.add(n.id);
+      appliedIds.push(op.id);
+    } else if (op.op === "update_node" && op.nodeId) {
+      let touched = false;
+      next.nodes = next.nodes.map((n) => {
+        if (n.id !== op.nodeId) return n;
+        touched = true;
+        return { ...n, ...(op.patch || {}) };
+      });
+      if (touched) appliedIds.push(op.id);
+    } else if (op.op === "add_edge" && op.edge && !edgeIds.has(op.edge.id) && nodeIds.has(op.edge.from) && nodeIds.has(op.edge.to)) {
+      const e = cleanPreview(op.edge);
+      next.edges.push(e);
+      edgeIds.add(e.id);
+      appliedIds.push(op.id);
+    }
+  }
+  return { doc: next, appliedIds };
+}
+
+export function markAgentPatchOperations(patch, operationIds, status) {
+  if (!patch) return patch;
+  const ids = new Set(operationIds);
+  return { ...patch, operations: patch.operations.map((op) => ids.has(op.id) ? { ...op, status } : op) };
+}
+
 // ---- Validation (plan §4.1 H, §10) ----
 export function validateDoc(doc) {
   const issues = [];

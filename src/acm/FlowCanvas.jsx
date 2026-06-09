@@ -23,17 +23,20 @@ function AcmNode({ data, selected }) {
   const meta = NODE_TYPE_META[n.type] || { c: "#64748b", glyph: "●" };
   const st = STATUS_META[n.status] || { dot: "#cbd5e1", label: n.status };
   const isDep = n.status === "deprecated";
+  const isAgentPreview = data.agentPreview;
   const isH = data.isH;
-  const tint = `color-mix(in oklch, ${meta.c} 8%, white)`;
-  const hStyle = { width: 9, height: 9, background: "#fff", border: `2px solid ${meta.c}` };
+  const accent = isAgentPreview ? "#8b5cf6" : meta.c;
+  const tint = `color-mix(in oklch, ${accent} ${isAgentPreview ? 11 : 8}%, white)`;
+  const hStyle = { width: 9, height: 9, background: "#fff", border: `2px solid ${accent}` };
   return (
     <div style={{
       position: "relative",
-      width: 210, background: "#fff", borderRadius: 12, overflow: "hidden",
+      width: 210, background: isAgentPreview ? "linear-gradient(135deg,#ffffff,#fbfaff)" : "#fff", borderRadius: 12, overflow: "hidden",
       opacity: data.dimmed ? 0.18 : 1, transition: "opacity .15s, box-shadow .12s",
-      border: `1px ${n.status === "suggested" ? "dashed" : "solid"} ${selected ? meta.c : data.related ? `${meta.c}99` : "#e7e9ee"}`,
-      boxShadow: selected ? `0 0 0 2px ${meta.c}, 0 12px 28px -12px ${meta.c}66`
-        : data.related ? `0 0 0 1.5px ${meta.c}55, 0 6px 18px -10px ${meta.c}55`
+      border: `${isAgentPreview ? 1.5 : 1}px ${isAgentPreview || n.status === "suggested" ? "dashed" : "solid"} ${selected ? accent : data.related ? `${accent}99` : isAgentPreview ? "#a78bfa" : "#e7e9ee"}`,
+      boxShadow: selected ? `0 0 0 2px ${accent}, 0 12px 28px -12px ${accent}66`
+        : isAgentPreview ? "0 10px 24px -18px rgba(109,40,217,.55)"
+        : data.related ? `0 0 0 1.5px ${accent}55, 0 6px 18px -10px ${accent}55`
         : "0 1px 2px rgba(16,24,40,.06), 0 4px 14px -8px rgba(16,24,40,.18)",
     }}>
       <Handle type="target" position={isH ? Position.Left : Position.Top} style={hStyle} />
@@ -64,6 +67,12 @@ function AcmNode({ data, selected }) {
           </div>
         )}
       </div>
+      {isAgentPreview && (
+        <div style={{ position: "absolute", top: 7, right: 8, fontSize: 10, fontWeight: 800, color: "#6d28d9",
+          background: "#f3e8ff", border: "1px solid #ddd6fe", borderRadius: 999, padding: "1px 7px", pointerEvents: "none" }}>
+          AI 建议
+        </div>
+      )}
       {data.collapsed && data.hiddenCount > 0 && (
         <div title={`已折叠 ${data.hiddenCount} 个子节点`} style={{ position: "absolute", right: 8, bottom: 6,
           fontSize: 10, fontWeight: 700, fontFamily: "var(--mono)", color: meta.c, background: tint,
@@ -161,9 +170,9 @@ function download(dataUrl, name) {
   a.download = name; a.href = dataUrl; a.click();
 }
 
-function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
+function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveAgentNode, fitSignal, typeFilter, rankdir, showGrid,
   hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes,
-  collapsedGroups, onToggleGroup }) {
+  collapsedGroups, onToggleGroup, showToast }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -225,7 +234,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
         id: n.id, type: "acm", position,
         selected: selection?.kind === "node" && selection.id === n.id,
         data: {
-          node: n, isH, dimmed: filtered || faded,
+          node: n, isH, dimmed: filtered || faded, agentPreview: !!n.__agentPreview,
           related: focus ? focus.nodes.has(n.id) && selection.id !== n.id : false,
           hasChildren: hasChildren?.has(n.id) || false,
           collapsed: collapsed?.has(n.id) || false,
@@ -250,7 +259,8 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     .map((e) => {
     const rm = RELATION_META[e.type] || { c: "#94a3b8", label: e.type };
     const sel = selection?.kind === "edge" && selection.id === e.id;
-    const sug = e.status === "suggested";
+    const preview = !!e.__agentPreview;
+    const sug = e.status === "suggested" || preview;
     const onPath = focus ? focus.edges.has(e.id) : null;
     const faded = (focus && !onPath) || (!focus && typeFilter != null);
     const strong = sel || onPath;
@@ -262,9 +272,9 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     return {
       id: e.id, source: e.from, target: e.to, type,
       data: route ? { points: route } : undefined,
-      label: faded ? undefined : rm.label, selected: sel, animated: sug && !faded,
+      label: faded ? undefined : (preview ? `${rm.label} · AI建议` : rm.label), selected: sel, animated: sug && !faded,
       markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: rm.c },
-      style: { stroke: rm.c, strokeWidth: strong ? 2.6 : 1.4, strokeDasharray: sug ? "6 4" : undefined, opacity: faded ? 0.08 : 0.9 },
+      style: { stroke: preview ? "#8b5cf6" : rm.c, strokeWidth: strong ? 2.6 : preview ? 1.8 : 1.4, strokeDasharray: sug ? "6 4" : undefined, opacity: faded ? 0.08 : preview ? 0.78 : 0.9 },
       labelStyle: { fontSize: 10, fontWeight: 600, fill: rm.c },
       labelBgStyle: { fill: "#fff", fillOpacity: 0.9 }, labelBgPadding: [4, 2], labelBgBorderRadius: 4,
       zIndex: strong ? 10 : 0,
@@ -283,8 +293,9 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     let x = node.position.x, y = node.position.y;
     const box = node.parentId && groupBoxes ? groupBoxes[node.parentId] : null;
     if (box) { x += box.x; y += box.y; }
-    onMoveNode(node.id, Math.round(x), Math.round(y));
-  }, [onMoveNode, groupBoxes]);
+    if (node.data?.agentPreview) onMoveAgentNode?.(node.id, Math.round(x), Math.round(y));
+    else onMoveNode(node.id, Math.round(x), Math.round(y));
+  }, [onMoveNode, onMoveAgentNode, groupBoxes]);
   const onNodeClick = useCallback((_, node) => onSelect({ kind: "node", id: node.id }), [onSelect]);
   const onEdgeClick = useCallback((_, edge) => onSelect({ kind: "edge", id: edge.id }), [onSelect]);
   const onPaneClick = useCallback(() => onSelect(null), [onSelect]);
@@ -294,9 +305,13 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
 
   // ---- export the whole graph (not just the visible part) to PNG / SVG ----
   const exportImage = useCallback(async (fmt) => {
+    const label = fmt.toUpperCase();
     const viewportEl = wrapRef.current?.querySelector(".react-flow__viewport");
     const all = rf.getNodes();
-    if (!viewportEl || !all.length) return;
+    if (!viewportEl || !all.length) {
+      showToast?.("当前没有可下载的图谱内容");
+      return;
+    }
     const bounds = getNodesBounds(all);
     const pad = 80;
     const w = Math.ceil(bounds.width) + pad * 2;
@@ -313,11 +328,16 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
       filter: (el) => !el?.classList || !(el.classList.contains("react-flow__minimap") || el.classList.contains("react-flow__controls") || el.classList.contains("react-flow__panel")),
     };
     const safe = (doc.meta?.title || "context-map").replace(/[\\/:*?"<>|]/g, "_");
+    const fileName = `${safe}.${fmt}`;
     try {
-      if (fmt === "svg") download(await toSvg(viewportEl, opts), safe + ".svg");
-      else download(await toPng(viewportEl, opts), safe + ".png");
+      showToast?.(`正在生成 ${label} 下载…`);
+      if (fmt === "svg") download(await toSvg(viewportEl, opts), fileName);
+      else download(await toPng(viewportEl, opts), fileName);
+      showToast?.(`已开始下载 ${label}：${fileName}`);
+    } catch (e) {
+      showToast?.(`${label} 下载失败：${e?.message || e}`);
     } finally { setExporting(false); }
-  }, [rf, doc.meta]);
+  }, [rf, doc.meta, showToast]);
 
   const pillBtn = {
     border: "1px solid #e3e6eb", background: "#fff", borderRadius: 8, padding: "5px 10px",
@@ -339,7 +359,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
         {showGrid !== false && <Background gap={22} size={1} color="#e9ecf1" />}
         <Controls showInteractive={false} />
         <MiniMap pannable zoomable nodeStrokeWidth={2} maskColor="rgba(247,248,250,.7)"
-          nodeColor={(nd) => NODE_TYPE_META[nd.data?.node?.type]?.c || "#cbd5e1"} />
+          nodeColor={(nd) => nd.data?.agentPreview ? "#8b5cf6" : NODE_TYPE_META[nd.data?.node?.type]?.c || "#cbd5e1"} />
         <Panel position="top-right" style={{ display: "flex", gap: 6 }}>
           {engine !== "elk" && (
             <button style={pillBtn} title="切换连线样式：曲线（默认，自动分散避免重叠）/ 直角"

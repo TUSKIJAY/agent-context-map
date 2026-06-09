@@ -5,7 +5,7 @@ import {
   NODE_TYPES, NODE_TYPE_META, NODE_STATUSES, STATUS_META,
   RELATION_TYPES, RELATION_META, PRIORITIES,
   validateDoc, diffDoc, diffCount, buildChangeSet,
-  DOMAIN_PROFILES, DOMAIN_PROFILE_META, typeLabel,
+  DOMAIN_PROFILES, DOMAIN_PROFILE_META, typeLabel, agentPatchStats,
 } from "./data.js";
 
 // ---------- small controls ----------
@@ -185,10 +185,11 @@ export const ghostBtn = { border: "1px solid #e3e6ec", background: "#fff", borde
   fontSize: 12.5, color: "#344054", cursor: "pointer", fontFamily: "inherit", fontWeight: 500 };
 
 // ---------- Inspector ----------
-export function Inspector({ doc, selection, patchNode, patchEdge, deleteNode, deleteEdge, confirmEdge }) {
+export function Inspector({ doc, selection, patchNode, patchEdge, deleteNode, deleteEdge, confirmEdge, pendingAgentPatch, onAgentAction, onAcceptAgentAll, onRejectAgentAll }) {
   if (!selection) {
     return <Empty glyph="◎" title="未选择对象" sub="点击画布中的节点或关系线查看并编辑属性；从节点右侧圆点拖出可创建关系。" />;
   }
+  const pendingStats = agentPatchStats(pendingAgentPatch, "pending");
   if (selection.kind === "node") {
     const n = doc.nodes.find((x) => x.id === selection.id);
     if (!n) return null;
@@ -196,6 +197,7 @@ export function Inspector({ doc, selection, patchNode, patchEdge, deleteNode, de
     return (
       <div style={panelBody}>
         <HeaderRow color={meta.c} glyph={meta.glyph} kind={typeLabel(n.type)} id={n.id} onDelete={() => deleteNode(n.id)} />
+        <AgentQuickActions pendingStats={pendingStats} onAction={onAgentAction} onAcceptAll={onAcceptAgentAll} onRejectAll={onRejectAgentAll} />
         <Field label="标题"><TextInput value={n.title} onChange={(e) => patchNode(n.id, { title: e.target.value })} /></Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Field label="类型"><Select value={n.type} onChange={(v) => patchNode(n.id, { type: v })}
@@ -257,6 +259,229 @@ export function Inspector({ doc, selection, patchNode, patchEdge, deleteNode, de
       <StatusSuggestion conf={e.confidence} status={e.status} onApply={(s) => patchEdge(e.id, { status: s })} />
       <Field label="原因 reason" hint="删除或关键修改时建议填写"><TextArea value={e.reason || ""} onChange={(ev) => patchEdge(e.id, { reason: ev.target.value })} placeholder="为什么存在这条关系…" style={{ minHeight: 44 }} /></Field>
       <MetaCell label="来源" value={e.source || "—"} />
+    </div>
+  );
+}
+
+function AgentQuickActions({ pendingStats, onAction, onAcceptAll, onRejectAll }) {
+  const hasPending = pendingStats.total > 0;
+  if (!onAction) return null;
+  return (
+    <div style={{ border: "1px solid #ebe7ff", background: "#fbfaff", borderRadius: 8, padding: 9, marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 7 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#6d28d9", letterSpacing: ".04em" }}>AGENT 动作</div>
+        <span style={{ flex: 1 }} />
+        {hasPending && <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "#6d28d9" }}>待确认 {pendingStats.total}</span>}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <button onClick={() => onAction("expand")} style={{ ...miniAgentBtn }}>展开此节点</button>
+        <button onClick={() => onAction("plan")} style={{ ...miniAgentBtn }}>生成方案</button>
+        <button onClick={() => onAction("rerun")} style={{ ...miniAgentBtn }}>重新推理</button>
+        <button onClick={onAcceptAll} disabled={!hasPending} style={{ ...miniAgentBtn, borderColor: hasPending ? "#8b5cf6" : "#e3e6ec", color: hasPending ? "#6d28d9" : "#cbd2dc" }}>采纳建议</button>
+        <button onClick={onRejectAll} disabled={!hasPending} style={{ ...miniAgentBtn, color: hasPending ? "#dc2626" : "#cbd2dc" }}>拒绝</button>
+      </div>
+    </div>
+  );
+}
+const miniAgentBtn = { ...ghostBtn, padding: "5px 8px", fontSize: 11.5, borderRadius: 7, lineHeight: 1.2 };
+
+// ---------- Agent panel ----------
+export function AgentPanel({ doc, selection, pendingAgentPatch, messages, input, onInput, onSubmit, onAgentAction, onOpenSuggestions, busy = false, source = "idle", error = "" }) {
+  const selected = selection?.kind === "node" ? doc.nodes.find((n) => n.id === selection.id) : null;
+  const stats = agentPatchStats(pendingAgentPatch, "pending");
+  const hasPending = stats.total > 0;
+  const promptChips = ["新增批量导入需求文档", "补充风险和待确认项", "把此节点拆成子模块"];
+  const statusText = busy ? "agy 同步中" : source === "agy_sdk" ? "agy SDK" : source === "agent_mock" ? "mock fallback" : "待连接";
+  return (
+    <div style={{ ...panelBody, position: "absolute", inset: 0, height: "auto", display: "flex", flexDirection: "column", background: "#fff", overflow: "hidden" }}>
+      <section style={{ flex: "0 0 auto", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+          <SectionTitle>当前上下文</SectionTitle>
+          <span style={{ flex: 1 }} />
+          <span title={error || statusText} style={{ fontSize: 10.5, fontFamily: "var(--mono)", color: source === "agent_mock" ? "#d97706" : busy ? "#2563eb" : source === "agy_sdk" ? "#16a34a" : "#98a2b3",
+            border: "1px solid #eef0f3", borderRadius: 999, padding: "1px 7px", background: "#fff" }}>{statusText}</span>
+        </div>
+        {selected ? <NodeContextCard node={selected} /> : (
+          <div style={{ fontSize: 12, color: "#98a2b3", border: "1px solid #eef0f3", borderRadius: 9, padding: 10 }}>未选中节点。Agent 将基于当前图谱整体生成建议。</div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
+          <button disabled={busy} onClick={() => onAgentAction("expand")} style={{ ...compactActionBtn, color: busy ? "#cbd2dc" : compactActionBtn.color }}>展开</button>
+          <button disabled={busy} onClick={() => onAgentAction("plan")} style={{ ...compactActionBtn, color: busy ? "#cbd2dc" : compactActionBtn.color }}>方案</button>
+          <button disabled={busy} onClick={() => onAgentAction("rerun")} style={{ ...compactActionBtn, color: busy ? "#cbd2dc" : compactActionBtn.color }}>重推理</button>
+        </div>
+        {error && <div style={{ fontSize: 11, color: "#b45309", background: "#fffaf0", border: "1px solid #fbe8c8", borderRadius: 8, padding: "7px 9px", marginTop: 8, lineHeight: 1.45 }}>
+          agy 暂不可用，当前建议来自 mock fallback。{error}
+        </div>}
+      </section>
+
+      {hasPending && (
+        <section style={{ flex: "0 0 auto", border: "1px solid #e8e5ff", background: "#fbfaff", borderRadius: 8, padding: "9px 10px", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#5b21b6", flex: 1 }}>本轮建议</div>
+            <Chip color="#8b5cf6">+{stats.nodes} 节点</Chip>
+            <Chip color="#2563eb">+{stats.edges} 关系</Chip>
+          </div>
+          <div style={{ fontSize: 11.5, color: "#6b7280", marginTop: 7, lineHeight: 1.45 }}>{pendingAgentPatch.summary}</div>
+          <button onClick={onOpenSuggestions} style={{ ...ghostBtn, width: "100%", marginTop: 8, padding: "6px 9px", fontSize: 11.5, borderColor: "#ddd6fe", color: "#6d28d9", fontWeight: 700 }}>查看并处理建议变更</button>
+        </section>
+      )}
+
+      <section style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", marginBottom: 12 }}>
+        <SectionTitle>对话</SectionTitle>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "grid", gap: 8, alignContent: "start",
+          padding: 10, border: "1px solid #eef0f6", background: "#fcfcff", borderRadius: 10 }}>
+          {messages.map((m) => <ChatBubble key={m.id} role={m.role} text={m.text} time={m.time} />)}
+        </div>
+      </section>
+
+      {!hasPending && (
+        <div style={{ flex: "0 0 auto", display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+          {promptChips.map((p) => (
+            <button key={p} type="button" onClick={() => onInput(p)}
+              disabled={busy}
+              style={{ border: "1px solid #ebe7ff", background: "#fbfaff", color: "#6d28d9", borderRadius: 999,
+                padding: "4px 9px", fontSize: 11.5, fontFamily: "inherit", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{p}</button>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} style={{ flex: "0 0 auto", display: "flex", gap: 7, paddingTop: 10, paddingRight: 48, borderTop: "1px solid #f0f1f4" }}>
+        <TextInput value={input} disabled={busy} onChange={(e) => onInput(e.target.value)} placeholder={busy ? "正在请求 agy…" : "给 Agent 发送消息…"} style={{ flex: 1, minHeight: 38 }} />
+        <button type="submit" disabled={busy} style={{ flex: "0 0 48px", border: "1px solid " + (busy ? "#e3e6ec" : "#7c3aed"), background: "#fff", color: busy ? "#cbd2dc" : "#6d28d9",
+          borderRadius: 9, fontSize: 12.5, fontWeight: 800, cursor: busy ? "default" : "pointer", fontFamily: "inherit" }}>{busy ? "…" : "发送"}</button>
+      </form>
+    </div>
+  );
+}
+const compactActionBtn = { ...ghostBtn, padding: "6px 8px", fontSize: 11.5, borderRadius: 8, fontWeight: 700 };
+
+function SectionTitle({ children }) {
+  return <div style={{ fontSize: 10.5, fontWeight: 700, color: "#98a2b3", letterSpacing: ".06em", marginBottom: 8 }}>{children}</div>;
+}
+
+function NodeContextCard({ node }) {
+  const meta = NODE_TYPE_META[node.type];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 9, border: "1px solid #e7e9ee", borderRadius: 9, padding: "9px 10px", background: "#fff" }}>
+      <span style={{ width: 26, height: 26, borderRadius: 7, display: "grid", placeItems: "center", background: `color-mix(in oklch, ${meta.c} 12%, white)`, color: meta.c, fontFamily: "var(--mono)", flex: "0 0 26px" }}>{meta.glyph}</span>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: "#1d2433", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{node.title}</div>
+        <div style={{ fontSize: 10.5, color: "#98a2b3", marginTop: 3 }}>{typeLabel(node.type)} · {node.type} · {STATUS_META[node.status]?.label}</div>
+      </div>
+    </div>
+  );
+}
+
+function ChatBubble({ role, text, time }) {
+  const user = role === "user";
+  return (
+    <div style={{ justifySelf: user ? "end" : "start", maxWidth: "92%", background: user ? "#eaf2ff" : "#f3f0ff",
+      border: "1px solid " + (user ? "#d7e6ff" : "#e4dcff"), borderRadius: 10, padding: "8px 10px" }}>
+      <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: user ? "#2563eb" : "#6d28d9" }}>{user ? "你" : "Agent"}</span>
+        <span style={{ fontSize: 10, color: "#98a2b3", fontFamily: "var(--mono)" }}>{time}</span>
+      </div>
+      <div style={{ fontSize: 12.2, color: "#344054", lineHeight: 1.5, textWrap: "pretty" }}>{text}</div>
+    </div>
+  );
+}
+
+// ---------- Suggested changes panel ----------
+export function SuggestionsPanel({ doc, pendingAgentPatch, onAcceptOp, onRejectOp, onAcceptAll, onRejectAll, onUpdateOp, nameOf, onGoTo }) {
+  if (!pendingAgentPatch) return <Empty glyph="✦" title="暂无 Agent 建议" sub="在 Agent tab 中发送需求，agy 会返回 pending graph patch；不可用时走 mock fallback。未采纳前不会写入正式图谱。" />;
+  const pending = agentPatchStats(pendingAgentPatch, "pending");
+  const all = agentPatchStats(pendingAgentPatch, "all");
+  const ops = pendingAgentPatch.operations || [];
+  return (
+    <div style={panelBody}>
+      <div style={{ border: "1px solid #e8e5ff", background: "linear-gradient(135deg,#fbfaff,#ffffff)", borderRadius: 10, padding: 11, marginBottom: 12 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: "#6d28d9", letterSpacing: ".05em", marginBottom: 5 }}>PENDING GRAPH PATCH</div>
+        <div style={{ fontSize: 12.5, color: "#312e81", lineHeight: 1.5 }}>{pendingAgentPatch.summary}</div>
+        <div style={{ fontSize: 10.5, color: pendingAgentPatch.source === "agy_sdk" ? "#16a34a" : "#d97706", marginTop: 6, fontFamily: "var(--mono)" }}>
+          source: {pendingAgentPatch.source}{pendingAgentPatch.fallbackReason ? ` · ${pendingAgentPatch.fallbackReason}` : ""}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 10 }}>
+          <StatPill c="#16a34a" label="节点" n={`+${pending.nodes}`} />
+          <StatPill c="#2563eb" label="关系" n={`+${pending.edges}`} />
+          <StatPill c="#d97706" label="待确认" n={pending.questions} />
+        </div>
+        <div style={{ display: "flex", gap: 7, marginTop: 10 }}>
+          <button onClick={onAcceptAll} disabled={!pending.total} style={{ ...ghostBtn, flex: 1, borderColor: pending.total ? "#8b5cf6" : "#e3e6ec", color: pending.total ? "#6d28d9" : "#cbd2dc", fontWeight: 700 }}>全部采纳</button>
+          <button onClick={onRejectAll} disabled={!pending.total} style={{ ...ghostBtn, flex: 1, color: pending.total ? "#dc2626" : "#cbd2dc" }}>全部拒绝</button>
+        </div>
+        <div style={{ fontSize: 10.5, color: "#98a2b3", marginTop: 8, fontFamily: "var(--mono)" }}>{pendingAgentPatch.id} · {all.total} ops</div>
+      </div>
+
+      <div style={{ display: "grid", gap: 8 }}>
+        {ops.map((op) => (
+          <OperationCard key={op.id} op={op} doc={doc} nameOf={nameOf} onAccept={() => onAcceptOp(op.id)}
+            onReject={() => onRejectOp(op.id)} onUpdate={(updater) => onUpdateOp(op.id, updater)} onGoTo={onGoTo} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OperationCard({ op, doc, nameOf, onAccept, onReject, onUpdate, onGoTo }) {
+  const pending = op.status === "pending";
+  const c = op.op === "add_node" ? "#16a34a" : op.op === "add_edge" ? "#2563eb" : "#d97706";
+  const typeText = op.op === "add_node" ? "新增节点" : op.op === "add_edge" ? "新增关系" : "修改节点";
+  const targetId = op.node?.id || op.edge?.id || op.nodeId;
+  return (
+    <div style={{ border: `1px solid ${pending ? "#e7e9ee" : "#eef0f3"}`, background: pending ? "#fff" : "#fafbfc", borderRadius: 9, padding: 10, opacity: pending ? 1 : 0.62 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+        <span style={{ width: 18, height: 18, borderRadius: 6, background: `color-mix(in oklch, ${c} 12%, white)`, color: c, display: "grid", placeItems: "center", fontSize: 11, fontFamily: "var(--mono)", fontWeight: 700 }}>{op.op === "add_edge" ? "→" : "+"}</span>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: "#344054", flex: 1 }}>{typeText}</span>
+        <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: pending ? c : "#98a2b3" }}>{op.status}</span>
+      </div>
+      {op.op === "add_node" && <NodeOpEditor op={op} onUpdate={onUpdate} />}
+      {op.op === "add_edge" && <EdgeOpEditor op={op} doc={doc} nameOf={nameOf} onUpdate={onUpdate} />}
+      {op.op === "update_node" && <UpdateOpEditor op={op} nameOf={nameOf} onUpdate={onUpdate} />}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
+        <button onClick={() => targetId && onGoTo(targetId)} disabled={!targetId} style={{ ...ghostBtn, padding: "4px 8px", fontSize: 11 }}>定位</button>
+        <span style={{ flex: 1, fontSize: 9.5, color: "#cbd2dc", fontFamily: "var(--mono)", overflow: "hidden", textOverflow: "ellipsis" }}>{op.id}</span>
+        <button onClick={onAccept} disabled={!pending} style={{ ...ghostBtn, padding: "4px 8px", fontSize: 11, color: pending ? "#16a34a" : "#cbd2dc" }}>采纳</button>
+        <button onClick={onReject} disabled={!pending} style={{ ...ghostBtn, padding: "4px 8px", fontSize: 11, color: pending ? "#dc2626" : "#cbd2dc" }}>拒绝</button>
+      </div>
+    </div>
+  );
+}
+
+function NodeOpEditor({ op, onUpdate }) {
+  const n = op.node;
+  return (
+    <div style={{ display: "grid", gap: 7 }}>
+      <TextInput value={n.title || ""} disabled={op.status !== "pending"} onChange={(e) => onUpdate((cur) => ({ node: { ...cur.node, title: e.target.value } }))} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+        <Select value={n.type} onChange={(v) => onUpdate((cur) => ({ node: { ...cur.node, type: v } }))} options={NODE_TYPES} render={(o) => typeLabel(o)} />
+        <Select value={n.status} onChange={(v) => onUpdate((cur) => ({ node: { ...cur.node, status: v } }))} options={NODE_STATUSES} render={(o) => STATUS_META[o].label} />
+      </div>
+      <div style={{ fontSize: 11.5, color: "#667085", lineHeight: 1.45 }}>{n.description || "—"}</div>
+    </div>
+  );
+}
+
+function EdgeOpEditor({ op, nameOf, onUpdate }) {
+  const e = op.edge;
+  return (
+    <div style={{ display: "grid", gap: 7 }}>
+      <div style={{ fontSize: 12, color: "#344054", lineHeight: 1.45 }}>{nameOf(e.from)} <span style={{ color: RELATION_META[e.type]?.c }}>→</span> {nameOf(e.to)}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+        <Select value={e.type} onChange={(v) => onUpdate((cur) => ({ edge: { ...cur.edge, type: v } }))} options={RELATION_TYPES} render={(o) => RELATION_META[o].label} />
+        <Select value={e.status} onChange={(v) => onUpdate((cur) => ({ edge: { ...cur.edge, status: v } }))} options={NODE_STATUSES} render={(o) => STATUS_META[o].label} />
+      </div>
+      {e.reason && <div style={{ fontSize: 11.5, color: "#667085", lineHeight: 1.45 }}>{e.reason}</div>}
+    </div>
+  );
+}
+
+function UpdateOpEditor({ op, nameOf, onUpdate }) {
+  return (
+    <div style={{ display: "grid", gap: 7 }}>
+      <div style={{ fontSize: 12, color: "#344054" }}>修改「{nameOf(op.nodeId)}」</div>
+      <TextArea value={JSON.stringify(op.patch || {}, null, 2)} onChange={(e) => {
+        try { onUpdate({ patch: JSON.parse(e.target.value || "{}") }); } catch {}
+      }} style={{ minHeight: 70, fontFamily: "var(--mono)", fontSize: 11 }} />
     </div>
   );
 }

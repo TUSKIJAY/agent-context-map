@@ -3,8 +3,163 @@
 > 面向后续 Agent / 新 session 的接手说明。配合 `AGENTS.md`（操作约束）与 `PROJECT_MAP.md`（文件职责）一起读。
 > 本文件**被 git 跟踪**；它引用的 `doc/` 下计划文档则**已被 gitignore，仅本地存在**（见下）。
 
-更新日期：2026-06-05
-当前焦点：**复杂图谱可读性优化**（让复杂项目的图谱不再"难看"）
+更新日期：2026-06-09
+当前焦点：**Agent 协作编辑 / Co-edit Mode 已完成前端 mock，下一步对接 agy SDK**
+
+---
+
+## 0. 2026-06-09 最新接手重点：对接 agy SDK
+
+本轮在分支 `codex/agy_agent` 上完成了 Agent 协作编辑前端原型，当前源码改动尚未提交：
+
+```text
+M src/App.jsx
+M src/acm/FlowCanvas.jsx
+M src/acm/Panels.jsx
+M src/acm/data.js
+```
+
+已完成能力：
+
+- 顶部新增 `Agent 协作` 主按钮，右侧状态显示 `待确认 N` / `本轮建议 +N 节点 +M 关系`。
+- 右侧面板切为 `Inspector / Agent / 建议变更 / 校验`。
+- `Agent` tab 支持当前节点上下文、紧凑聊天、prompt chips、快捷动作（展开 / 方案 / 重推理）。
+- `建议变更` tab 展示 pending graph patch，支持逐项采纳 / 拒绝 / 全部采纳 / 全部拒绝，并可校正建议节点和建议关系字段。
+- 画布渲染 AI 建议层：建议节点虚线紫色边框 + `AI 建议` badge，建议关系虚线；未采纳前不写入正式 `doc`。
+- 采纳后才写入 `doc.nodes` / `doc.edges`，继续复用现有 `validateDoc` / `diffDoc` / export 流程。
+
+关键验证：
+
+- `npm run build` 已多次通过（最近一次在 2026-06-09，对应修复右侧 Agent 输入栏贴底问题）。
+- 已用 Python Playwright 检查 `http://127.0.0.1:5173/`：Agent tab 输入框已贴右侧面板底部，控制台无 error/warn。
+- 5173 当前被 Vite 监听，进程命令行为：
+
+```text
+node ...\node_modules\.bin\..\vite\bin\vite.js --host 127.0.0.1 --port 5173
+```
+
+### 当前 mock / agy 替换入口
+
+最重要入口：
+
+```text
+src/App.jsx
+  runMockAgent(text)
+```
+
+当前 `runMockAgent()` 做三件事：
+
+1. 取当前选中节点作为 `baseNodeId`。
+2. 调用 `createMockAgentPatch(doc, baseNodeId, prompt)` 生成本地 mock patch。
+3. `setPendingAgentPatch(patch)`，让画布和右侧面板显示 pending 建议。
+
+对接 agy SDK 时，建议不要把 SDK 调用散落在 `App.jsx`。推荐新增一个轻薄适配层：
+
+```text
+src/acm/agentClient.js
+```
+
+建议接口：
+
+```js
+export async function requestAgentPatch({ doc, baseNodeId, prompt, selection }) {
+  // v1: call agy sidecar / MCP / SDK
+  // return pendingAgentPatch shape
+}
+```
+
+然后把 `src/App.jsx` 的 `runMockAgent()` 中：
+
+```js
+const patch = createMockAgentPatch(doc, baseNodeId, prompt);
+```
+
+替换成：
+
+```js
+const patch = await requestAgentPatch({ doc, baseNodeId, prompt, selection });
+```
+
+### pendingAgentPatch 数据契约
+
+当前纯函数入口都在 `src/acm/data.js`：
+
+```text
+createMockAgentPatch(doc, baseNodeId, prompt)
+previewAgentPatchDoc(doc, patch)
+agentPatchStats(patch, status)
+updateAgentPatchOperation(patch, opId, updater)
+applyAgentPatchOperations(doc, patch, operationIds)
+rejectAgentPatchOperations(patch, operationIds)
+markAgentPatchOperations(patch, operationIds, status)
+```
+
+agy SDK 返回值应尽量保持这个结构：
+
+```js
+pendingAgentPatch = {
+  id,
+  createdAt,
+  source: "agy_sdk",
+  prompt,
+  summary,
+  baseNodeId,
+  operations: [
+    { id, op: "add_node", status: "pending", node: {...} },
+    { id, op: "add_edge", status: "pending", edge: {...} },
+    { id, op: "update_node", status: "pending", nodeId, patch: {...} }
+  ]
+}
+```
+
+协议边界必须继续遵守：
+
+- pending patch 是 view state，不写入正式 ACM-MD。
+- 未采纳建议不能进入保存 / 导出 / Agent Diff。
+- 采纳后节点/边可以写入正式 `doc`，但推断内容默认 `status: "suggested"`。
+- 需要人工判断的内容用 `status: "needs_validation"`。
+- 不要把 AI 建议直接标成 `confirmed`。
+- 不要改 `ACM-MD v0.1` 核心契约，除非同步更新 `doc/03-ACM-MD格式规范指导文件.md`。
+
+### 下一步建议
+
+1. 先阅读 `AGENTS.md` / `PROJECT_MAP.md` / 本 `HANDOFF.md`。
+2. 跑 Git 外置检查：
+
+```powershell
+git rev-parse --show-toplevel
+git rev-parse --git-dir
+git status --short --branch
+```
+
+期望 `git-dir` 仍是：
+
+```text
+D:/git-stores/stargate/LLM_project_agent思维导图.git
+```
+
+3. 阅读以下源码入口：
+
+```text
+src/App.jsx            # runMockAgent / pendingAgentPatch 状态 / 右侧 tab 接入
+src/acm/data.js        # pending patch 纯函数与 mock 结构
+src/acm/Panels.jsx     # AgentPanel / SuggestionsPanel / Inspector 快捷动作
+src/acm/FlowCanvas.jsx # AI 建议层视觉渲染
+```
+
+4. 新增 `src/acm/agentClient.js`，将 agy SDK 适配成 `pendingAgentPatch`。
+5. 修改 `runMockAgent()` 为 async，加入 loading/error 状态；失败时保留 mock fallback 或 toast 提示。
+6. 修改源码后必须运行：
+
+```powershell
+npm run build
+```
+
+7. 若继续验证 UI，使用当前 Vite dev 地址：
+
+```text
+http://127.0.0.1:5173/
+```
 
 ---
 
