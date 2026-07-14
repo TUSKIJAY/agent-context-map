@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "agent-context-map-phase5-widget-gate/v1",
+  "capturedAt": "2026-07-14",
+  "runtime": {
+    "codexCliVersion": "0.144.2",
+    "pluginVersion": "0.2.0",
+    "widgetProtocol": "MCP Apps ui/* JSON-RPC over postMessage",
+    "widgetBundleBytes": 2087825,
+    "widgetBundleSha256": "ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527",
+    "mcpReleaseSha256": "a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4"
+  },
+  "codexProductReplay": {
+    "installation": "temporary local canary marketplace and product plugin bundle; removed after validation",
+    "nonGitWorkspace": "fail_closed_no_trusted_workspace",
+    "trustedGitWorkspaceDocumentCount": 1,
+    "uiResourceAdvertised": "ui://agent-context-map/widget.html",
+    "toolSuccessReportedReady": false,
+    "awaitWithoutMountedWidgetReportedReady": false,
+    "rawTaskIdsRetained": false,
+    "rawWorkspacePathsRetained": false
+  },
+  "standardHostBrowserReplay": {
+    "browser": "Playwright Chromium",
+    "protocolSequence": [
+      "ui/initialize",
+      "ui/notifications/initialized",
+      "ui/notifications/tool-result",
+      "tools/call:agent_context_map_widget_bootstrap",
+      "tools/call:agent_context_map_widget_ready"
+    ],
+    "renderedDocumentId": "acm_phase5_browser_001",
+    "renderedNodeCount": 2,
+    "renderedEdgeCount": 1,
+    "titleEditObserved": true,
+    "readyProof": {
+      "reactMounted": true,
+      "projectHydrated": true,
+      "canvasFirstFrame": true
+    },
+    "consoleErrors": 0,
+    "localStorageItems": 0,
+    "remoteNetworkCapabilities": false,
+    "screenshot": "output/playwright/phase5-widget/phase5-widget-ready.png"
+  },
+  "projectAcmSha256Unchanged": "92c9d452199495c6d3f76e5bbeb47e6bfc6b494ed90ce08ba88df46d65650eb2",
+  "gate": "pass"
+}

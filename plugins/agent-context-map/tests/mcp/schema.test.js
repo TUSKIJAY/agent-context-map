@@ -19,13 +19,18 @@ describe("Phase 4 MCP schema", () => {
   });
 
   test("publishes strict input/output schemas and truthful read-only annotations", () => {
-    expect(MCP_TOOLS.map((tool) => tool.name)).toEqual(["agent_context_map_health", "validate_acm_graph"]);
+    expect(MCP_TOOLS.map((tool) => tool.name)).toEqual([
+      "agent_context_map_health", "validate_acm_graph", "open_agent_context_map", "await_agent_context_map_ready",
+      "agent_context_map_widget_bootstrap", "agent_context_map_widget_ready", "agent_context_map_widget_commit", "agent_context_map_widget_send",
+    ]);
     for (const tool of MCP_TOOLS) {
       expect(tool.inputSchema.additionalProperties, tool.name).toBe(false);
       expect(tool.outputSchema.additionalProperties, tool.name).toBe(false);
-      expect(tool.annotations, tool.name).toEqual({ readOnlyHint: true, destructiveHint: false, openWorldHint: false, idempotentHint: true });
+      expect(tool.annotations.openWorldHint, tool.name).toBe(false);
     }
     expect(MCP_TOOLS[1].inputSchema.required).toEqual(["acmMdText"]);
+    expect(MCP_TOOLS[2]._meta.ui).toEqual({ resourceUri: "ui://agent-context-map/widget.html", visibility: ["model", "app"] });
+    for (const tool of MCP_TOOLS.slice(4)) expect(tool._meta.ui.visibility).toEqual(["app"]);
   });
 
   test("advertises tools and resources over the initialized stdio protocol", async () => {

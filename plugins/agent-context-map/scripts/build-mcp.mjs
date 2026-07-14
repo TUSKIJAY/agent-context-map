@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "vite";
+import { buildWidget } from "./build-widget.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 export const pluginRoot = path.resolve(scriptDirectory, "..");
@@ -13,12 +14,13 @@ export const defaultReleaseRoot = path.join(workspaceRoot, "dist", "agent-contex
 const entry = path.join(pluginRoot, "mcp", "src", "server.js");
 const sourceSkill = path.join(workspaceRoot, "skills", "acm-md");
 
-async function bundleServer(targetRoot) {
+async function bundleServer(targetRoot, widgetHtml) {
   const mcpDirectory = path.join(targetRoot, "mcp");
   await fs.mkdir(mcpDirectory, { recursive: true });
   await build({
     configFile: false,
     logLevel: "silent",
+    define: { "globalThis.__ACM_WIDGET_HTML__": JSON.stringify(widgetHtml) },
     build: {
       target: "node20",
       emptyOutDir: false,
@@ -79,13 +81,14 @@ async function writeReleaseManifest(releaseRoot) {
 export async function buildMcp({ releaseRoot = defaultReleaseRoot, writeDevelopmentBundle = true } = {}) {
   const resolvedRelease = path.resolve(releaseRoot);
   if (resolvedRelease === path.parse(resolvedRelease).root) throw new Error("Refusing to use a filesystem root as release output");
+  const widget = await buildWidget();
   if (writeDevelopmentBundle) {
-    await bundleServer(pluginRoot);
+    await bundleServer(pluginRoot, widget.html);
     await copySkill(pluginRoot);
   }
   await fs.rm(resolvedRelease, { recursive: true, force: true });
   await copyPluginMetadata(resolvedRelease);
-  await bundleServer(resolvedRelease);
+  await bundleServer(resolvedRelease, widget.html);
   await copySkill(resolvedRelease);
   const manifest = await writeReleaseManifest(resolvedRelease);
   return { releaseRoot: resolvedRelease, files: manifest.files };

@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；尚未设置 upstream
-- 当前 HEAD：Phase 4 scoped commit；接手时以 `git log -1 --oneline` 实测；push 未获授权
+- 当前 HEAD：Phase 5 scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测；push 未获授权
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 4 complete；下一 Gate 为 Phase 5 原生 Widget、生命周期和 editor 复用
+- 当前 Phase：Phase 5 complete；下一 Gate 为 Phase 6 完整 MCP 工具、pending 写入与发送语义
 
 ## Navigation
 
@@ -25,8 +25,8 @@
 
 ## In Progress
 
-- Phase 5 待开始：把 Phase 3 `acm-editor` 接入 Phase 4 MCP Apps resource，建立 Widget bridge、hydrate、ready proof、rebind 和 supersede 生命周期。
-- Phase 5 必须保持 CSP/资产全本地，Widget 不得自建业务真源、直接访问 localhost 或把 tool success 当成 ready。
+- Phase 6 待开始：补齐 get/validate/write/import/export、proposal store、app-only commit、三种 context builder 和 click-gated send。
+- Phase 6 必须保持模型写入只生成 pending proposal；app-only commit 在锁内复核 revision；server 重建 send payload/digest，并拒绝 stale task/instance/revision、legacy operation 和 prompt injection。
 
 ## Blocked
 
@@ -36,6 +36,9 @@
 
 ## Completed
 
+- [x] 2026-07-14 — Phase 5：构建 self-contained MCP Apps Widget，复用 `acm-editor`；标准 `ui/*` bridge、兼容 fallback、ephemeral working copy、openAttempt/widgetInstance/rebind/supersede 和 React/项目/画布首帧 ready proof 落位。
+- [x] 2026-07-14 — Phase 5 真实 Gate：Playwright 标准宿主渲染 2 nodes/1 edge 并完成编辑，console/localStorage 均为零；产品 Codex 临时 canary 证明 open success 不等于 ready、无 Widget 时 await 保持 false，测试 `.acm` hash 不变。
+- [x] 2026-07-14 — Phase 5 Gate：Widget 3、lifecycle 1、rebind 2、bundle policy 1、distribution 3、全仓 29 files / 88 tests；Widget SHA-256 `ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527`，MCP Release 可复现 SHA-256 `a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4`；Vite、Tauri executable/MSI/NSIS、plugin validator、harness 与 diff check 通过。
 - [x] 2026-07-14 — Phase 4：以标准 `.codex-plugin/plugin.json`、`.mcp.json` 和自包含 `mcp/server.mjs` 建立正式 local-only 插件包；发布包包含构建复制的 `acm-md` skill 和 MCP Apps UI resource 占位。
 - [x] 2026-07-14 — Phase 4 安全边界：只接受 host-owned task/workspace 元数据与 MCP roots 的单根交集；伪造 identity 参数、缺失/多 root、旧 task rebind、traversal、absolute path、symlink/junction 和 Windows 保留设备名全部 fail closed。
 - [x] 2026-07-14 — Phase 4 真实宿主与拓扑 Gate：临时安装产品插件后用 3 个独立 Codex task、remove/reinstall reload 和额外 writable dir 重放；项目 fingerprint 稳定、session 隔离、`.acm` 未修改；DEC-005/006 确认为单 bundled stdio MCP，无 daemon/listener/token。
@@ -57,15 +60,16 @@
 
 ## Next
 
-1. 执行 Phase 5：构建原生 MCP Apps Widget，并把 `acm-editor` 作为 platform-free UI 注入。
-2. 建立 openAttempt/widgetInstance 单调状态机、首帧 ready proof、reload/rebind/supersede 与旧实例隔离。
-3. 验证 Widget bundle 无 Tauri/SQLite/绝对路径/远程资产、无 localStorage 业务真源，并保持 Tauri 回归。
+1. 执行 Phase 6：实现完整模型可见 read/pending proposal 工具和 app-only commit/send 工具。
+2. 建立 proposal store、锁内 expectedRevision 校验、selected/related/execution context builder 与 server-side digest。
+3. 验证不接受 proposal 时项目 hash 不变，点击后仅预览 operations 落盘，非法/stale/oversize/prompt injection 全部 fail closed。
 4. Phase 验收后 scoped local commit；每次 push 仍需用户明确确认。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 5 native Widget 与 lifecycle 完成 | standard-host browser replay；Codex canary await Gate；Widget/lifecycle/rebind/policy；88 tests；Tauri bundles |
 | 2026-07-14 | Phase 4 plugin/MCP control plane 完成 | product plugin host replay；schema/runtime/binding/path/distribution；reproducible clean bundle |
 | 2026-07-14 | Phase 3 editor/platform adapters 解耦完成 | editor 7、import-boundaries 4、全仓 60；Vite 317；Tauri release bundle；桌面 smoke |
 | 2026-07-14 | Phase 2 项目文件单真源与 SQLite 只读迁移完成 | project-store 23 tests；Rust 3；Vite 308；Tauri release；DEC-004/007 implemented |

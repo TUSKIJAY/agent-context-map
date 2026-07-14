@@ -166,7 +166,7 @@ const edgeTypes = { elkEdge: ElkEdge };
 
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveAgentNode, fitSignal, typeFilter, rankdir, showGrid,
   hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes,
-  collapsedGroups, onToggleGroup, showToast, exportAdapter, hostCapabilities, imageExportEnabled = true }) {
+  collapsedGroups, onToggleGroup, showToast, exportAdapter, hostCapabilities, imageExportEnabled = true, onFirstFrame }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -247,6 +247,21 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveA
   // which happen mid-drag, so live drag positions are preserved until drag stop.
   const [nodes, setNodes, onNodesChange] = useNodesState(derivedNodes);
   useEffect(() => { setNodes(derivedNodes); }, [derivedNodes, setNodes]);
+  const firstFrameReported = useRef(false);
+  useEffect(() => {
+    if (firstFrameReported.current || !doc?.doc_id || typeof onFirstFrame !== "function") return undefined;
+    const schedule = globalThis.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
+    const cancel = globalThis.cancelAnimationFrame || clearTimeout;
+    let secondFrame;
+    const firstFrame = schedule(() => {
+      secondFrame = schedule(() => {
+        if (!wrapRef.current?.querySelector(".react-flow__viewport")) return;
+        firstFrameReported.current = true;
+        void onFirstFrame({ documentId: doc.doc_id, nodeCount: doc.nodes.length, edgeCount: doc.edges.length });
+      });
+    });
+    return () => { cancel(firstFrame); if (secondFrame) cancel(secondFrame); };
+  }, [doc?.doc_id, doc?.nodes?.length, doc?.edges?.length, onFirstFrame]);
 
   const edges = useMemo(() => doc.edges
     .filter((e) => !hidden?.has(e.from) && !hidden?.has(e.to))   // collapse: drop edges touching a hidden node

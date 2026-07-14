@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：插件化 active plan 的 Phase 4 已完成；下一步执行 Phase 5 原生 Widget、生命周期和 editor 复用。
+当前焦点：插件化 active plan 的 Phase 5 已完成；下一步执行 Phase 6 完整 MCP 工具、pending 写入与发送语义。
 
 ## Resume Point
 
@@ -21,31 +21,37 @@
   - FlowCanvas export 由 adapter 注入；pending proposal 与正式 Diff 已分栏；产品 Agent 调用方只产出 canonical camelCase operations；
   - Tauri capability 已收敛到 dialog open/save 与 text write，文件 scope 只由原生对话框动态授予。
 - Phase 4：
-  - `plugins/agent-context-map` 是正式 local-only Codex plugin 源；manifest、`.mcp.json`、bundled stdio MCP、UI resource 占位和构建复制 skill 已落位；未创建 public marketplace；
+  - `plugins/agent-context-map` 是正式 local-only Codex plugin 源；manifest、`.mcp.json`、bundled stdio MCP 和构建复制 skill 已落位；未创建 public marketplace；
   - `host-binding.js` 只接受 host-owned task/workspace metadata 与 MCP roots 的单根交集，模型参数、cwd、最近项目和额外 writable dir 不构成授权；
   - `path-security.js` 把文件访问限制在 canonical project root 的 `.acm/documents/*.acm.md`，拒绝 traversal、absolute path、symlink/junction escape 和 Windows 保留设备名；
   - 单进程 `session-service` 已通过 task 隔离、same-task binding、reload 和 clean-package 验证；DEC-006 确认为 single bundled stdio MCP，不引入 daemon/listener/token；
-  - 当前只提供 health 与 read-only strict validate；UI resource 仍是 Phase 4 占位，不包含 editor 或写工具。
+  - Phase 4 的 control plane 已被 Phase 5 Widget resource 扩展；完整写工具仍留给 Phase 6。
+- Phase 5：
+  - `plugins/agent-context-map/widget` 构建 self-contained MCP Apps Widget，标准 `ui/*` bridge 为主、`window.openai` 仅作兼容 fallback；
+  - `acm-editor` 在 Widget 内使用 ephemeral working copy，人工编辑不会绕过 proposal/commit 边界写项目文件，也不使用 localStorage 业务真源；
+  - `mcp/src/widget/lifecycle-service.js` 以 attempt/task/project/instance 建立单调状态机，rebind 会 supersede 旧实例，旧实例不能 ready/commit/send；
+  - ready 必须同时包含 React mounted、项目 snapshot hydrated 和 React Flow canvas first frame；open tool 返回和无 Widget 的 await 都不构成 ready；
+  - UI resource 内嵌 production Widget HTML，CSP/资产 local-only；正式 app-only commit/send 仍为 Phase 6 reserved fail-closed stub。
 
 ## Current Repository Facts
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：未设置
-- HEAD：Phase 4 scoped commit；接手时以 `git log -1 --oneline` 实测
+- HEAD：Phase 5 scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测
 - push：未获授权
-- 当前计划状态：Phase 4 complete；Phase 5 next
+- 当前计划状态：Phase 5 complete；Phase 6 next
 
-## Phase 4 Verification
+## Phase 5 Verification
 
 已运行并通过：
 
 ```powershell
-npm run build:mcp
-npm run test:mcp-schema
-npm run test:mcp-runtime
-npm run test:project-binding
-npm run test:path-security
+npm run build:widget
+npm run test:widget
+npm run test:widget-lifecycle
+npm run test:widget-rebind
+npm run test:widget-bundle-policy
 npm run test:distribution
 npm run test:mcp-bundle-repro
 npm test
@@ -55,16 +61,16 @@ npm run harness:budget
 git diff --check
 ```
 
-结果：Release 8 files；schema 3、runtime 2、binding 4、path security 10、distribution 3、全仓 24 files / 81 tests；Vite 317 modules。bundle 两次构建 SHA-256 为 `25b79aec2b04a29b4222688b8b210b78868851b4b8096704f59bccd5971e3396`。clean package 仅用 Release 内容启动；plugin validator、harness、budget 与 diff check 通过。
+结果：Widget 3、lifecycle 1、rebind 2、bundle policy 1、distribution 3、全仓 29 files / 88 tests；Vite 317 modules，Tauri release executable/MSI/NSIS 通过。Widget HTML 2,087,825 bytes，SHA-256 `ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527`；MCP Release 两次构建 SHA-256 `a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4`。plugin validator、harness、budget 与 diff check 通过。
 
-真实宿主证据：Phase 0B 已完成 Codex Desktop Gate；Phase 4 将正式产品插件通过临时 local marketplace 安装到 `codex-cli 0.144.2`，3 个独立只读 task、remove/reinstall reload 和额外 writable dir 均保持同项目 fingerprint、不同 session；strict schema/服务端测试拒绝伪造 identity，多 root fail closed，项目 `.acm` 未修改。临时 plugin/marketplace 已移除；脱敏证据在 `plugins/agent-context-map/tests/evidence/phase4-host-gate.json`。
+真实宿主证据：Playwright Chromium 通过标准 MCP Apps `ui/initialize`、tool-result、bootstrap、ready 序列真实渲染 `acm-editor` 的 2 nodes/1 edge，并观察到标题编辑；console error、localStorage、远程网络能力均为零。正式产品插件通过临时 canary 安装到 `codex-cli 0.144.2`：非 Git workspace fail closed，可信 Git workspace open 成功但 openReady/无挂载 Widget 的 await 均为 false，fixture `.acm` hash 不变。临时插件、marketplace 与测试项目已移除；脱敏证据在 `plugins/agent-context-map/tests/evidence/phase5-widget-gate.json`。
 
 关键实现：
 
-- `plugins/agent-context-map/mcp/src/tools/registry.js`：稳定 envelope、strict schema、truthful annotations 和只读工具。
-- `plugins/agent-context-map/mcp/src/security/`：host binding、root canonicalization 和 path containment。
-- `plugins/agent-context-map/mcp/src/session/session-service.js`：task/project session 隔离与 rebind 拒绝。
-- `plugins/agent-context-map/scripts/build-mcp.mjs`：自包含 server、skill 复制、clean release 和确定性 manifest。
+- `plugins/agent-context-map/widget/src/platform/WidgetHostAdapter.js`：标准 MCP Apps host bridge、兼容 fallback、result race 缓存与尺寸通知。
+- `plugins/agent-context-map/widget/src/platform/widget-platform.js`：ephemeral editor adapters 和 Phase 5 capability 边界。
+- `plugins/agent-context-map/mcp/src/widget/lifecycle-service.js`：attempt/task/project/instance 生命周期与真实 ready proof。
+- `plugins/agent-context-map/scripts/build-widget.mjs`：self-contained production Widget 和 local CSP。
 
 ## Governance Boundary
 
@@ -76,17 +82,17 @@ git diff --check
 
 ## Risks
 
-- Phase 5 必须确认真实 MCP Apps bridge 与 ready proof；若宿主 bridge 能力不足且无安全兼容方案，按计划停止。
+- Phase 6 必须让模型可见 write/import 只创建 pending proposal，只有 app-only、当前 instance 的明确用户动作才能 commit/send。
 - legacy snake_case operations 已从产品调用方移除，只在显式 fixture/import diagnostics adapter 接受；Phase 6 必须按计划彻底拒绝 legacy 名称。
 - Windows safe replace 已原生执行；portable tests 已建立，macOS/Linux 真实矩阵留在计划 Phase 7，不把它写成已运行证据。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 创建 `plugins/agent-context-map/widget`、WidgetHostAdapter、app-only widget API 与独立 Vite Widget build。
-2. 通过 MCP Apps bridge hydrate `acm-editor`，实现 openAttempt/widgetInstance/rebind/supersede 单调状态机和画布首帧 ready proof。
-3. 验证 reload、新 task、多实例、旧 instance 权限隔离，以及 local-only CSP/asset/bundle policy。
-4. 运行 `build:widget`、widget lifecycle/rebind/bundle-policy、distribution、Tauri regression、harness 和 diff Gate。
+1. 实现 get/validate/write/import/export；write/import 只返回 pending proposal，严格只接受 canonical camelCase operations。
+2. 实现 proposal store 和 app-only commit，在文档锁内重读 expectedRevision 并拒绝 stale task/instance/proposal。
+3. 实现 selected/related/execution context builder、server-side payload/digest 和 click-gated app-only send。
+4. 运行 MCP schema/tools、proposal/revision/context/send/prompt-injection/concurrency、build、Tauri regression、harness 和 diff Gate。
 
 ## History
 

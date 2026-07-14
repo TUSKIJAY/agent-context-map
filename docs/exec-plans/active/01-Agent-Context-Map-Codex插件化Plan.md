@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 4 已完成，下一 Gate 为 Phase 5
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 5 已完成，下一 Gate 为 Phase 6
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -95,6 +95,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 3 验证通过：editor 4 files / 7 tests、import-boundaries 4 tests、全仓 19 files / 60 tests、Vite 317 modules、Tauri release executable/MSI/NSIS、harness 和 `git diff --check`；桌面 smoke 覆盖项目绑定、新建/打开/编辑/撤销/重做/校验/Diff/保存/重开。当前 Gate：进入 Phase 4。
 - 2026-07-14，Phase 4 完成：正式 local-only Codex plugin、bundled stdio MCP、UI resource 占位、host-owned project binding、canonical path containment、single-process session service 与 clean reproducible distribution 落位；未创建 public marketplace 或 daemon。
 - Phase 4 验证通过：schema 3、runtime 2、binding 4、path security 10、distribution 3、全仓 24 files / 81 tests；clean Release 8 files 可独立启动且两次构建 SHA-256 一致；Vite 317 modules、plugin validator、harness、budget 和 diff check 通过。正式插件经临时 local marketplace 在 3 个独立 Codex task、remove/reinstall reload 和额外 writable dir 场景复验，`.acm` 未修改。DEC-005/006 已确认；当前 Gate：进入 Phase 5。
+- 2026-07-14，Phase 5 完成：构建 self-contained MCP Apps Widget，复用 `acm-editor`，以标准 `ui/*` bridge 为主、`window.openai` 为兼容 fallback；Widget 使用 ephemeral working copy，不建立 localStorage 或项目文件真源；openAttempt/widgetInstance/rebind/supersede 单调生命周期与 React/项目/画布首帧 ready proof 已落位。
+- Phase 5 验证通过：Widget 3、lifecycle 1、rebind 2、bundle policy 1、distribution 3、全仓 29 files / 88 tests；Widget HTML 2,087,825 bytes，SHA-256 `ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527`，MCP Release 两次构建 SHA-256 `a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4`。Playwright 标准宿主真实渲染 2 nodes/1 edge 并完成编辑；产品 Codex 临时 canary 证明 open tool success 不等于 ready；Vite、Tauri executable/MSI/NSIS、plugin validator、harness、budget 和 diff check 通过。当前 Gate：进入 Phase 6。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1231,6 +1233,8 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 5：原生 Widget、生命周期和复用 editor
 
+执行状态：Completed（2026-07-14）。实现、真实宿主证据和 Gate 摘要见 §0.7、`PROGRESS.md`、`HANDOFF.md` 与 `plugins/agent-context-map/tests/evidence/phase5-widget-gate.json`。
+
 输入：
 
 - Phase 3 acm-editor；
@@ -1657,4 +1661,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 4 已完成并在产品 MCP 生命周期复验宿主字段；下一步执行 Phase 5 原生 Widget、生命周期和 editor 复用。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 5 已完成原生 Widget、editor 复用和真实 ready/rebind Gate；下一步执行 Phase 6 完整 MCP 工具、pending 写入与发送语义。

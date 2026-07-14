@@ -28,10 +28,12 @@ pnpm-debug.log*
 
 coverage/
 *.tsbuildinfo
+.playwright-cli/
 
 # Codex plugin generated release assets (source stays tracked)
 plugins/agent-context-map/mcp/server.mjs
 plugins/agent-context-map/skills/acm-md/
+plugins/agent-context-map/widget/dist/
 
 .DS_Store
 Thumbs.db

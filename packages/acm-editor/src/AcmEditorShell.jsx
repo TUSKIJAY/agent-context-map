@@ -678,7 +678,8 @@ export default function AcmEditorShell({ platform }) {
             hidden={hiddenAll} collapsed={collapsed} descCount={descCount} hasChildren={hasChildren} onToggleCollapse={onToggleCollapse}
             engine={engine} elkRoutes={elkRoutes} groupOf={groupOf} groupBoxes={groupBoxes}
             collapsedGroups={collapsedGroups} onToggleGroup={onToggleGroup} showToast={showToast}
-            exportAdapter={exportAdapter} hostCapabilities={host} imageExportEnabled={capabilities.imageExport} />
+            exportAdapter={exportAdapter} hostCapabilities={host} imageExportEnabled={capabilities.imageExport}
+            onFirstFrame={host.reportReady} />
           <CanvasHint />
           {layouting && <LayoutVeil />}
         </div>

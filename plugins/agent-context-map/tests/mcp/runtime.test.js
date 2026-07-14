@@ -27,7 +27,7 @@ describe("Phase 4 MCP runtime", () => {
     const listed = await harness.request("resources/list");
     expect(listed.result.resources[0]).toMatchObject({ uri: "ui://agent-context-map/widget.html", mimeType: "text/html;profile=mcp-app" });
     const read = await harness.request("resources/read", { uri: "ui://agent-context-map/widget.html" });
-    expect(read.result.contents[0].text).toContain("data-phase=\"4\"");
+    expect(read.result.contents[0]._meta.ui).toMatchObject({ resourceUri: "ui://agent-context-map/widget.html", csp: { connectDomains: [] } });
     expect(await fs.readFile(path.join(root, ".acm", "sentinel"), "utf8")).toBe("unchanged\n");
   });
 

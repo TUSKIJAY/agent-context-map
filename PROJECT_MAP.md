@@ -109,10 +109,13 @@ npm run tauri:build -- --no-bundle
 | `plugins/agent-context-map/mcp/src/protocol.js` | dependency-free stdio JSON-RPC、tools/resources 分派与 MCP roots client request |
 | `plugins/agent-context-map/mcp/src/security/` | host-owned task/workspace binding、root canonicalization 与 `.acm/documents` path containment |
 | `plugins/agent-context-map/mcp/src/session/` | 单进程 task/project session 隔离、稳定 sessionId 与 rebind 拒绝 |
-| `plugins/agent-context-map/mcp/src/tools/registry.js` | health、strict read-only validate、稳定 envelope 与 strict schema |
-| `plugins/agent-context-map/mcp/src/resources/` | MCP Apps UI resource；Phase 4 为 local-only Widget 占位 |
-| `plugins/agent-context-map/scripts/` | 自包含 MCP bundle、skill 复制、clean release manifest 与可复现构建校验 |
-| `plugins/agent-context-map/tests/` | schema/runtime/binding/path-security、clean-package 与脱敏真实宿主证据 |
+| `plugins/agent-context-map/mcp/src/tools/registry.js` | health、strict read-only validate、open/await、app-only Widget bootstrap/ready 与稳定 strict schema |
+| `plugins/agent-context-map/mcp/src/widget/` | project snapshot 读取与 attempt/task/project/instance 单调生命周期；旧实例 fail closed |
+| `plugins/agent-context-map/mcp/src/resources/` | 内嵌构建产物的 local-only MCP Apps UI resource 与 CSP |
+| `plugins/agent-context-map/widget/src/platform/` | 标准 MCP Apps `ui/*` bridge、兼容 fallback 与 editor platform adapters |
+| `plugins/agent-context-map/widget/src/main.jsx` | Widget hydrate、`acm-editor` 挂载和 React/项目/画布首帧 ready 上报 |
+| `plugins/agent-context-map/scripts/` | self-contained Widget/MCP bundle、skill 复制、clean release manifest 与可复现构建校验 |
+| `plugins/agent-context-map/tests/` | schema/runtime/binding/path-security、Widget/lifecycle/rebind/bundle policy、clean-package 与脱敏真实宿主证据 |
 | `tests/distribution/plugin-distribution.test.js` | clean Release 内容、开发路径泄漏、独立启动和项目不变性 Gate |
 
 `plugins/agent-context-map/mcp/server.mjs` 与 `plugins/agent-context-map/skills/acm-md/` 是本地构建生成物，不提交；正式发布树由 `npm run build:mcp` 生成到被忽略的 `dist/agent-context-map-plugin/`。

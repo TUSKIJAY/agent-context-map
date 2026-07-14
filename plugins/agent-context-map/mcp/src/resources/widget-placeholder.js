@@ -6,14 +6,16 @@ export const WIDGET_PLACEHOLDER_HTML = `<!doctype html>
 <body><main id="root" data-phase="4"><h1>Agent Context Map</h1><p>The secure MCP control plane is ready. The interactive editor is enabled in Phase 5.</p></main></body>
 </html>`;
 
+export const WIDGET_HTML = globalThis.__ACM_WIDGET_HTML__ || WIDGET_PLACEHOLDER_HTML;
+
 export function listUiResources() {
   return {
     resources: [{
       uri: WIDGET_RESOURCE_URI,
-      name: "Agent Context Map Widget placeholder",
-      description: "Phase 4 MCP Apps UI resource placeholder; no editor is mounted yet.",
+      name: "Agent Context Map Widget",
+      description: "Local-only MCP Apps editor for the current trusted Agent Context Map project.",
       mimeType: "text/html;profile=mcp-app",
-      _meta: { ui: { resourceUri: WIDGET_RESOURCE_URI, csp: { connectDomains: [], resourceDomains: [] } } },
+      _meta: { ui: { resourceUri: WIDGET_RESOURCE_URI, csp: { connectDomains: [], resourceDomains: ["data:", "blob:"] } } },
     }],
   };
 }
@@ -24,8 +26,8 @@ export function readUiResource(uri) {
     contents: [{
       uri: WIDGET_RESOURCE_URI,
       mimeType: "text/html;profile=mcp-app",
-      text: WIDGET_PLACEHOLDER_HTML,
-      _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] } } },
+      text: WIDGET_HTML,
+      _meta: { ui: { resourceUri: WIDGET_RESOURCE_URI, csp: { connectDomains: [], resourceDomains: ["data:", "blob:"] } } },
     }],
   };
 }
