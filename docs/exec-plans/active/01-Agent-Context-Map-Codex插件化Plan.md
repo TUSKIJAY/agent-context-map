@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 5 已完成，下一 Gate 为 Phase 6
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 6 已完成，下一 Gate 为 Phase 7
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -97,6 +97,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 4 验证通过：schema 3、runtime 2、binding 4、path security 10、distribution 3、全仓 24 files / 81 tests；clean Release 8 files 可独立启动且两次构建 SHA-256 一致；Vite 317 modules、plugin validator、harness、budget 和 diff check 通过。正式插件经临时 local marketplace 在 3 个独立 Codex task、remove/reinstall reload 和额外 writable dir 场景复验，`.acm` 未修改。DEC-005/006 已确认；当前 Gate：进入 Phase 5。
 - 2026-07-14，Phase 5 完成：构建 self-contained MCP Apps Widget，复用 `acm-editor`，以标准 `ui/*` bridge 为主、`window.openai` 为兼容 fallback；Widget 使用 ephemeral working copy，不建立 localStorage 或项目文件真源；openAttempt/widgetInstance/rebind/supersede 单调生命周期与 React/项目/画布首帧 ready proof 已落位。
 - Phase 5 验证通过：Widget 3、lifecycle 1、rebind 2、bundle policy 1、distribution 3、全仓 29 files / 88 tests；Widget HTML 2,087,825 bytes，SHA-256 `ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527`，MCP Release 两次构建 SHA-256 `a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4`。Playwright 标准宿主真实渲染 2 nodes/1 edge 并完成编辑；产品 Codex 临时 canary 证明 open tool success 不等于 ready；Vite、Tauri executable/MSI/NSIS、plugin validator、harness、budget 和 diff check 通过。当前 Gate：进入 Phase 6。
+- 2026-07-14，Phase 6 完成：模型可见 get/validate/write/import/export、内存 pending proposal、app-only proposal/manual commit、selected/related/execution context、server-side payload digest 与 `ui/message` click gate 落位；bootstrap/app session proof 只经 Widget `_meta` 传递，不进入模型 content/structuredContent。
+- Phase 6 验证通过：专项 16 tests、全仓 36 files / 101 tests；proposal 前和无 gesture 时项目 hash 不变，锁内 stale revision 保留较新文件，并发同 revision 仅 1 次 commit；legacy snake_case、`patchMeta`、confirmed escalation、oversize 和 prompt injection 全部拒绝。标准 MCP Apps 浏览器宿主证明 preview 阶段 message/send 均为 0、最终二次确认后均为 1，proposal commit 经过确认对话框；Widget SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`，MCP Release 可复现 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`；Vite、Tauri executable/MSI/NSIS、distribution、harness 和 diff check 通过。当前 Gate：进入 Phase 7。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1289,6 +1291,8 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 6：完整 MCP 工具、pending 写入与发送语义
 
+执行状态：Completed（2026-07-14）。实现、hash 守卫、标准宿主交互证据与 Gate 摘要见 §0.7、`PROGRESS.md`、`HANDOFF.md` 与 `plugins/agent-context-map/tests/evidence/phase6-pending-send-gate.json`。
+
 输入：
 
 - 第 7 节工具契约；
@@ -1661,4 +1665,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 5 已完成原生 Widget、editor 复用和真实 ready/rebind Gate；下一步执行 Phase 6 完整 MCP 工具、pending 写入与发送语义。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 6 已完成完整 MCP 工具、pending/人工 commit 和 click-gated send Gate；下一步执行 Phase 7 跨平台、干净包与发布候选验证。

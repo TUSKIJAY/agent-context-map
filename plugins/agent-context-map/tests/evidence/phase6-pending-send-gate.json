@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "agent-context-map-phase6-pending-send-gate/v1",
+  "capturedAt": "2026-07-14",
+  "runtime": {
+    "codexCliVersion": "0.144.2",
+    "pluginVersion": "0.2.0",
+    "widgetBundleBytes": 2095044,
+    "widgetBundleSha256": "abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0",
+    "mcpReleaseSha256": "4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52"
+  },
+  "automatedGate": {
+    "fullTestFiles": 36,
+    "fullTests": 101,
+    "modelWriteProjectHashUnchanged": true,
+    "legacyOperationRejected": true,
+    "patchMetaRejected": true,
+    "confirmedEscalationRejected": true,
+    "promptInjectionRejected": true,
+    "staleRevisionPreservedNewerBytes": true,
+    "concurrentSharedRevisionCommits": 1,
+    "gestureNonceSingleUse": true,
+    "appSessionProofExcludedFromModelContent": true,
+    "bootstrapProofExcludedFromModelContent": true
+  },
+  "standardHostBrowserReplay": {
+    "browser": "Microsoft Edge through Playwright CLI",
+    "readyProof": {
+      "reactMounted": true,
+      "projectHydrated": true,
+      "canvasFirstFrame": true
+    },
+    "proposalVisible": true,
+    "proposalCommitRequiredConfirmDialog": true,
+    "messagesBeforeFinalConfirm": 0,
+    "sendCallsBeforeFinalConfirm": 0,
+    "messagesAfterFinalConfirm": 1,
+    "sendCallsAfterFinalConfirm": 1,
+    "sentMessageWasServerAuthorized": true,
+    "localStorageItems": 0,
+    "consoleApplicationErrors": 0,
+    "ignoredBrowserNoise": ["localhost favicon.ico 404"],
+    "screenshot": "output/playwright/phase6-widget/phase6-widget-gate.png"
+  },
+  "tauriRegression": {
+    "viteModules": 317,
+    "releaseExecutable": "src-tauri/target/release/agent-context-map.exe",
+    "msi": "Agent Context Map_0.2.0_x64_en-US.msi",
+    "nsis": "Agent Context Map_0.2.0_x64-setup.exe"
+  },
+  "gate": "pass"
+}

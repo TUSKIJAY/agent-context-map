@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；尚未设置 upstream
-- 当前 HEAD：Phase 5 scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测；push 未获授权
+- 当前 HEAD：Phase 6 scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测；push 未获授权
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 5 complete；下一 Gate 为 Phase 6 完整 MCP 工具、pending 写入与发送语义
+- 当前 Phase：Phase 6 complete；下一 Gate 为 Phase 7 CI、clean-room 与 release candidate
 
 ## Navigation
 
@@ -25,8 +25,8 @@
 
 ## In Progress
 
-- Phase 6 待开始：补齐 get/validate/write/import/export、proposal store、app-only commit、三种 context builder 和 click-gated send。
-- Phase 6 必须保持模型写入只生成 pending proposal；app-only commit 在锁内复核 revision；server 重建 send payload/digest，并拒绝 stale task/instance/revision、legacy operation 和 prompt injection。
+- Phase 7 待开始：建立三平台 CI、clean-room 构建、release candidate 产物与 fresh/update/downgrade/uninstall/reinstall 生命周期验证。
+- Phase 7 必须固定 Node/npm/lockfile，验证 source-free release 独立启动、两次构建可复现、checksum/SBOM 完整，并对项目 `.acm` 做安装生命周期 hash guard。
 
 ## Blocked
 
@@ -36,6 +36,9 @@
 
 ## Completed
 
+- [x] 2026-07-14 — Phase 6：模型可见 get/validate/write/import/export 与 app-only commit/manual-edit/send 全部落位；write/import 只生成 15 分钟 pending proposal，正式写入必须由当前 Widget 实例的一次性人工 gesture 触发。
+- [x] 2026-07-14 — Phase 6 安全边界：canonical camelCase only、operation 数量/体积上限、锁内 expectedRevision、task/project/document/instance 绑定、idempotency、prompt-injection 和 stale proposal/revision/gesture 全部 fail closed；server 重建 context payload 与 digest。
+- [x] 2026-07-14 — Phase 6 Gate：专项 16 tests、全仓 36 files / 101 tests；标准宿主完成预览不发送、二次确认后仅发送一次以及 proposal 人工采纳；Widget SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`，MCP Release 可复现 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`；Vite、Tauri executable/MSI/NSIS、distribution、harness 与 diff check 通过。
 - [x] 2026-07-14 — Phase 5：构建 self-contained MCP Apps Widget，复用 `acm-editor`；标准 `ui/*` bridge、兼容 fallback、ephemeral working copy、openAttempt/widgetInstance/rebind/supersede 和 React/项目/画布首帧 ready proof 落位。
 - [x] 2026-07-14 — Phase 5 真实 Gate：Playwright 标准宿主渲染 2 nodes/1 edge 并完成编辑，console/localStorage 均为零；产品 Codex 临时 canary 证明 open success 不等于 ready、无 Widget 时 await 保持 false，测试 `.acm` hash 不变。
 - [x] 2026-07-14 — Phase 5 Gate：Widget 3、lifecycle 1、rebind 2、bundle policy 1、distribution 3、全仓 29 files / 88 tests；Widget SHA-256 `ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527`，MCP Release 可复现 SHA-256 `a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4`；Vite、Tauri executable/MSI/NSIS、plugin validator、harness 与 diff check 通过。
@@ -60,15 +63,16 @@
 
 ## Next
 
-1. 执行 Phase 6：实现完整模型可见 read/pending proposal 工具和 app-only commit/send 工具。
-2. 建立 proposal store、锁内 expectedRevision 校验、selected/related/execution context builder 与 server-side digest。
-3. 验证不接受 proposal 时项目 hash 不变，点击后仅预览 operations 落盘，非法/stale/oversize/prompt injection 全部 fail closed。
+1. 执行 Phase 7：建立 Windows/macOS/Linux CI 与固定 Node/npm 的 clean-room release candidate 流水线。
+2. 生成并验证 checksum、SBOM/dependency manifest，确认 release 不依赖源码、仓库外全局状态或网络服务即可启动。
+3. 覆盖 fresh install、update、downgrade、uninstall、reinstall 与平台文件系统差异，并在全程保护 `.acm` hash。
 4. Phase 验收后 scoped local commit；每次 push 仍需用户明确确认。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 6 pending commit 与 click-gated send 完成 | MCP/context/security/concurrency 16；全仓 101；标准宿主二次确认；Tauri bundles |
 | 2026-07-14 | Phase 5 native Widget 与 lifecycle 完成 | standard-host browser replay；Codex canary await Gate；Widget/lifecycle/rebind/policy；88 tests；Tauri bundles |
 | 2026-07-14 | Phase 4 plugin/MCP control plane 完成 | product plugin host replay；schema/runtime/binding/path/distribution；reproducible clean bundle |
 | 2026-07-14 | Phase 3 editor/platform adapters 解耦完成 | editor 7、import-boundaries 4、全仓 60；Vite 317；Tauri release bundle；桌面 smoke |

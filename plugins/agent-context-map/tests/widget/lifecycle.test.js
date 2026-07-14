@@ -29,22 +29,28 @@ describe("Phase 5 Widget lifecycle", () => {
     expect(opened.result.structuredContent).toMatchObject({ ok: true, documentId: "acm_baseline_001", data: { documentCount: 1, ready: false } });
     expect(opened.result._meta.widgetData).toMatchObject({ schemaVersion: "agent-context-map-widget-snapshot/v1", persistence: "ephemeral_working_copy" });
     const openAttemptId = opened.result.structuredContent.data.openAttemptId;
+    const bootstrapNonce = opened.result._meta.widgetData.bootstrapNonce;
+    expect(opened.result.content[0].text).not.toContain(bootstrapNonce);
 
     const beforeMount = await harness.callTool("await_agent_context_map_ready", { openAttemptId }, meta);
     expect(beforeMount.result.structuredContent.data).toMatchObject({ ready: false, widgetState: null });
 
-    const bootstrapped = await harness.callTool("agent_context_map_widget_bootstrap", { openAttemptId, clientMountId: "mount_001" }, meta);
+    const forgedBootstrap = await harness.callTool("agent_context_map_widget_bootstrap", { openAttemptId, clientMountId: "mount_forged", bootstrapNonce: "forged" }, meta);
+    expect(forgedBootstrap.result.structuredContent.error.code).toBe("app_session_mismatch");
+    const bootstrapped = await harness.callTool("agent_context_map_widget_bootstrap", { openAttemptId, clientMountId: "mount_001", bootstrapNonce }, meta);
     const widgetInstanceId = bootstrapped.result.structuredContent.data.widgetInstanceId;
+    const appSessionNonce = bootstrapped.result._meta.widgetData.appSessionNonce;
+    expect(bootstrapped.result.content[0].text).not.toContain(appSessionNonce);
     expect(bootstrapped.result.structuredContent.data).toMatchObject({ widgetState: "initialized", ready: false });
 
     const invalid = await harness.callTool("agent_context_map_widget_ready", {
-      openAttemptId, widgetInstanceId,
+      openAttemptId, widgetInstanceId, appSessionNonce,
       proof: { reactMounted: true, projectHydrated: true, canvasFirstFrame: false, documentId: "acm_baseline_001" },
     }, meta);
     expect(invalid.result.structuredContent.error.code).toBe("invalid_ready_proof");
 
     const ready = await harness.callTool("agent_context_map_widget_ready", {
-      openAttemptId, widgetInstanceId,
+      openAttemptId, widgetInstanceId, appSessionNonce,
       proof: { reactMounted: true, projectHydrated: true, canvasFirstFrame: true, documentId: "acm_baseline_001" },
     }, meta);
     expect(ready.result.structuredContent.data).toMatchObject({ ready: true, widgetState: "ready", documentId: "acm_baseline_001" });

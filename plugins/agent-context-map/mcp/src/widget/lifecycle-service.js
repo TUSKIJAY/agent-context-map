@@ -21,6 +21,7 @@ export class WidgetLifecycleService {
     if (previousId) this.supersedeAttempt(this.attempts.get(previousId));
     const attempt = {
       openAttemptId: randomUUID(),
+      bootstrapNonce: randomUUID(),
       taskFingerprint: binding.taskFingerprint,
       rootFingerprint: binding.rootFingerprint,
       projectId: binding.projectId,
@@ -51,8 +52,16 @@ export class WidgetLifecycleService {
     return attempt;
   }
 
-  bootstrap(binding, { openAttemptId, clientMountId }) {
+  appOpenMetadata(binding, openAttemptId) {
     const attempt = this.requireAttempt(binding, openAttemptId);
+    return { bootstrapNonce: attempt.bootstrapNonce };
+  }
+
+  bootstrap(binding, { openAttemptId, clientMountId, bootstrapNonce }) {
+    const attempt = this.requireAttempt(binding, openAttemptId);
+    if (typeof bootstrapNonce !== "string" || bootstrapNonce !== attempt.bootstrapNonce) {
+      throw new McpControlPlaneError("app_session_mismatch", "The app-only open proof is missing or invalid.");
+    }
     assertIdentifier(clientMountId, "clientMountId");
     if (attempt.activeInstanceId) {
       const previous = attempt.instances.get(attempt.activeInstanceId);
@@ -60,9 +69,11 @@ export class WidgetLifecycleService {
     }
     const instance = {
       widgetInstanceId: randomUUID(),
+      appSessionNonce: randomUUID(),
       clientMountId,
       state: "initialized",
       transitions: ["initialized"],
+      gestures: new Map(),
     };
     attempt.instances.set(instance.widgetInstanceId, instance);
     attempt.activeInstanceId = instance.widgetInstanceId;
@@ -75,13 +86,26 @@ export class WidgetLifecycleService {
     const instance = attempt.instances.get(assertIdentifier(widgetInstanceId, "widgetInstanceId"));
     if (!instance) throw new McpControlPlaneError("widget_instance_not_found", "The Widget instance is unavailable.");
     if (attempt.activeInstanceId !== instance.widgetInstanceId || instance.state === "superseded") {
-      throw new McpControlPlaneError("widget_instance_superseded", "The Widget instance is no longer active.");
+      throw new McpControlPlaneError("stale_widget_instance", "The Widget instance is no longer active.");
     }
     return { attempt, instance };
   }
 
-  ready(binding, { openAttemptId, widgetInstanceId, proof }) {
-    const { attempt, instance } = this.requireActiveInstance(binding, { openAttemptId, widgetInstanceId });
+  requireAppInstance(binding, args) {
+    const active = this.requireActiveInstance(binding, args);
+    if (typeof args.appSessionNonce !== "string" || args.appSessionNonce !== active.instance.appSessionNonce) {
+      throw new McpControlPlaneError("app_session_mismatch", "The app-only Widget session proof is missing or invalid.");
+    }
+    return active;
+  }
+
+  appMetadata(binding, args) {
+    const { instance } = this.requireActiveInstance(binding, args);
+    return { appSessionNonce: instance.appSessionNonce };
+  }
+
+  ready(binding, { openAttemptId, widgetInstanceId, appSessionNonce, proof }) {
+    const { attempt, instance } = this.requireAppInstance(binding, { openAttemptId, widgetInstanceId, appSessionNonce });
     if (!proof || typeof proof !== "object" || Array.isArray(proof)) {
       throw new McpControlPlaneError("invalid_ready_proof", "A complete Widget ready proof is required.");
     }
@@ -97,6 +121,7 @@ export class WidgetLifecycleService {
     instance.transitions = [...READY_STATES];
     instance.state = "ready";
     instance.documentId = proof.documentId;
+    instance.documentRevision = attempt.snapshot.documents.find((record) => record.doc_id === proof.documentId)?.document_revision || null;
     return this.snapshot(attempt);
   }
 
@@ -105,9 +130,30 @@ export class WidgetLifecycleService {
     return this.snapshot(attempt);
   }
 
-  gateReservedAction(binding, args, action) {
-    this.requireActiveInstance(binding, args);
-    throw new McpControlPlaneError("capability_not_enabled", `${action} is reserved for Phase 6 and cannot run from the Phase 5 Widget.`);
+  requireReadyInstance(binding, args) {
+    const active = this.requireAppInstance(binding, args);
+    if (active.instance.state !== "ready") throw new McpControlPlaneError("widget_not_ready", "The active Widget has not completed its ready proof.");
+    return active;
+  }
+
+  issueUserGesture(binding, args, { purpose, digest, ttlMs = 30_000 }) {
+    const { instance } = this.requireReadyInstance(binding, args);
+    if (typeof purpose !== "string" || typeof digest !== "string" || !/^[a-f0-9]{64}$/.test(digest)) {
+      throw new McpControlPlaneError("invalid_arguments", "A normalized gesture purpose and SHA-256 preview digest are required.");
+    }
+    const userGestureNonce = randomUUID();
+    instance.gestures.set(userGestureNonce, { purpose, digest, expiresAtMs: Date.now() + ttlMs, used: false });
+    return { userGestureNonce, expiresAt: new Date(Date.now() + ttlMs).toISOString() };
+  }
+
+  consumeUserGesture(binding, args, { purpose, digest }) {
+    const { instance } = this.requireReadyInstance(binding, args);
+    const gesture = instance.gestures.get(args.userGestureNonce);
+    if (!gesture || gesture.used || gesture.expiresAtMs <= Date.now() || gesture.purpose !== purpose || gesture.digest !== digest) {
+      throw new McpControlPlaneError(purpose === "send" ? "send_not_user_initiated" : "commit_not_user_initiated", "A current one-time user gesture is required.");
+    }
+    gesture.used = true;
+    return gesture;
   }
 
   snapshot(attempt) {
@@ -121,6 +167,7 @@ export class WidgetLifecycleService {
       widgetState: instance?.state || null,
       transitions: instance ? [...instance.transitions] : [],
       documentId: instance?.documentId || null,
+      documentRevision: instance?.documentRevision || null,
       ready: instance?.state === "ready",
     };
   }

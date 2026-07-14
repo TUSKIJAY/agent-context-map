@@ -15,13 +15,14 @@ describe("Phase 5 Widget rebind and supersede", () => {
   test("supersedes a reloaded instance and blocks stale ready, commit, and send", () => {
     const service = new WidgetLifecycleService();
     const opened = service.open(binding(), snapshot);
-    const first = service.bootstrap(binding(), { openAttemptId: opened.openAttemptId, clientMountId: "mount_a" });
-    const second = service.bootstrap(binding(), { openAttemptId: opened.openAttemptId, clientMountId: "mount_b" });
-    const stale = { openAttemptId: opened.openAttemptId, widgetInstanceId: first.widgetInstanceId };
-    expect(errorCode(() => service.ready(binding(), { ...stale, proof: { reactMounted: true, projectHydrated: true, canvasFirstFrame: true, documentId: "acm_test_001" } }))).toBe("widget_instance_superseded");
-    expect(errorCode(() => service.gateReservedAction(binding(), stale, "commit"))).toBe("widget_instance_superseded");
-    expect(errorCode(() => service.gateReservedAction(binding(), stale, "send"))).toBe("widget_instance_superseded");
-    expect(errorCode(() => service.gateReservedAction(binding(), { openAttemptId: opened.openAttemptId, widgetInstanceId: second.widgetInstanceId }, "commit"))).toBe("capability_not_enabled");
+    const openApp = service.appOpenMetadata(binding(), opened.openAttemptId);
+    const first = service.bootstrap(binding(), { openAttemptId: opened.openAttemptId, clientMountId: "mount_a", ...openApp });
+    const firstApp = service.appMetadata(binding(), { openAttemptId: opened.openAttemptId, widgetInstanceId: first.widgetInstanceId });
+    const second = service.bootstrap(binding(), { openAttemptId: opened.openAttemptId, clientMountId: "mount_b", ...openApp });
+    const stale = { openAttemptId: opened.openAttemptId, widgetInstanceId: first.widgetInstanceId, ...firstApp };
+    expect(errorCode(() => service.ready(binding(), { ...stale, proof: { reactMounted: true, projectHydrated: true, canvasFirstFrame: true, documentId: "acm_test_001" } }))).toBe("stale_widget_instance");
+    expect(errorCode(() => service.requireReadyInstance(binding(), stale))).toBe("stale_widget_instance");
+    expect(errorCode(() => service.requireReadyInstance(binding(), { openAttemptId: opened.openAttemptId, widgetInstanceId: second.widgetInstanceId, appSessionNonce: "forged" }))).toBe("app_session_mismatch");
   });
 
   test("keeps attempts task/project scoped and supersedes an older open attempt", () => {

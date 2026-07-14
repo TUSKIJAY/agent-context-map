@@ -30,6 +30,7 @@ describe("Phase 5 MCP Apps host bridge", () => {
     const bridge = new WidgetHostAdapter({ ...host, timeoutMs: 100 });
     await expect(bridge.connect()).resolves.toMatchObject({ displayMode: "inline" });
     await expect(bridge.callServerTool("widget_test", { value: 1 })).resolves.toMatchObject({ structuredContent: { ok: true } });
+    await expect(bridge.sendMessage("reviewed context")).resolves.toEqual({});
     host.emit({ method: "ui/notifications/tool-result", params: { result: { _meta: { widgetData: { schemaVersion: "test/v1" } } } } });
     const result = await bridge.waitForToolResult();
     expect(widgetDataFromToolResult(result)).toEqual({ schemaVersion: "test/v1" });

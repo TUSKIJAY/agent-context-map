@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { AcmEditorShell } from "../../../../packages/acm-editor/src/index.js";
 import { WidgetHostAdapter, widgetDataFromToolResult } from "./platform/WidgetHostAdapter.js";
 import { createWidgetEditorPlatform } from "./platform/widget-platform.js";
+import { Phase6Controls } from "./Phase6Controls.jsx";
 import "./widget.css";
 
 const rootElement = document.getElementById("root");
@@ -33,20 +34,26 @@ async function boot() {
   const bootstrapped = await bridge.callServerTool("agent_context_map_widget_bootstrap", {
     openAttemptId: snapshot.openAttemptId,
     clientMountId,
+    bootstrapNonce: snapshot.bootstrapNonce,
   });
   if (bootstrapped?.isError || !bootstrapped?.structuredContent?.data?.widgetInstanceId) {
     throw new Error(bootstrapped?.structuredContent?.error?.message || "The Widget instance could not bind to the open attempt.");
   }
   const lifecycle = bootstrapped.structuredContent.data;
+  const appSessionNonce = bootstrapped?._meta?.widgetData?.appSessionNonce;
+  if (!appSessionNonce) throw new Error("The host did not preserve the app-only Widget session proof.");
   let readyPromise = null;
+  let setSelection = () => {};
   const platform = createWidgetEditorPlatform({
     snapshot,
+    onSelectionChange(value) { setSelection(value?.selection || null); },
     onCanvasFirstFrame(proof) {
       if (readyPromise) return readyPromise;
       rootElement.dataset.acmWidgetState = "canvas_first_frame";
       readyPromise = bridge.callServerTool("agent_context_map_widget_ready", {
         openAttemptId: snapshot.openAttemptId,
         widgetInstanceId: lifecycle.widgetInstanceId,
+        appSessionNonce,
         proof: { reactMounted: true, projectHydrated: true, canvasFirstFrame: true, documentId: proof.documentId },
       }).then((result) => {
         if (result?.isError || result?.structuredContent?.data?.ready !== true) {
@@ -64,7 +71,12 @@ async function boot() {
   });
 
   rootElement.dataset.acmWidgetState = "react_mounted";
-  createRoot(rootElement).render(<AcmEditorShell platform={platform} />);
+  function WidgetApp() {
+    const [selection, updateSelection] = React.useState(null);
+    setSelection = updateSelection;
+    return <div className="acm-widget-shell"><AcmEditorShell platform={platform} /><Phase6Controls {...{ bridge, snapshot, lifecycle, appSessionNonce, platform, selection }} /></div>;
+  }
+  createRoot(rootElement).render(<WidgetApp />);
   const resizeObserver = new ResizeObserver(() => bridge.sendSizeChanged());
   resizeObserver.observe(document.documentElement);
   window.addEventListener("unload", () => { resizeObserver.disconnect(); bridge.close(); }, { once: true });

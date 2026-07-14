@@ -114,6 +114,16 @@ export class WidgetHostAdapter {
     return this.request("tools/call", { name, arguments: args }, 12000);
   }
 
+  async sendMessage(text) {
+    if (typeof text !== "string" || !text.trim()) throw new Error("A non-empty reviewed message is required.");
+    if (this.compatibilityMode) {
+      const send = this.currentWindow.openai?.sendFollowUpMessage;
+      if (typeof send !== "function") throw new Error("The compatibility host cannot send a follow-up message.");
+      return send({ prompt: text });
+    }
+    return this.request("ui/message", { role: "user", content: [{ type: "text", text }] }, 12000);
+  }
+
   sendSizeChanged() {
     if (!this.connected || this.compatibilityMode) return;
     const root = this.currentWindow.document?.documentElement;

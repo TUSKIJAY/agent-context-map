@@ -9,7 +9,7 @@ afterEach(async () => {
   children.clear();
 });
 
-describe("Phase 4 MCP schema", () => {
+describe("Phase 6 MCP schema", () => {
   test("uses a strict plugin manifest and companion MCP config without a marketplace", async () => {
     const manifest = JSON.parse(await fs.readFile("plugins/agent-context-map/.codex-plugin/plugin.json", "utf8"));
     const mcp = JSON.parse(await fs.readFile("plugins/agent-context-map/.mcp.json", "utf8"));
@@ -20,17 +20,19 @@ describe("Phase 4 MCP schema", () => {
 
   test("publishes strict input/output schemas and truthful read-only annotations", () => {
     expect(MCP_TOOLS.map((tool) => tool.name)).toEqual([
-      "agent_context_map_health", "validate_acm_graph", "open_agent_context_map", "await_agent_context_map_ready",
-      "agent_context_map_widget_bootstrap", "agent_context_map_widget_ready", "agent_context_map_widget_commit", "agent_context_map_widget_send",
+      "agent_context_map_health", "open_agent_context_map", "await_agent_context_map_ready", "get_acm_graph_context",
+      "validate_acm_graph", "write_acm_graph", "import_acm_md", "export_acm_md",
+      "agent_context_map_widget_bootstrap", "agent_context_map_widget_ready", "agent_context_map_widget_api",
+      "commit_acm_proposal", "commit_manual_edit", "send_acm_context",
     ]);
     for (const tool of MCP_TOOLS) {
       expect(tool.inputSchema.additionalProperties, tool.name).toBe(false);
       expect(tool.outputSchema.additionalProperties, tool.name).toBe(false);
       expect(tool.annotations.openWorldHint, tool.name).toBe(false);
     }
-    expect(MCP_TOOLS[1].inputSchema.required).toEqual(["acmMdText"]);
-    expect(MCP_TOOLS[2]._meta.ui).toEqual({ resourceUri: "ui://agent-context-map/widget.html", visibility: ["model", "app"] });
-    for (const tool of MCP_TOOLS.slice(4)) expect(tool._meta.ui.visibility).toEqual(["app"]);
+    expect(MCP_TOOLS[4].inputSchema.required).toEqual([]);
+    expect(MCP_TOOLS[1]._meta.ui).toEqual({ resourceUri: "ui://agent-context-map/widget.html", visibility: ["model", "app"] });
+    for (const tool of MCP_TOOLS.slice(8)) expect(tool._meta.ui.visibility).toEqual(["app"]);
   });
 
   test("advertises tools and resources over the initialized stdio protocol", async () => {

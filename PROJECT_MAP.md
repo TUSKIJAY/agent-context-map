@@ -57,7 +57,7 @@
 | `packages/acm-core/src/diff.js` | 正式文档 Diff 与确定性 `changes` 构建 |
 | `packages/acm-core/src/operations.js` | 唯一 camelCase operation schema、legacy input adapter、precondition 与原子应用 |
 | `packages/acm-core/src/revision.js` | canonical bytes 与 SHA-256 revision |
-| `packages/acm-core/src/context.js` | selection/subgraph/execution context 安全裁剪 |
+| `packages/acm-core/src/context.js` | selected/related/execution 三种 context 白名单、安全裁剪与 prompt injection 检测 |
 | `packages/acm-core/src/pending.js` | pending proposal 纯函数；不接正式存储 |
 | `packages/acm-core/src/index.js` | platform-free 公共导出 |
 
@@ -109,11 +109,15 @@ npm run tauri:build -- --no-bundle
 | `plugins/agent-context-map/mcp/src/protocol.js` | dependency-free stdio JSON-RPC、tools/resources 分派与 MCP roots client request |
 | `plugins/agent-context-map/mcp/src/security/` | host-owned task/workspace binding、root canonicalization 与 `.acm/documents` path containment |
 | `plugins/agent-context-map/mcp/src/session/` | 单进程 task/project session 隔离、稳定 sessionId 与 rebind 拒绝 |
-| `plugins/agent-context-map/mcp/src/tools/registry.js` | health、strict read-only validate、open/await、app-only Widget bootstrap/ready 与稳定 strict schema |
+| `plugins/agent-context-map/mcp/src/tools/definitions.js` | 模型可见与 app-only 工具的 strict JSON Schema、visibility 和 truthful annotations |
+| `plugins/agent-context-map/mcp/src/tools/registry.js` | open/await/get/validate/write/import/export、Widget API、commit/send 分派与稳定 envelope |
+| `plugins/agent-context-map/mcp/src/tools/operation-policy.js` | canonical camelCase operation 白名单、大小限制、confirmed/prompt injection 拒绝与原子 preview |
+| `plugins/agent-context-map/mcp/src/state/` | bound ProjectStore、revision-bound context、内存 pending proposal、send payload/digest 服务 |
 | `plugins/agent-context-map/mcp/src/widget/` | project snapshot 读取与 attempt/task/project/instance 单调生命周期；旧实例 fail closed |
 | `plugins/agent-context-map/mcp/src/resources/` | 内嵌构建产物的 local-only MCP Apps UI resource 与 CSP |
 | `plugins/agent-context-map/widget/src/platform/` | 标准 MCP Apps `ui/*` bridge、兼容 fallback 与 editor platform adapters |
-| `plugins/agent-context-map/widget/src/main.jsx` | Widget hydrate、`acm-editor` 挂载和 React/项目/画布首帧 ready 上报 |
+| `plugins/agent-context-map/widget/src/main.jsx` | Widget hydrate、app-only proof、`acm-editor` 挂载和 React/项目/画布首帧 ready 上报 |
+| `plugins/agent-context-map/widget/src/Phase6Controls.jsx` | proposal/manual commit 预览确认、三种 send 预览与二次点击门控 |
 | `plugins/agent-context-map/scripts/` | self-contained Widget/MCP bundle、skill 复制、clean release manifest 与可复现构建校验 |
 | `plugins/agent-context-map/tests/` | schema/runtime/binding/path-security、Widget/lifecycle/rebind/bundle policy、clean-package 与脱敏真实宿主证据 |
 | `tests/distribution/plugin-distribution.test.js` | clean Release 内容、开发路径泄漏、独立启动和项目不变性 Gate |

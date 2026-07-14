@@ -11,3 +11,10 @@ button, input, select, textarea { font-family: inherit; }
 .acm-widget-error { min-height: 320px; display: grid; place-content: center; padding: 32px; text-align: center; background: #f7f8fa; }
 .acm-widget-error h1 { margin: 0 0 8px; font-size: 18px; }
 .acm-widget-error p { margin: 0; max-width: 560px; color: #667085; font-size: 13px; line-height: 1.6; }
+.acm-widget-shell { height: 100%; min-height: 560px; position: relative; padding-bottom: 84px; }
+.acm-phase6-controls { position: fixed; z-index: 80; left: 8px; right: 8px; bottom: 8px; padding: 8px 10px; border: 1px solid #ddd6fe; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 10px 32px rgba(16,24,40,.16); }
+.acm-phase6-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font: 11px system-ui; color: #667085; }
+.acm-phase6-row strong { color: #5b21b6; }
+.acm-phase6-row + .acm-phase6-row { margin-top: 6px; }
+.acm-phase6-preview { margin-top: 7px; max-height: 280px; overflow: auto; border-top: 1px solid #eee; padding-top: 7px; font: 11px system-ui; }
+.acm-phase6-preview pre { white-space: pre-wrap; max-height: 180px; overflow: auto; background: #f8fafc; border-radius: 7px; padding: 7px; }

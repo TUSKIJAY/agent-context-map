@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：插件化 active plan 的 Phase 5 已完成；下一步执行 Phase 6 完整 MCP 工具、pending 写入与发送语义。
+当前焦点：插件化 active plan 的 Phase 6 已完成；下一步执行 Phase 7 CI、clean-room 与 release candidate。
 
 ## Resume Point
 
@@ -32,25 +32,36 @@
   - `mcp/src/widget/lifecycle-service.js` 以 attempt/task/project/instance 建立单调状态机，rebind 会 supersede 旧实例，旧实例不能 ready/commit/send；
   - ready 必须同时包含 React mounted、项目 snapshot hydrated 和 React Flow canvas first frame；open tool 返回和无 Widget 的 await 都不构成 ready；
   - UI resource 内嵌 production Widget HTML，CSP/资产 local-only；正式 app-only commit/send 仍为 Phase 6 reserved fail-closed stub。
+- Phase 6：
+  - 模型可见的 get/validate/write/import/export 只读取正式项目或创建内存 pending proposal；proposal 绑定 task/project/document/revision，15 分钟过期且不进入保存、导出或 Agent Diff；
+  - app-only commit/manual edit/send 必须来自当前 ready Widget instance，先生成 preview，再消费一次性短 TTL gesture；commit 在文档锁内复核 expectedRevision，clientMutationId 保证幂等；
+  - canonical operation policy 拒绝 legacy snake_case、patchMeta、confirmed 升级、未知字段、超 100 operations、超 512 KiB 和 instruction-like 内容；
+  - selected/related/execution context 分别执行精确选择、单层有向 allowlist 扩展和 Task-only 冲突门禁；send payload/digest 由 server 重建，并拒绝 stale task/instance/revision 与 prompt injection；
+  - Widget 使用标准 `ui/message` 发送，兼容 fallback 只在标准能力不可用时启用；底部 safe action bar 明示 preview、二次确认和发送结果。
 
 ## Current Repository Facts
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：未设置
-- HEAD：Phase 5 scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测
+- HEAD：Phase 6 scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测
 - push：未获授权
-- 当前计划状态：Phase 5 complete；Phase 6 next
+- 当前计划状态：Phase 6 complete；Phase 7 next
 
-## Phase 5 Verification
+## Phase 6 Verification
 
 已运行并通过：
 
 ```powershell
 npm run build:widget
-npm run test:widget
-npm run test:widget-lifecycle
-npm run test:widget-rebind
+npm run test:mcp-schema
+npm run test:mcp-tools
+npm run test:proposal-boundary
+npm run test:revision-conflict
+npm run test:context-selection
+npm run test:send-semantics
+npm run test:prompt-injection
+npm run test:concurrency
 npm run test:widget-bundle-policy
 npm run test:distribution
 npm run test:mcp-bundle-repro
@@ -61,16 +72,17 @@ npm run harness:budget
 git diff --check
 ```
 
-结果：Widget 3、lifecycle 1、rebind 2、bundle policy 1、distribution 3、全仓 29 files / 88 tests；Vite 317 modules，Tauri release executable/MSI/NSIS 通过。Widget HTML 2,087,825 bytes，SHA-256 `ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527`；MCP Release 两次构建 SHA-256 `a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4`。plugin validator、harness、budget 与 diff check 通过。
+结果：Phase 6 专项 16 tests、全仓 36 files / 101 tests；Vite 317 modules，Tauri release executable/MSI/NSIS 通过。Widget HTML 2,095,044 bytes，SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`；MCP Release 两次构建 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`。distribution、bundle policy、plugin validator、harness、budget 与 diff check 通过。
 
-真实宿主证据：Playwright Chromium 通过标准 MCP Apps `ui/initialize`、tool-result、bootstrap、ready 序列真实渲染 `acm-editor` 的 2 nodes/1 edge，并观察到标题编辑；console error、localStorage、远程网络能力均为零。正式产品插件通过临时 canary 安装到 `codex-cli 0.144.2`：非 Git workspace fail closed，可信 Git workspace open 成功但 openReady/无挂载 Widget 的 await 均为 false，fixture `.acm` hash 不变。临时插件、marketplace 与测试项目已移除；脱敏证据在 `plugins/agent-context-map/tests/evidence/phase5-widget-gate.json`。
+真实宿主证据：Playwright Edge 通过标准 MCP Apps bridge 渲染 2 nodes/1 edge；首次点击“发送选中”只建立 preview，`ui/message` 与 `send_acm_context` 均为 0，二次点击“确认并发送”后两者各为 1 且消息与 server 授权 payload 一致；proposal 采纳显示确认并只调用一次 commit。localStorage 为空，仅有测试页 favicon 404；脱敏证据在 `plugins/agent-context-map/tests/evidence/phase6-pending-send-gate.json`。
 
 关键实现：
 
-- `plugins/agent-context-map/widget/src/platform/WidgetHostAdapter.js`：标准 MCP Apps host bridge、兼容 fallback、result race 缓存与尺寸通知。
-- `plugins/agent-context-map/widget/src/platform/widget-platform.js`：ephemeral editor adapters 和 Phase 5 capability 边界。
-- `plugins/agent-context-map/mcp/src/widget/lifecycle-service.js`：attempt/task/project/instance 生命周期与真实 ready proof。
-- `plugins/agent-context-map/scripts/build-widget.mjs`：self-contained production Widget 和 local CSP。
+- `plugins/agent-context-map/mcp/src/tools/definitions.js` 与 `registry.js`：14 个严格 schema 工具、模型/app 可见性边界与 server-side preflight。
+- `plugins/agent-context-map/mcp/src/tools/operation-policy.js`：canonical operation、尺寸/数量、字段与 prompt-injection policy。
+- `plugins/agent-context-map/mcp/src/state/`：revision-bound context、pending proposal、ProjectStore 和 send service。
+- `packages/acm-core/src/context.js`：selected/related/execution context builder 与执行冲突门禁。
+- `plugins/agent-context-map/widget/src/Phase6Controls.jsx`：proposal/manual preview、一次性 gesture、二次确认和标准消息发送。
 
 ## Governance Boundary
 
@@ -82,17 +94,17 @@ git diff --check
 
 ## Risks
 
-- Phase 6 必须让模型可见 write/import 只创建 pending proposal，只有 app-only、当前 instance 的明确用户动作才能 commit/send。
-- legacy snake_case operations 已从产品调用方移除，只在显式 fixture/import diagnostics adapter 接受；Phase 6 必须按计划彻底拒绝 legacy 名称。
-- Windows safe replace 已原生执行；portable tests 已建立，macOS/Linux 真实矩阵留在计划 Phase 7，不把它写成已运行证据。
+- Windows safe replace 与 Phase 6 write concurrency 已原生执行；portable tests 已建立，macOS/Linux 真实矩阵留在计划 Phase 7，不把它写成已运行证据。
+- Phase 7 必须在隔离 HOME/clean checkout 中验证 release candidate，不得把当前仓库的 node_modules、源码路径或已安装插件当成隐式依赖。
+- 三平台 CI 未经远端 runner 实跑前不能宣称绿色；push 仍必须取得本任务中的明确授权。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 实现 get/validate/write/import/export；write/import 只返回 pending proposal，严格只接受 canonical camelCase operations。
-2. 实现 proposal store 和 app-only commit，在文档锁内重读 expectedRevision 并拒绝 stale task/instance/proposal。
-3. 实现 selected/related/execution context builder、server-side payload/digest 和 click-gated app-only send。
-4. 运行 MCP schema/tools、proposal/revision/context/send/prompt-injection/concurrency、build、Tauri regression、harness 和 diff Gate。
+1. 建立 Windows/macOS/Linux CI matrix，固定 Node/npm/lockfile，并覆盖 core/MCP/Widget/project-store 与平台文件系统语义。
+2. 建立 clean-room 两次构建、source-free release 启动、checksum 与 SBOM/dependency manifest Gate。
+3. 在隔离 HOME 中覆盖 fresh/update/downgrade/uninstall/reinstall，全程验证项目 `.acm` hash 不变。
+4. 形成 scoped local commit；远端 matrix 需要获得明确 push 授权后才能实跑和完成 Phase 7 Gate。
 
 ## History
 

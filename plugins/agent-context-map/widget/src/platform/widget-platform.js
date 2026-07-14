@@ -2,7 +2,7 @@ import { assertEditorPlatform } from "../../../../../packages/acm-editor/src/con
 
 const clone = (value) => structuredClone(value);
 
-export function createWidgetEditorPlatform({ snapshot, onCanvasFirstFrame, hostWindow = globalThis.window }) {
+export function createWidgetEditorPlatform({ snapshot, onCanvasFirstFrame, onSelectionChange = () => {}, hostWindow = globalThis.window }) {
   if (snapshot?.schemaVersion !== "agent-context-map-widget-snapshot/v1" || !Array.isArray(snapshot.documents)) {
     throw new TypeError("The Widget requires a validated project snapshot.");
   }
@@ -43,7 +43,7 @@ export function createWidgetEditorPlatform({ snapshot, onCanvasFirstFrame, hostW
     async migrateLegacyDocument() { return null; },
   };
 
-  return assertEditorPlatform({
+  const platform = assertEditorPlatform({
     id: "codex-widget",
     store,
     files: {
@@ -63,7 +63,13 @@ export function createWidgetEditorPlatform({ snapshot, onCanvasFirstFrame, hostW
         return () => hostWindow.removeEventListener("keydown", handler);
       },
       reportReady(proof) { return onCanvasFirstFrame(proof); },
+      reportSelection(selection) { onSelectionChange(selection); },
     },
     capabilities: { imageExport: false, projectTruth: false, ephemeralWorkingCopy: true, browserDemo: false },
   });
+  platform.widgetApi = {
+    getWorkingDocument(documentId) { return documents.has(documentId) ? clone(documents.get(documentId).body) : null; },
+    replaceWorkingRecord(record) { if (record?.doc_id) documents.set(record.doc_id, clone(record)); },
+  };
+  return platform;
 }

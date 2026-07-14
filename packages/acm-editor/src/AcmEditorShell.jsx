@@ -262,6 +262,7 @@ export default function AcmEditorShell({ platform }) {
   // un-openable whenever a node/edge was selected).
   const selKey = selection ? selection.kind + ":" + selection.id : null;
   const prevSelKey = useRef(selKey);
+  useFx(() => { host.reportSelection?.({ documentId: docId || null, selection }); }, [host, docId, selKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useFx(() => {
     if (selKey === prevSelKey.current) return; // a tab change, not a selection change — leave the tab alone
     prevSelKey.current = selKey;
