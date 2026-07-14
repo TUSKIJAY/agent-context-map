@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 7 第四轮平台与 clean-room 全绿，但下载资产缺隐藏 manifest；artifact 完整性 Gate 待第五轮
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 7 第五轮五 job 全绿；skill 文本 canonical LF 与固定 tree hash 待第六轮三平台验证
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -102,6 +102,7 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - 2026-07-14，Phase 7 本地 Release Candidate 就绪：插件版本固定为 `0.3.0-rc.1`，新增 Node 24.12.0/npm 11.6.2 三平台 workflow、clean-room `npm ci` replay、Windows junction/locked-file 与 POSIX symlink/permission 测试、隔离 HOME 安装生命周期、SHA-256 checksums、依赖清单和 CycloneDX SBOM。
 - Phase 7 本地 Gate 通过：Windows 与 Ubuntu WSL 均以 Node 24.12.0/npm 11.6.2 在各自原生文件系统完成 38 files / 105 tests（各有 1 项异平台测试按条件跳过），Windows 覆盖 junction/locked file，Linux 覆盖 symlink/permission；两侧 clean-room 均从无 `node_modules`/生成物副本完成 `npm ci`、全测、Vite build、固定包和两次可复现构建。首次 Linux replay 暴露并已修复 `python3` 命令兼容与 production JSX 绝对源码路径泄漏。
 - Phase 7 远端执行：run `29325559181` 的 Windows、macOS、Ubuntu 与 clean-room 全绿；真实下载上传资产时发现默认排除 `.codex-plugin/` 与 `.mcp.json`，因此平台 matrix green 尚不能构成可安装 Release Gate。当前新增 hidden-file 显式上传、standalone release verifier 和下载后独立 audit job；第五轮 audit 全绿前 Phase 7 保持 in progress，证据见 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
+- Phase 7 第五轮：run `29326418297` 的三平台、clean-room 与 downloaded artifact audit 全绿，下载资产完整可校验；补充逐文件比较发现 Windows checkout 的 4 个 skill 文本因 CRLF/LF 与 Ubuntu canonical tree hash 不同。当前发布 copy 规范化文本为 LF，并要求三平台和下载资产都命中固定 tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；第六轮通过前仍不标记 Phase 7 Completed。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1670,4 +1671,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 7 第四轮 Windows/macOS/Ubuntu 与 clean-room 已全绿，但下载资产因默认隐藏文件过滤缺少插件 manifest；当前下一闸门是第五轮 downloaded artifact integrity audit，平台、clean-room、下载资产全部通过前 Phase 7 不标记 Completed。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 7 第五轮平台、clean-room 和下载资产已全绿；当前下一闸门是第六轮跨平台 canonical tree hash，所有构建与下载资产命中同一固定 SHA-256 前 Phase 7 不标记 Completed。

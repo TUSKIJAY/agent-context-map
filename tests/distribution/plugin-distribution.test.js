@@ -37,6 +37,9 @@ describe("Phase 4 clean plugin distribution", () => {
       expect(offset, offset < 0 ? undefined : bundle.slice(Math.max(0, offset - 160), offset + marker.length + 160)).toBe(-1);
     }
     expect(bundle).not.toMatch(/@tauri-apps|plugin-sql|127\.0\.0\.1|0\.0\.0\.0|createServer\(/);
+    for (const relative of ["skills/acm-md/SKILL.md", "skills/acm-md/agents/openai.yaml", "skills/acm-md/references/acm-md-v0.1.md", "skills/acm-md/scripts/validate_acm_md.py"]) {
+      expect(await fs.readFile(path.join(releaseRoot, relative), "utf8")).not.toContain("\r");
+    }
   });
 
   test("starts the bundled server from a clean package without global Codex command configuration", async () => {

@@ -38,8 +38,22 @@ async function bundleServer(targetRoot, widgetHtml) {
 async function copySkill(targetRoot) {
   const target = path.join(targetRoot, "skills", "acm-md");
   await fs.rm(target, { recursive: true, force: true });
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  await fs.cp(sourceSkill, target, { recursive: true });
+  const canonicalTextExtensions = new Set([".json", ".md", ".py", ".txt", ".yaml", ".yml"]);
+  async function copyCanonical(source, destination) {
+    await fs.mkdir(destination, { recursive: true });
+    for (const entry of await fs.readdir(source, { withFileTypes: true })) {
+      const sourcePath = path.join(source, entry.name);
+      const destinationPath = path.join(destination, entry.name);
+      if (entry.isSymbolicLink()) throw new Error(`Skill release source must not contain a symbolic link: ${sourcePath}`);
+      if (entry.isDirectory()) await copyCanonical(sourcePath, destinationPath);
+      else if (entry.isFile() && canonicalTextExtensions.has(path.extname(entry.name).toLowerCase())) {
+        const text = await fs.readFile(sourcePath, "utf8");
+        await fs.writeFile(destinationPath, text.replace(/\r\n?/gu, "\n"), "utf8");
+      } else if (entry.isFile()) await fs.copyFile(sourcePath, destinationPath);
+      else throw new Error(`Skill release source contains an unsupported filesystem entry: ${sourcePath}`);
+    }
+  }
+  await copyCanonical(sourceSkill, target);
 }
 
 async function copyPluginMetadata(targetRoot, pluginVersion) {

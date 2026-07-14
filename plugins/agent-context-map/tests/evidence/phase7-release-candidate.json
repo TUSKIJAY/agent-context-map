@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase7-gate/v1",
   "date": "2026-07-14",
-  "status": "fourth_run_platform_green_artifact_correction_ready",
+  "status": "fifth_run_green_cross_platform_bytes_correction_ready",
   "pluginVersion": "0.3.0-rc.1",
   "buildToolchain": {
     "node": "24.12.0",
@@ -73,9 +73,9 @@
   ],
   "release": {
     "fileCount": 13,
-    "treeSha256": "7665ffaf6e096f9335657ecff518cdd473a01a8989efb5bc6c90db37bf61a4df",
-    "checksumSetDigest": "1dc8a3f37d3a078f5262a93e424387ded9b779cc96c79b72e01d0aadb58c166d",
-    "sha256SumsFileSha256": "356b13e2477d0bb2b1d2eae3ced3f668e894664a71e8b1461f4c02c5a3dfb2a3",
+    "treeSha256": "2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e",
+    "checksumSetDigest": "144a68a5b97b87c12177e32859f0715976b0d4bfcfea1853579d3f22089c7b13",
+    "sha256SumsFileSha256": "5d8f0efd0d64f23182b018b37690786f0aeea9a1b2dc55d05219e24d1885b501",
     "metadata": [
       "SHA256SUMS",
       "dist/manifest.json",
@@ -146,6 +146,25 @@
       "missingRequiredFiles": [".codex-plugin/plugin.json", ".mcp.json"],
       "cause": "upload-artifact excludes dot-prefixed files and directories unless include-hidden-files is enabled",
       "correction": "Upload hidden plugin metadata explicitly and audit the downloaded immutable artifact in a dependent job"
+    },
+    "fifthRun": {
+      "id": 29326418297,
+      "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29326418297",
+      "commit": "d16aedc",
+      "windowsPlatform": "passed",
+      "ubuntuPlatform": "passed",
+      "macosPlatform": "passed",
+      "ubuntuCleanRoom": "passed",
+      "downloadedArtifact": "passed_integrity",
+      "artifact": {
+        "id": 8308154998,
+        "sizeBytes": 749113,
+        "archiveDigest": "sha256:b6a055b181f2a2d1896ab4d54a77d0eb10c38f4b0e18d38025bd4421606569dc",
+        "expiresAt": "2026-07-28T10:47:05Z",
+        "treeSha256": "2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e"
+      },
+      "postGateFinding": "Windows checkout copied four skill text files with CRLF while Ubuntu used LF, producing a different otherwise-valid tree hash",
+      "correction": "Canonicalize released skill text to LF and require the Ubuntu canonical tree hash on every platform and downloaded artifact"
     },
     "claim": "Phase 7 is not complete until all remote runners pass"
   },

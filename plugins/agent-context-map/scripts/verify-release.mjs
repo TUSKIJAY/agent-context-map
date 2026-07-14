@@ -46,7 +46,7 @@ function safeRelativePath(root, relative) {
   return target;
 }
 
-export async function verifyRelease({ releaseRoot, expectedVersion } = {}) {
+export async function verifyRelease({ releaseRoot, expectedVersion, expectedTreeSha256 } = {}) {
   if (!releaseRoot) throw new Error("releaseRoot is required");
   const root = path.resolve(releaseRoot);
   const checksumBytes = await fs.readFile(path.join(root, "SHA256SUMS"));
@@ -96,13 +96,17 @@ export async function verifyRelease({ releaseRoot, expectedVersion } = {}) {
     tree.update(path.relative(root, file).replaceAll("\\", "/"));
     tree.update(await fs.readFile(file));
   }
+  const treeSha256 = tree.digest("hex");
+  if (expectedTreeSha256 && treeSha256 !== expectedTreeSha256) {
+    throw new Error(`Release tree mismatch: expected ${expectedTreeSha256}, received ${treeSha256}`);
+  }
   return {
     ok: true,
     releaseRoot: root,
     pluginVersion: plugin.version,
     totalFiles: files.length,
     checksumEntries: checksums.size,
-    treeSha256: tree.digest("hex"),
+    treeSha256,
     checksumSetDigest: sha256(lines.join("\n")),
     sha256SumsFileSha256: sha256(checksumBytes),
   };
@@ -111,8 +115,11 @@ export async function verifyRelease({ releaseRoot, expectedVersion } = {}) {
 function parseCli(args) {
   const options = { releaseRoot: args[0] };
   for (let index = 1; index < args.length; index += 1) {
-    if (args[index] !== "--expected-version" || !args[index + 1]) throw new Error(`Unknown or incomplete verify option: ${args[index]}`);
-    options.expectedVersion = args[index + 1];
+    const option = args[index];
+    if ((option !== "--expected-version" && option !== "--expected-tree-sha256") || !args[index + 1]) {
+      throw new Error(`Unknown or incomplete verify option: ${option}`);
+    }
+    options[option === "--expected-version" ? "expectedVersion" : "expectedTreeSha256"] = args[index + 1];
     index += 1;
   }
   return options;

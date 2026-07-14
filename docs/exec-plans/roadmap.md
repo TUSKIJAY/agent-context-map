@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 7 第四轮 Windows/macOS/Ubuntu 与 clean-room 已全绿，但实际下载资产缺少点号 manifest，新增 hidden-file 上传与 downloaded artifact audit 尚待第五轮验证，Phase 7 未完成。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 7 第五轮三平台、clean-room 与 downloaded artifact audit 已全绿，补充发现并关闭 skill 文本 CRLF/LF 字节差异；固定 canonical tree hash 尚待第六轮三平台验证，Phase 7 未完成。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

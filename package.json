@@ -43,7 +43,7 @@
     "test:install-upgrade-rollback": "vitest run tests/distribution/install-lifecycle.test.js -t \"fresh install, upgrade, and rollback\"",
     "test:uninstall-reinstall": "vitest run tests/distribution/install-lifecycle.test.js -t \"uninstall and reinstall\"",
     "test:clean-room": "node plugins/agent-context-map/scripts/check-clean-room.mjs",
-    "test:release-artifact": "npm run build:plugin && node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.1",
+    "test:release-artifact": "npm run build:plugin && node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.1 --expected-tree-sha256 2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e",
     "test:release-candidate": "npm run test:release-artifact && npm run test:distribution && npm run test:mcp-bundle-repro && npm run test:install-upgrade-rollback && npm run test:uninstall-reinstall",
     "test:host-binding-spike": "vitest run spikes/codex-host-binding/tests",
     "harness:check": "python scripts/check-project-harness.py --root . --profile auto",
