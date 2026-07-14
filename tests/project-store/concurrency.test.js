@@ -29,7 +29,7 @@ describe("project store concurrency", () => {
     expect(rejected.every((result) => result.reason?.code === "revision_conflict")).toBe(true);
     const final = await store.readDocument("acm_test_001");
     expect(final.documentRevision).toBe(fulfilled[0].value.newRevision);
-  });
+  }, 20_000);
 
   it("classifies layout-only and mixed conflicts without auto-rebase", async () => {
     const workspace = await tempWorkspace();
@@ -50,5 +50,5 @@ describe("project store concurrency", () => {
       expectedRevision: base.documentRevision,
       clientMutationId: "stale-local",
     })).rejects.toMatchObject({ code: "revision_conflict", details: { conflictClass: "layout_only", affectedIds: ["goal_001"] } });
-  });
+  }, 20_000);
 });

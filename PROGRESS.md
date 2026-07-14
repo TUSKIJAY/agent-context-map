@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD 基线：`c1441f0` Phase 7 cross-platform RC；首轮远端 CI 修复与验证已在当前工作区完成，待 scoped commit/push
+- 当前 HEAD：`f43f7e5` Phase 7 remote-CI corrections；第二轮 Windows 慢文件系统测试预算修复在当前工作区，待 scoped commit/push
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 7 in progress；首轮远端 Ubuntu + clean-room 已通过，Windows/macOS 暴露的 Python 依赖和 Windows 测试导入问题已在本地关闭，待第二轮远端 matrix
+- 当前 Phase：Phase 7 in progress；第二轮 macOS、Ubuntu 与 clean-room 全绿；Windows 全部语义断言已过，仅 20 路文件锁用例以 5.26 秒越过 Vitest 默认 5 秒，专属 20 秒测试预算待第三轮验证
 
 ## Navigation
 
@@ -26,11 +26,11 @@
 ## In Progress
 
 - Phase 7 本地候选已完成：`0.3.0-rc.1`、Node 24.12.0/npm 11.6.2、checksums/SBOM、clean-room、source-free 启动和隔离 HOME 生命周期 Gate 全通过。
-- Phase 7 当前只剩提交并推送 CI 修复、确认第二轮 Windows/macOS/Linux workflow 全绿；任一 runner 未绿前不得进入 Phase 8。
+- Phase 7 当前只剩提交并推送 Windows CI 测试预算修复、确认第三轮 Windows/macOS/Linux workflow 全绿；任一 runner 未绿前不得进入 Phase 8。
 
 ## Blocked
 
-- Phase 7 首轮远端 run `29324137580`：Ubuntu platform 与 clean-room 通过；Windows/macOS 因未安装 PyYAML 失败，Windows 另暴露 Vitest 直接导入 release CLI 的解析差异。修复已通过本地全测、RC 与 clean-room，第二轮尚未推送。
+- Phase 7 第二轮远端 run `29324813249`：macOS、Ubuntu、clean-room 全绿；Windows 105 项中 104 通过、1 项仅因 20 路真实文件锁竞争耗时 5.26 秒超过默认 5 秒，产品锁与断言无失败。测试专属预算修复尚未推送。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -42,6 +42,7 @@
 - [x] 2026-07-14 — Phase 7 clean-room：不复制 `.git`、`node_modules`、源码生成物或 dist，从隔离副本完成 `npm ci`、全测、Vite build、固定包与两次 bundle；三平台 workflow 已建立但远端 runner 未执行，故 Phase 7 本身未完成。
 - [x] 2026-07-14 — Phase 7 Linux 本地 Gate：Ubuntu WSL 固定 Node 24.12.0/npm 11.6.2，POSIX symlink/permission 与 38 files / 105 tests 通过；修复 Python 命令选择、test-mode JSX 绝对源码路径泄漏和 toolchain 未强制问题，Windows/Ubuntu release tree hash 一致。
 - [x] 2026-07-14 — Phase 7 首轮远端诊断：run `29324137580` 的 Ubuntu platform/clean-room 通过；CI 固定 Python 3.13.5 + PyYAML 6.0.3，distribution fixture 改由真实 release CLI 子进程构建；本地 38 files / 105 tests、RC、clean-room、Vite、harness 与 diff check 通过。
+- [x] 2026-07-14 — Phase 7 第二轮远端诊断：run `29324813249` 的 macOS、Ubuntu、clean-room 全绿；Windows 已通过 PyYAML、release CLI、junction/locked file 与 104 项测试，唯一失败是文件锁竞争用例 5.26 秒越过 Vitest 默认 5 秒；产品 2 秒 lock timeout 不变，仅为磁盘并发测试设置 20 秒预算。
 - [x] 2026-07-14 — Phase 6：模型可见 get/validate/write/import/export 与 app-only commit/manual-edit/send 全部落位；write/import 只生成 15 分钟 pending proposal，正式写入必须由当前 Widget 实例的一次性人工 gesture 触发。
 - [x] 2026-07-14 — Phase 6 安全边界：canonical camelCase only、operation 数量/体积上限、锁内 expectedRevision、task/project/document/instance 绑定、idempotency、prompt-injection 和 stale proposal/revision/gesture 全部 fail closed；server 重建 context payload 与 digest。
 - [x] 2026-07-14 — Phase 6 Gate：专项 16 tests、全仓 36 files / 101 tests；标准宿主完成预览不发送、二次确认后仅发送一次以及 proposal 人工采纳；Widget SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`，MCP Release 可复现 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`；Vite、Tauri executable/MSI/NSIS、distribution、harness 与 diff check 通过。
@@ -69,8 +70,8 @@
 
 ## Next
 
-1. 创建首轮远端 CI 修复 scoped local commit。
-2. 将已获授权的 `codex/acm-pluginization-plan` 推送到 origin 并观察第二轮 `Plugin Release Candidate` workflow。
+1. 创建 Windows 慢文件系统测试预算 scoped local commit。
+2. 将已获授权的 `codex/acm-pluginization-plan` 推送到 origin 并观察第三轮 `Plugin Release Candidate` workflow。
 3. Windows/macOS/Linux matrix 全绿后记录 run URL/结论，标记 Phase 7 complete；任一差异按停止条件修复后重跑。
 4. 只有 Phase 7 完成后才进入 Phase 8 真实 Codex Desktop canary、固定 tag/Release 和 stable 交接。
 
@@ -78,6 +79,7 @@
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 7 第二轮只剩 Windows 测试预算差异 | run 29324813249；macOS/Ubuntu/clean-room green；Windows 104 passed + one 5.26s timeout |
 | 2026-07-14 | Phase 7 首轮远端差异已复现并本地关闭 | run 29324137580；Ubuntu/clean-room green；Python/PyYAML pin；release CLI fixture；105 tests + clean-room |
 | 2026-07-14 | Phase 7 local RC 就绪，remote matrix pending | Windows + Ubuntu WSL 各 105；clean-room npm ci；native filesystem；RC checksums/SBOM |
 | 2026-07-14 | Phase 6 pending commit 与 click-gated send 完成 | MCP/context/security/concurrency 16；全仓 101；标准宿主二次确认；Tauri bundles |
