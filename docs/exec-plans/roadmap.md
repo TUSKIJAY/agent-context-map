@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 6 完整 MCP 工具、pending 写入与发送语义已完成，下一 Gate 为 Phase 7 跨平台、干净包与发布候选验证。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 7 本地 Release Candidate、Windows/clean-room/隔离生命周期 Gate 已通过，远端 Windows/macOS/Linux matrix 尚待 push 授权并实跑，Phase 7 未完成。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 6 已完成，下一 Gate 为 Phase 7
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 7 本地 Release Candidate 已就绪，远端三平台 CI Gate 待 push 授权，尚未完成
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -99,6 +99,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 5 验证通过：Widget 3、lifecycle 1、rebind 2、bundle policy 1、distribution 3、全仓 29 files / 88 tests；Widget HTML 2,087,825 bytes，SHA-256 `ef20b5144c7edab1045d581403d70a9cb4ccc37a3a54fc37f3aa86929e55a527`，MCP Release 两次构建 SHA-256 `a0e0776bd80f19542f6b4dbeb4bd8b2b8f5d87a6fdf9dc6a8a19538f0e1fbbe4`。Playwright 标准宿主真实渲染 2 nodes/1 edge 并完成编辑；产品 Codex 临时 canary 证明 open tool success 不等于 ready；Vite、Tauri executable/MSI/NSIS、plugin validator、harness、budget 和 diff check 通过。当前 Gate：进入 Phase 6。
 - 2026-07-14，Phase 6 完成：模型可见 get/validate/write/import/export、内存 pending proposal、app-only proposal/manual commit、selected/related/execution context、server-side payload digest 与 `ui/message` click gate 落位；bootstrap/app session proof 只经 Widget `_meta` 传递，不进入模型 content/structuredContent。
 - Phase 6 验证通过：专项 16 tests、全仓 36 files / 101 tests；proposal 前和无 gesture 时项目 hash 不变，锁内 stale revision 保留较新文件，并发同 revision 仅 1 次 commit；legacy snake_case、`patchMeta`、confirmed escalation、oversize 和 prompt injection 全部拒绝。标准 MCP Apps 浏览器宿主证明 preview 阶段 message/send 均为 0、最终二次确认后均为 1，proposal commit 经过确认对话框；Widget SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`，MCP Release 可复现 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`；Vite、Tauri executable/MSI/NSIS、distribution、harness 和 diff check 通过。当前 Gate：进入 Phase 7。
+- 2026-07-14，Phase 7 本地 Release Candidate 就绪：插件版本固定为 `0.3.0-rc.1`，新增 Node 24.12.0/npm 11.6.2 三平台 workflow、clean-room `npm ci` replay、Windows junction/locked-file 与 POSIX symlink/permission 测试、隔离 HOME 安装生命周期、SHA-256 checksums、依赖清单和 CycloneDX SBOM。
+- Phase 7 本地 Gate 通过：Windows 全仓 38 files / 105 tests（1 项 POSIX-only 测试按平台跳过），clean-room 从无 `node_modules`/生成物副本完成 `npm ci`、全测、Vite build、固定包和两次可复现构建；fresh/update/downgrade/uninstall/reinstall 全程保持项目 `.acm` hash，release tree SHA-256 `accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775`。远端 Windows/macOS/Linux runners 尚未执行，故 Phase 7 保持 in progress；证据见 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1351,6 +1353,8 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 7：跨平台、干净包与发布候选验证
 
+执行状态：In Progress — 本地 Windows 与 clean-room Gate 已通过；远端 Windows/macOS/Linux CI 尚待分支 push 后实跑，不得提前标记 Completed。
+
 输入：
 
 - 功能完整插件候选；
@@ -1665,4 +1669,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 6 已完成完整 MCP 工具、pending/人工 commit 和 click-gated send Gate；下一步执行 Phase 7 跨平台、干净包与发布候选验证。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 7 的本地 Release Candidate 与隔离生命周期 Gate 已完成；下一闸门是在获得当前任务的 push 授权后运行 Windows/macOS/Linux CI，三平台全部通过前 Phase 7 不标记 Completed。

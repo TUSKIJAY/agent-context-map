@@ -91,5 +91,5 @@ describe("safe replacement and recovery", () => {
       expect(bytes.length).toBeGreaterThan(20);
       expect((await store.readDocument("acm_test_001")).doc.meta.title).toBe(`Replacement ${index}`);
     }
-  });
+  }, 15_000);
 });

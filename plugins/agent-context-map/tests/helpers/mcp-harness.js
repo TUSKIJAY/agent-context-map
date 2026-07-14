@@ -4,8 +4,8 @@ import path from "node:path";
 
 export const sourceServerPath = path.resolve("plugins/agent-context-map/mcp/src/server.js");
 
-export function createMcpHarness({ roots = [], serverPath = sourceServerPath, cwd = process.cwd() } = {}) {
-  const child = spawn(process.execPath, [serverPath], { cwd, stdio: ["pipe", "pipe", "pipe"] });
+export function createMcpHarness({ roots = [], serverPath = sourceServerPath, cwd = process.cwd(), env = {} } = {}) {
+  const child = spawn(process.execPath, [serverPath], { cwd, env: { ...process.env, ...env }, stdio: ["pipe", "pipe", "pipe"] });
   const pending = new Map();
   let sequence = 0;
   let currentRoots = roots;

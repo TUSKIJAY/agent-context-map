@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "agent-context-map-phase7-gate/v1",
+  "date": "2026-07-14",
+  "status": "local_candidate_ready_remote_matrix_pending",
+  "pluginVersion": "0.3.0-rc.1",
+  "buildToolchain": {
+    "node": "24.12.0",
+    "npm": "11.6.2",
+    "lockfileVersion": 3
+  },
+  "localWindows": {
+    "npmCi": "passed",
+    "testAll": {
+      "filesPassed": 38,
+      "testsPassed": 105,
+      "testsSkipped": 1,
+      "skipReason": "POSIX-only permission test is selected on macOS/Linux runners"
+    },
+    "nativeFilesystem": [
+      "junction escape rejected",
+      "exclusive locked destination preserved",
+      "replacement succeeds after lock release"
+    ],
+    "cleanRoom": {
+      "isolatedCopy": true,
+      "npmCi": true,
+      "testAll": "passed",
+      "viteBuild": "passed",
+      "packageBuilds": 2,
+      "sourceTreeDependency": false
+    },
+    "distributionTests": 6,
+    "lifecycle": [
+      "fresh install",
+      "upgrade",
+      "downgrade rollback",
+      "uninstall",
+      "reinstall",
+      "user state preserved",
+      "project .acm hash preserved"
+    ]
+  },
+  "release": {
+    "fileCount": 13,
+    "treeSha256": "accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775",
+    "checksumSetDigest": "c970cac77e0946d1f1d6693c891076451c2a78bb46225e161c85d1bb3c640135",
+    "sha256SumsFileSha256": "108d25d65ce217f32c5a16068fe86d1239d699491819d4fc145acd2b4fb8c1f1",
+    "metadata": [
+      "SHA256SUMS",
+      "dist/manifest.json",
+      "dist/dependencies.json",
+      "dist/sbom.cdx.json",
+      "CHANGELOG.md"
+    ]
+  },
+  "remoteMatrix": {
+    "workflow": ".github/workflows/plugin-release-candidate.yml",
+    "runners": ["windows-latest", "macos-latest", "ubuntu-latest"],
+    "status": "pending_push_authorization",
+    "claim": "Phase 7 is not complete until all remote runners pass"
+  },
+  "environmentSafety": {
+    "realGlobalCodexHomeModified": false,
+    "marketplaceCreated": false,
+    "networkServiceCreated": false,
+    "pushPerformed": false
+  }
+}

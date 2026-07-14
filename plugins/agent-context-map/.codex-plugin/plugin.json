@@ -1,8 +1,8 @@
 {
   "id": "agent-context-map",
   "name": "agent-context-map",
-  "version": "0.2.0",
-  "description": "Open and validate project-local ACM-MD graphs through a fail-closed Codex MCP control plane.",
+  "version": "0.3.0-rc.1",
+  "description": "Inspect and safely edit project-local ACM-MD graphs through a fail-closed Codex MCP Apps workflow.",
   "author": {
     "name": "TUSKIJAY",
     "url": "https://github.com/TUSKIJAY"
@@ -15,10 +15,10 @@
   "interface": {
     "displayName": "Agent Context Map",
     "shortDescription": "Inspect project-local ACM-MD context safely.",
-    "longDescription": "A local-first Codex plugin for validating and, in later gated phases, interactively editing Agent Context Map documents bound to the current trusted workspace.",
+    "longDescription": "A local-first Codex plugin for validating and interactively editing Agent Context Map documents bound to the current trusted workspace, with pending proposals and explicit user commit/send gates.",
     "developerName": "TUSKIJAY",
     "category": "Productivity",
-    "capabilities": ["Read", "Interactive"],
+    "capabilities": ["Read", "Write", "Interactive"],
     "brandColor": "#6C63E8",
     "defaultPrompt": [
       "Open the Agent Context Map for this project.",

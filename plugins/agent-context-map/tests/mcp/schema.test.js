@@ -13,7 +13,7 @@ describe("Phase 6 MCP schema", () => {
   test("uses a strict plugin manifest and companion MCP config without a marketplace", async () => {
     const manifest = JSON.parse(await fs.readFile("plugins/agent-context-map/.codex-plugin/plugin.json", "utf8"));
     const mcp = JSON.parse(await fs.readFile("plugins/agent-context-map/.mcp.json", "utf8"));
-    expect(manifest).toMatchObject({ id: "agent-context-map", name: "agent-context-map", version: "0.2.0", skills: "./skills/", mcpServers: "./.mcp.json" });
+    expect(manifest).toMatchObject({ id: "agent-context-map", name: "agent-context-map", version: "0.3.0-rc.1", skills: "./skills/", mcpServers: "./.mcp.json" });
     expect(mcp.mcpServers.agent_context_map).toMatchObject({ command: "node", args: ["./mcp/server.mjs"], cwd: "." });
     await expect(fs.access(".agents/plugins/marketplace.json")).rejects.toMatchObject({ code: "ENOENT" });
   });

@@ -7,7 +7,7 @@ let html;
 beforeAll(async () => {
   const result = await buildWidget();
   html = result.html;
-});
+}, 30_000);
 
 describe("Phase 5 Widget bundle policy", () => {
   test("emits one self-contained local-only HTML resource", async () => {

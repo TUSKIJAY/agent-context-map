@@ -26,7 +26,7 @@ export async function tempWorkspace(prefix = "acm-project-store-") {
     parent,
     root,
     stateRoot,
-    cleanup: () => fs.rm(parent, { recursive: true, force: true }),
+    cleanup: () => fs.rm(parent, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }),
   };
 }
 

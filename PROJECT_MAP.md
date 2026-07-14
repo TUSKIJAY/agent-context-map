@@ -14,6 +14,8 @@
 | `PROJECT_MAP.md` | 本路径地图 |
 | `README.md` | 面向普通使用者的产品说明与运行方法 |
 | `.harness/config.json` | machine-readable harness profile 和验证命令 |
+| `.github/workflows/plugin-release-candidate.yml` | 固定 Node/npm 的 Windows/macOS/Linux RC matrix、clean-room replay 与固定资产上传 |
+| `.nvmrc` | Phase 7 release candidate 的固定 Node 构建版本 |
 | `package.json` | Node 依赖与 dev/build/harness/Tauri 脚本 |
 | `vite.config.js` | Vite + React 构建配置 |
 | `index.html` | Vite HTML 入口 |
@@ -118,11 +120,13 @@ npm run tauri:build -- --no-bundle
 | `plugins/agent-context-map/widget/src/platform/` | 标准 MCP Apps `ui/*` bridge、兼容 fallback 与 editor platform adapters |
 | `plugins/agent-context-map/widget/src/main.jsx` | Widget hydrate、app-only proof、`acm-editor` 挂载和 React/项目/画布首帧 ready 上报 |
 | `plugins/agent-context-map/widget/src/Phase6Controls.jsx` | proposal/manual commit 预览确认、三种 send 预览与二次点击门控 |
-| `plugins/agent-context-map/scripts/` | self-contained Widget/MCP bundle、skill 复制、clean release manifest 与可复现构建校验 |
-| `plugins/agent-context-map/tests/` | schema/runtime/binding/path-security、Widget/lifecycle/rebind/bundle policy、clean-package 与脱敏真实宿主证据 |
-| `tests/distribution/plugin-distribution.test.js` | clean Release 内容、开发路径泄漏、独立启动和项目不变性 Gate |
+| `plugins/agent-context-map/CHANGELOG.md` | 插件独立版本的发布候选变更记录 |
+| `plugins/agent-context-map/scripts/` | self-contained Widget/MCP bundle、skill 复制、release manifest/checksums/SBOM、clean-room 与可复现构建校验 |
+| `plugins/agent-context-map/tests/` | schema/runtime/binding/path-security、Widget/lifecycle/rebind/bundle policy、clean-package 与脱敏 Gate 证据 |
+| `tests/distribution/` | clean Release、开发路径泄漏、独立启动、checksums/SBOM 与隔离安装/升级/回滚/卸载生命周期 Gate |
+| `tests/project-store/platform-filesystem.test.js` | Windows junction/独占锁和 POSIX symlink/permission 原生差异 Gate |
 
-`plugins/agent-context-map/mcp/server.mjs` 与 `plugins/agent-context-map/skills/acm-md/` 是本地构建生成物，不提交；正式发布树由 `npm run build:mcp` 生成到被忽略的 `dist/agent-context-map-plugin/`。
+`plugins/agent-context-map/mcp/server.mjs` 与 `plugins/agent-context-map/skills/acm-md/` 是本地构建生成物，不提交；固定发布候选由 `npm run build:plugin` 生成到被忽略的 `dist/agent-context-map-plugin/`。
 
 ## 文档与治理
 

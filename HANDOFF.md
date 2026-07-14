@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：插件化 active plan 的 Phase 6 已完成；下一步执行 Phase 7 CI、clean-room 与 release candidate。
+当前焦点：Phase 7 本地 Release Candidate 已就绪；在获得明确 push 授权后运行远端 Windows/macOS/Linux matrix，全部绿色前 Phase 7 不完成。
 
 ## Resume Point
 
@@ -38,51 +38,54 @@
   - canonical operation policy 拒绝 legacy snake_case、patchMeta、confirmed 升级、未知字段、超 100 operations、超 512 KiB 和 instruction-like 内容；
   - selected/related/execution context 分别执行精确选择、单层有向 allowlist 扩展和 Task-only 冲突门禁；send payload/digest 由 server 重建，并拒绝 stale task/instance/revision 与 prompt injection；
   - Widget 使用标准 `ui/message` 发送，兼容 fallback 只在标准能力不可用时启用；底部 safe action bar 明示 preview、二次确认和发送结果。
+- Phase 7 本地候选：
+  - 插件版本固定为 `0.3.0-rc.1`；`.nvmrc` 和 CI 固定 Node 24.12.0/npm 11.6.2，`package-lock.json` 是唯一安装输入；
+  - release 包含 `SHA256SUMS`、deterministic manifest、依赖清单、CycloneDX SBOM 和 CHANGELOG，13 个文件可脱离源码树启动；
+  - `check-clean-room.mjs` 从不含 `.git`、`node_modules`、dist 与源码生成物的隔离副本执行 `npm ci`、全测、Vite build、固定包和两次可复现构建；
+  - Windows 原生 Gate 覆盖 junction escape、独占 locked destination 和解锁后 replace；POSIX runner 覆盖 symlink 与 permission-denied；
+  - 安装 fixture 只使用临时 `CODEX_HOME`/`HOME`/`USERPROFILE`，fresh/update/downgrade/uninstall/reinstall 均复核 release checksums、独立 MCP 启动、用户状态和项目 `.acm` hash。
 
 ## Current Repository Facts
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：未设置
-- HEAD：Phase 6 scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测
+- HEAD：Phase 6 已提交 `ae1050d`；Phase 7 local RC scoped commit 待本次 Gate 收尾创建，接手时以 `git log -1 --oneline` 实测
 - push：未获授权
-- 当前计划状态：Phase 6 complete；Phase 7 next
+- 当前计划状态：Phase 7 in progress；local RC ready，remote matrix pending push authorization
 
-## Phase 6 Verification
+## Phase 7 Local Candidate Verification
 
 已运行并通过：
 
 ```powershell
-npm run build:widget
-npm run test:mcp-schema
-npm run test:mcp-tools
-npm run test:proposal-boundary
-npm run test:revision-conflict
-npm run test:context-selection
-npm run test:send-semantics
-npm run test:prompt-injection
-npm run test:concurrency
-npm run test:widget-bundle-policy
+npm ci --no-audit --no-fund
+npm run test:all
+npm run build
+npm run build:plugin
+npm run test:platform-filesystem
 npm run test:distribution
 npm run test:mcp-bundle-repro
-npm test
-npm run build
+npm run test:install-upgrade-rollback
+npm run test:uninstall-reinstall
+npm run test:clean-room
+python C:\Users\LENOVO\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py plugins/agent-context-map
 npm run harness:check
 npm run harness:budget
 git diff --check
 ```
 
-结果：Phase 6 专项 16 tests、全仓 36 files / 101 tests；Vite 317 modules，Tauri release executable/MSI/NSIS 通过。Widget HTML 2,095,044 bytes，SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`；MCP Release 两次构建 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`。distribution、bundle policy、plugin validator、harness、budget 与 diff check 通过。
+结果：本机 Windows 全仓 38 files / 105 tests，1 项 POSIX-only permission test 按平台跳过；distribution 6、Windows native filesystem 1、安装生命周期 2 全通过。clean-room 从隔离副本完成 `npm ci`、同一全测、Vite 317 modules、固定包和两次可复现打包。Release tree SHA-256 `accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775`，checksum set digest `c970cac77e0946d1f1d6693c891076451c2a78bb46225e161c85d1bb3c640135`，`SHA256SUMS` 文件 SHA-256 `108d25d65ce217f32c5a16068fe86d1239d699491819d4fc145acd2b4fb8c1f1`。plugin validator 通过。
 
-真实宿主证据：Playwright Edge 通过标准 MCP Apps bridge 渲染 2 nodes/1 edge；首次点击“发送选中”只建立 preview，`ui/message` 与 `send_acm_context` 均为 0，二次点击“确认并发送”后两者各为 1 且消息与 server 授权 payload 一致；proposal 采纳显示确认并只调用一次 commit。localStorage 为空，仅有测试页 favicon 404；脱敏证据在 `plugins/agent-context-map/tests/evidence/phase6-pending-send-gate.json`。
+生命周期证据：临时安装旧 `0.2.0` fixture、升级到 `0.3.0-rc.1`、降级回滚、卸载并重装；每一步从安装目录启动 bundled MCP、验证 checksums，真实用户全局目录未触及，测试项目 `.acm` hash 和隔离用户状态保持不变。脱敏证据在 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
 关键实现：
 
-- `plugins/agent-context-map/mcp/src/tools/definitions.js` 与 `registry.js`：14 个严格 schema 工具、模型/app 可见性边界与 server-side preflight。
-- `plugins/agent-context-map/mcp/src/tools/operation-policy.js`：canonical operation、尺寸/数量、字段与 prompt-injection policy。
-- `plugins/agent-context-map/mcp/src/state/`：revision-bound context、pending proposal、ProjectStore 和 send service。
-- `packages/acm-core/src/context.js`：selected/related/execution context builder 与执行冲突门禁。
-- `plugins/agent-context-map/widget/src/Phase6Controls.jsx`：proposal/manual preview、一次性 gesture、二次确认和标准消息发送。
+- `.github/workflows/plugin-release-candidate.yml`：Windows/macOS/Linux 固定 toolchain matrix 与 Ubuntu clean-room。
+- `plugins/agent-context-map/scripts/build-mcp.mjs`：固定版本 release、checksums、manifest、依赖清单与 SBOM。
+- `plugins/agent-context-map/scripts/check-clean-room.mjs`：无现成依赖/生成物的隔离安装与两次构建。
+- `tests/distribution/install-lifecycle.test.js`：隔离 HOME 的安装、升级、回滚、卸载、重装与 `.acm` hash guard。
+- `tests/project-store/platform-filesystem.test.js`：Windows 与 POSIX 原生文件系统差异 Gate。
 
 ## Governance Boundary
 
@@ -94,17 +97,17 @@ git diff --check
 
 ## Risks
 
-- Windows safe replace 与 Phase 6 write concurrency 已原生执行；portable tests 已建立，macOS/Linux 真实矩阵留在计划 Phase 7，不把它写成已运行证据。
-- Phase 7 必须在隔离 HOME/clean checkout 中验证 release candidate，不得把当前仓库的 node_modules、源码路径或已安装插件当成隐式依赖。
-- 三平台 CI 未经远端 runner 实跑前不能宣称绿色；push 仍必须取得本任务中的明确授权。
+- 本地 Windows/clean-room Gate 不替代 GitHub macOS/Linux 原生 runner；远端 matrix 未运行，Phase 7 仍为 in progress。
+- workflow 只有在分支推送后才能产生三平台证据；push 仍必须取得当前任务明确授权。
+- Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 建立 Windows/macOS/Linux CI matrix，固定 Node/npm/lockfile，并覆盖 core/MCP/Widget/project-store 与平台文件系统语义。
-2. 建立 clean-room 两次构建、source-free release 启动、checksum 与 SBOM/dependency manifest Gate。
-3. 在隔离 HOME 中覆盖 fresh/update/downgrade/uninstall/reinstall，全程验证项目 `.acm` hash 不变。
-4. 形成 scoped local commit；远端 matrix 需要获得明确 push 授权后才能实跑和完成 Phase 7 Gate。
+1. 形成 Phase 7 local RC scoped local commit，不 push。
+2. 获得明确 push 授权后推送 `codex/acm-pluginization-plan`，观察 `Plugin Release Candidate` workflow。
+3. Windows/macOS/Linux 与 clean-room jobs 全绿后记录 run URL、产物 checksum，并标记 Phase 7 complete；任一差异按停止条件修复重跑。
+4. Phase 7 complete 后再进入 Phase 8；真实 canary、marketplace、tag/Release/stable 仍分别受计划 Gate 和用户授权约束。
 
 ## History
 

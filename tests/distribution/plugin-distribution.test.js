@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -17,7 +18,7 @@ beforeAll(async () => {
   await fs.mkdir(path.join(workspace, ".acm"), { recursive: true });
   await fs.writeFile(path.join(workspace, ".acm", "sentinel"), "unchanged\n");
   await buildMcp({ releaseRoot, writeDevelopmentBundle: false });
-});
+}, 30_000);
 afterAll(async () => { await fs.rm(base, { recursive: true, force: true }); });
 
 describe("Phase 4 clean plugin distribution", () => {
@@ -41,5 +42,33 @@ describe("Phase 4 clean plugin distribution", () => {
       expect(validated.result.structuredContent).toMatchObject({ ok: true, data: { valid: true } });
       expect(await fs.readFile(path.join(workspace, ".acm", "sentinel"), "utf8")).toBe("unchanged\n");
     } finally { await harness.close(); }
+  });
+
+  test("ships deterministic checksums, dependency inventory, and CycloneDX SBOM", async () => {
+    const manifest = JSON.parse(await fs.readFile(path.join(releaseRoot, ".codex-plugin", "plugin.json"), "utf8"));
+    const dependencies = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "dependencies.json"), "utf8"));
+    const sbom = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "sbom.cdx.json"), "utf8"));
+    expect(manifest.version).toBe("0.3.0-rc.1");
+    expect(dependencies).toMatchObject({
+      schemaVersion: "agent-context-map-plugin-dependencies/v1",
+      pluginVersion: manifest.version,
+      buildRuntime: { node: "24.12.0", npm: "11.6.2", lockfileVersion: 3 },
+    });
+    expect(dependencies.packages.length).toBeGreaterThan(10);
+    expect(sbom).toMatchObject({
+      bomFormat: "CycloneDX",
+      specVersion: "1.5",
+      metadata: { component: { name: "agent-context-map", version: manifest.version } },
+    });
+    expect(sbom.components.length).toBe(dependencies.packages.length);
+    const checksumLines = (await fs.readFile(path.join(releaseRoot, "SHA256SUMS"), "utf8")).trim().split("\n");
+    expect(checksumLines.some((line) => line.endsWith("  mcp/server.mjs"))).toBe(true);
+    expect(checksumLines.some((line) => line.endsWith("  dist/sbom.cdx.json"))).toBe(true);
+    for (const line of checksumLines) {
+      const match = line.match(/^([a-f0-9]{64})  (.+)$/);
+      expect(match).not.toBeNull();
+      const actual = createHash("sha256").update(await fs.readFile(path.join(releaseRoot, match[2]))).digest("hex");
+      expect(actual).toBe(match[1]);
+    }
   });
 });

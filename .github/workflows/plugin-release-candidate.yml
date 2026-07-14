@@ -1,0 +1,76 @@
+name: Plugin Release Candidate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - codex/acm-pluginization-plan
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-rc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  platform-gate:
+    name: ${{ matrix.os }} / Node 24.12.0
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Pin npm
+        run: npm install --global npm@11.6.2
+      - name: Verify toolchain
+        run: |
+          node --version
+          npm --version
+      - name: Install from lockfile
+        run: npm ci --no-audit --no-fund
+      - name: Core, MCP, Widget, and project-store tests
+        run: npm run test:all
+      - name: Desktop web build
+        run: npm run build
+      - name: Build fixed plugin candidate
+        run: npm run build:plugin
+      - name: Distribution and reproducibility gates
+        run: |
+          npm run test:distribution
+          npm run test:mcp-bundle-repro
+      - name: Isolated lifecycle gates
+        run: |
+          npm run test:install-upgrade-rollback
+          npm run test:uninstall-reinstall
+      - name: Upload fixed release candidate
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-context-map-plugin-0.3.0-rc.1
+          path: dist/agent-context-map-plugin
+          if-no-files-found: error
+          retention-days: 14
+
+  clean-room:
+    name: Clean-room package replay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.12.0
+          cache: npm
+      - name: Pin npm
+        run: npm install --global npm@11.6.2
+      - name: Bootstrap checker
+        run: npm ci --no-audit --no-fund
+      - name: Rebuild from an isolated source copy
+        run: npm run test:clean-room
