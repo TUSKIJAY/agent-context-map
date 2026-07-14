@@ -1,0 +1,41 @@
+{
+  "base": {
+    "schema_version": "acm-md/0.1",
+    "doc_id": "acm_operations_001",
+    "meta": { "title": "Operation fixture" },
+    "nodes": [
+      { "id": "goal_001", "type": "Goal", "title": "Goal", "status": "confirmed", "source": "fixture", "confidence": 1, "x": 0, "y": 0 },
+      { "id": "module_001", "type": "Module", "title": "Old module", "status": "confirmed", "source": "fixture", "confidence": 1, "x": 100, "y": 100 },
+      { "id": "feature_001", "type": "Feature", "title": "Remove me", "status": "confirmed", "source": "fixture", "confidence": 1, "x": 200, "y": 200 }
+    ],
+    "edges": [
+      { "id": "edge_remove", "from": "module_001", "to": "feature_001", "type": "contains", "status": "confirmed", "source": "fixture", "confidence": 1 },
+      { "id": "edge_update", "from": "goal_001", "to": "module_001", "type": "contains", "status": "confirmed", "reason": "old", "source": "fixture", "confidence": 1 }
+    ]
+  },
+  "operations": [
+    { "id": "op_001", "op": "removeEdge", "edgeId": "edge_remove", "reason": "feature removed" },
+    { "id": "op_002", "op": "removeNode", "nodeId": "feature_001", "reason": "obsolete" },
+    { "id": "op_003", "op": "addNode", "node": { "id": "feature_002", "type": "Feature", "title": "New feature", "status": "suggested", "source": "agent", "confidence": 0.8, "x": 300, "y": 300 } },
+    { "id": "op_004", "op": "updateNodeFields", "nodeId": "module_001", "fields": { "title": "Updated module" } },
+    { "id": "op_005", "op": "addEdge", "edge": { "id": "edge_new", "from": "module_001", "to": "feature_002", "type": "contains", "status": "suggested", "source": "agent", "confidence": 0.8 } },
+    { "id": "op_006", "op": "updateEdgeFields", "edgeId": "edge_update", "fields": { "reason": "updated" } },
+    { "id": "op_007", "op": "setNodeLayout", "nodeId": "module_001", "layout": { "x": 220, "y": 330 }, "preconditions": { "nodeExists": ["module_001"], "noDanglingEdges": true } }
+  ],
+  "expected": {
+    "nodeIds": ["goal_001", "module_001", "feature_002"],
+    "edgeIds": ["edge_update", "edge_new"],
+    "moduleTitle": "Updated module",
+    "edgeReason": "updated",
+    "moduleLayout": { "x": 220, "y": 330 },
+    "changeBuckets": {
+      "added_nodes": 1,
+      "modified_nodes": 1,
+      "removed_nodes": 1,
+      "added_edges": 1,
+      "modified_edges": 1,
+      "removed_edges": 1,
+      "layout_changes": 1
+    }
+  }
+}

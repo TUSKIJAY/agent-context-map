@@ -1,0 +1,11 @@
+{
+  "name": "@agent-context-map/acm-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./schema": "./src/schema.js",
+    "./operations": "./src/operations.js"
+  }
+}

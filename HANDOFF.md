@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：插件化 active plan 的 Phase 0B 已完成并得到 `trusted_host_identity`；下一步执行 Phase 1 acm-core 协议等价抽取。
+当前焦点：插件化 active plan 的 Phase 1 已完成；下一步执行 Phase 2 项目 `.acm` 文件真源与 SQLite 迁移兼容。
 
 ## Resume Point
 
@@ -13,33 +13,38 @@
   - Phase 0B 在 `spikes/codex-host-binding/` 建立最小 repo-local plugin、只读 stdio MCP、6 个自动化 tests 和脱敏 Gate report；
   - Codex Desktop new task、same-task follow-up、second task、cachebuster reload 与伪造 identity args 均验证；最终 Gate = `trusted_host_identity`；
   - 单一 host workspace 可绑定；多 workspace 候选只返回 `trusted_native_picker_required`，缺任一 task/root 证据均 `unavailable`。
-- 当前仍没有创建产品插件、core/editor 重构、项目 store、数据迁移或 `.acm` 写路径；Phase 0B spike 与产品代码完全隔离。
+- Phase 1 已完成：
+  - `packages/acm-core/src/` 是 platform-free 协议核心，公共入口为 `index.js`；
+  - strict parse、确定性 serialize、JS/Python validator parity、Diff、canonical camelCase `op`、legacy input adapter、SHA-256 revision 与 context 裁剪已覆盖；
+  - `src/acm/data.js` 保留 UI 词表/布局与兼容包装，现有 legacy pending UI 行为未回退；
+  - 尚未创建项目 store、执行 SQLite 迁移或切换业务真源。
 
 ## Current Repository Facts
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：未设置
-- HEAD：Phase 0B scoped commit；接手时以 `git log -1 --oneline` 实测
+- HEAD：Phase 1 scoped commit；接手时以 `git log -1 --oneline` 实测
 - push：未获授权
-- 当前计划状态：Phase 0B complete；Phase 1 next
+- 当前计划状态：Phase 1 complete；Phase 2 next
 
-## Phase 0B Verification
+## Phase 1 Verification
 
 已运行并通过：
 
 ```powershell
-npm run test:host-binding-spike
-python "$env:USERPROFILE\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py" spikes\codex-host-binding\plugins\codex-host-binding-spike
+npm test -- --run acm-core
+npm run test:acm-roundtrip
+npm run test:acm-validator-parity
+npm test -- --run
+npm run build
+npm run tauri:build -- --no-bundle
 npm run harness:check
 npm run harness:budget
-npm run test -- --run tests/baseline
-npm run test:distribution
-npm run build
 git diff --check
 ```
 
-真实宿主证据见 `spikes/codex-host-binding/evidence/gate-report.json`。同一任务 instance/task/root hash 稳定；第二任务产生独立 instance/task hash；cachebuster 重装后 root hash 不变；伪造 `projectPath/workspaceRoot/threadId/taskId` 全部被记录为 ignored，`modelArgumentsUsedForAuthorization=false`。临时证据不含仓库路径或伪造路径明文，不提交 raw NDJSON。
+结果：acm-core 3 files / 16 tests；全仓 9 files / 31 tests；JS/Python strict parity 8 fixtures；core 生成的 round-trip bytes 经 Python strict stdin 验证；Vite 306 modules；Tauri release executable 构建成功。静态 Gate 证明 core 不导入 React/Tauri/Dagre/ELK/SQLite/fs/path/crypto，也不访问 window/document/localStorage。
 
 ## Governance Boundary
 
@@ -50,15 +55,15 @@ git diff --check
 
 ## Blockers And Risks
 
-- DEC-005 的 Phase 0B evidence Gate 已满足，但公开文档仍未承诺这些 host-owned 字段；Phase 4 必须在产品 MCP 中复验，字段漂移即 fail closed 并重开 ADR。
-- 多 root 真实 Desktop 选择器尚未作为自动授权路径开放；当前策略是多候选返回 `trusted_native_picker_required`。任何实现不得把附加可写目录或模型参数提升为 workspace root。
+- DEC-005 的 Phase 0B evidence Gate 已满足，但 Phase 4 仍须在产品 MCP 中复验；字段漂移即 fail closed 并重开 ADR。
+- legacy `add_node/update_node/add_edge` 只在显式 adapter 接受并产生 deprecation diagnostics；core 与新调用方只产出 `op: addNode/updateNodeFields/addEdge/...`。Phase 3 必须迁移现有 UI 调用方，Phase 6 必须拒绝 legacy 名称。
 - Vite 5 audit advisory 需在后续获授权依赖升级范围内解决，不影响本地 production build，但影响 dev-server 安全基线。
 
 ## Next Gate
 
-1. 从 `src/acm/data.js` 抽取纯 Node `acm-core`；React/layout/display helpers 留在 UI 层。
-2. 建 JS/Python strict validator parity、确定性 round-trip、规范 camelCase operations/preconditions/changes projection 和 legacy input diagnostics。
-3. 运行 Phase 1 全部自动化 Gate、Vite/Tauri 回归与 scoped commit；未过停止条件不得进入 Phase 2。
+1. 建 `.acm/index.json`、`.acm/documents/*.acm.md` 与 platform adapter；index 只作可重建 cache。
+2. 实现 canonical SHA-256 revision、expectedRevision、document lock、temp/safe replace、crash recovery 与 conflict classification。
+3. 实现 SQLite read-only migration preview/backup/validate/apply/rollback；不得双写，未过 Gate 不更新 `INSTRUCTIONS.md` 的当前真源事实。
 
 ## History
 

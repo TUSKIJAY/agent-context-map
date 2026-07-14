@@ -30,7 +30,8 @@
 | 范围 | 首选入口 |
 | --- | --- |
 | 应用布局、全局状态、工具栏、撤销重做、文件与导出 | `src/App.jsx` |
-| ACM 数据契约、校验、导入导出、建议 patch 纯函数 | `src/acm/data.js` |
+| ACM 数据契约、校验、导入导出、Diff、operations、revision、context | `packages/acm-core/src/` |
+| UI 受控词表展示、布局与 core 兼容入口 | `src/acm/data.js` |
 | Agent SDK / Tauri / MCP / sidecar 适配与 fallback | `src/acm/agentClient.js` |
 | 画布、节点、边、布局与交互 | `src/acm/FlowCanvas.jsx` |
 | Inspector、Agent、建议变更和校验面板 | `src/acm/Panels.jsx` |

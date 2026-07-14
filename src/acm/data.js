@@ -1,13 +1,32 @@
 // data.js — ACM controlled vocabulary, visual tokens, sample graph, pure helpers.
-import { parse as parseYaml } from "yaml";
 import dagre from "@dagrejs/dagre";
+import {
+  NODE_TYPES,
+  NODE_STATUSES,
+  RELATION_TYPES,
+  PRIORITIES,
+  TYPE_PREFIX,
+  nextId,
+  agentPatchStats as coreAgentPatchStats,
+  createMockAgentPatch as coreCreateMockAgentPatch,
+  previewAgentPatchDoc as corePreviewAgentPatchDoc,
+  updateAgentPatchOperation as coreUpdateAgentPatchOperation,
+  rejectAgentPatchOperations as coreRejectAgentPatchOperations,
+  applyAgentPatchOperations as coreApplyAgentPatchOperations,
+  markAgentPatchOperations as coreMarkAgentPatchOperations,
+  validateDoc as coreValidateDoc,
+  diffDoc as coreDiffDoc,
+  diffCount as coreDiffCount,
+  buildChangeSet as coreBuildChangeSet,
+  toExportDoc as coreToExportDoc,
+  toYaml as coreToYaml,
+  toAcmMd as coreToAcmMd,
+  parseAcmMdPreview,
+} from "../../packages/acm-core/src/index.js";
 // Ported from the design prototype (data.jsx); window globals → ES exports.
 
 // ---- Controlled vocabulary (ACM-MD v0.1 §7/§8/§10) ----
-export const NODE_TYPES = [
-  "Goal", "Module", "Feature", "Page", "DataEntity", "API",
-  "Constraint", "Risk", "Assumption", "Question", "Decision", "Task",
-];
+export { NODE_TYPES, NODE_STATUSES, RELATION_TYPES, PRIORITIES, TYPE_PREFIX, nextId };
 
 export const NODE_TYPE_META = {
   Goal:       { label: "目标",     hue: 250, c: "#6366f1", glyph: "◎" },
@@ -24,7 +43,6 @@ export const NODE_TYPE_META = {
   Task:       { label: "任务",     hue: 205, c: "#0284c7", glyph: "☑" },
 };
 
-export const NODE_STATUSES = ["confirmed", "suggested", "needs_validation", "deprecated"];
 export const STATUS_META = {
   confirmed:        { label: "已确认",  c: "#16a34a", dot: "#16a34a" },
   suggested:        { label: "建议",    c: "#d97706", dot: "#f59e0b" },
@@ -32,10 +50,6 @@ export const STATUS_META = {
   deprecated:       { label: "已弃用",  c: "#94a3b8", dot: "#cbd5e1" },
 };
 
-export const RELATION_TYPES = [
-  "contains", "depends_on", "impacts", "conflicts_with", "requires",
-  "replaces", "references", "constrains", "answers", "needs_validation",
-];
 export const RELATION_META = {
   contains:        { label: "包含",   c: "#94a3b8" },
   depends_on:      { label: "依赖",   c: "#2563eb" },
@@ -48,8 +62,6 @@ export const RELATION_META = {
   answers:         { label: "回答",   c: "#16a34a" },
   needs_validation:{ label: "待验证", c: "#9333ea" },
 };
-
-export const PRIORITIES = ["P0", "P1", "P2", "P3"];
 
 // ---- Domain Profiles / Templates (plan §6.5, §8.7) ----
 // Profiles only remap UI DISPLAY NAMES over the same stable ACM-MD NodeType
@@ -191,446 +203,77 @@ export function sampleDoc() {
   };
 }
 
-// ---- id generation (plan §7.7) ----
-export function nextId(prefix, existing) {
-  let max = 0;
-  for (const id of existing) {
-    const m = new RegExp("^" + prefix + "_(\\d+)$").exec(id);
-    if (m) max = Math.max(max, parseInt(m[1], 10));
-  }
-  return `${prefix}_${String(max + 1).padStart(3, "0")}`;
-}
-export const TYPE_PREFIX = {
-  Goal: "goal", Module: "module", Feature: "feature", Page: "page",
-  DataEntity: "data", API: "api", Constraint: "constraint", Risk: "risk",
-  Assumption: "assumption", Question: "question", Decision: "decision", Task: "task",
-};
-
 // ---- Agent co-edit pending patch (PURE VIEW STATE; never exported until applied) ----
-const copy = (o) => JSON.parse(JSON.stringify(o));
-const pendingOps = (patch) => (patch?.operations || []).filter((op) => op.status === "pending");
-
-function nextFromType(type, used) {
-  const prefix = TYPE_PREFIX[type] || "node";
-  const id = nextId(prefix, used);
-  used.add(id);
-  return id;
-}
-
-function nextEdgeFrom(used) {
-  const id = nextId("edge", used);
-  used.add(id);
-  return id;
-}
-
 export function agentPatchStats(patch, status = "pending") {
-  const ops = (patch?.operations || []).filter((op) => status === "all" || op.status === status);
-  const nodes = ops.filter((op) => op.op === "add_node").length;
-  const edges = ops.filter((op) => op.op === "add_edge").length;
-  const questions = ops.filter((op) =>
-    (op.op === "add_node" && (op.node?.status === "needs_validation" || op.node?.type === "Question")) ||
-    (op.op === "add_edge" && op.edge?.status === "needs_validation") ||
-    op.op === "update_node"
-  ).length;
-  return { nodes, edges, questions, total: ops.length };
+  return coreAgentPatchStats(patch, status);
 }
 
 export function createMockAgentPatch(doc, baseNodeId, prompt = "") {
-  const base = doc.nodes.find((n) => n.id === baseNodeId) || doc.nodes.find((n) => n.type === "Module") || doc.nodes[0] || { id: null, x: 120, y: 180 };
-  const usedNodeIds = new Set((doc.nodes || []).map((n) => n.id));
-  const usedEdgeIds = new Set((doc.edges || []).map((e) => e.id));
-  const stamp = Date.now();
-  const bx = Number.isFinite(base.x) ? base.x : 120;
-  const by = Number.isFinite(base.y) ? base.y : 180;
-  const N = (type, title, dx, dy, extra = {}) => ({
-    id: nextFromType(type, usedNodeIds), type, title,
-    status: extra.status || "suggested",
-    description: extra.description || "",
-    priority: extra.priority || "",
-    source: "agent_mock",
-    confidence: extra.confidence ?? 0.72,
-    tags: extra.tags || ["agent_suggestion"],
-    notes: extra.notes || "",
-    x: Math.round(bx + dx), y: Math.round(by + dy),
-  });
-  const nodes = {
-    bulk: N("Feature", "批量导入需求文档", 330, -210, {
-      priority: "P1",
-      description: "支持一次选择多份需求文档进入解析流程，并保留导入批次上下文。",
-    }),
-    parser: N("Module", "文档解析器", 360, -40, {
-      description: "抽取 Word/PDF 中的标题、段落、表格与疑似需求项，生成待校正图谱草稿。",
-    }),
-    data: N("DataEntity", "Word/PDF 输入", 620, -10, {
-      description: "用户上传的 .docx / .pdf 需求文档原始输入。",
-    }),
-    risk: N("Risk", "解析失败风险", 380, 140, {
-      confidence: 0.64,
-      description: "版式复杂、扫描件、表格嵌套或编码异常可能导致解析质量下降。",
-    }),
-    correct: N("Feature", "人工校正入口", 340, 300, {
-      description: "让用户在采纳前修正 Agent 抽取的节点、字段与关系。",
-    }),
-    scan: N("Question", "是否支持图片扫描件", 630, 250, {
-      status: "needs_validation",
-      confidence: 0.5,
-      description: "需要确认是否支持 OCR 处理图片型 PDF / 扫描件。",
-    }),
-  };
-  const E = (from, to, type, extra = {}) => ({
-    id: nextEdgeFrom(usedEdgeIds), from, to, type,
-    status: extra.status || "suggested",
-    reason: extra.reason || "",
-    source: "agent_mock",
-    confidence: extra.confidence ?? 0.72,
-  });
-  const edges = [
-    E(base.id, nodes.bulk.id, "contains", { reason: "用户希望在当前模块下新增批量导入能力。" }),
-    E(base.id, nodes.parser.id, "contains", { reason: "批量导入需要一个解析子模块承载文档处理。" }),
-    E(nodes.parser.id, nodes.data.id, "depends_on", { reason: "解析器依赖用户提供的 Word/PDF 输入。" }),
-    E(nodes.risk.id, nodes.bulk.id, "impacts", { reason: "解析失败会影响批量导入体验与结果可信度。" }),
-    E(base.id, nodes.correct.id, "contains", { reason: "建议提供人工校正入口，避免 AI 建议直接污染正式图谱。" }),
-    E(nodes.scan.id, nodes.bulk.id, "needs_validation", { status: "needs_validation", confidence: 0.5, reason: "扫描件支持范围需要人工确认。" }),
-  ];
-  const operations = [
-    ...Object.values(nodes).map((node, i) => ({ id: `op_${stamp}_${String(i + 1).padStart(2, "0")}`, op: "add_node", status: "pending", node })),
-    ...edges.map((edge, i) => ({ id: `op_${stamp}_${String(i + 7).padStart(2, "0")}`, op: "add_edge", status: "pending", edge })),
-  ];
-  const stats = agentPatchStats({ operations }, "pending");
+  const patch = coreCreateMockAgentPatch(doc, baseNodeId, prompt);
   return {
-    id: "agent_patch_" + stamp.toString(36),
-    createdAt: new Date().toISOString(),
-    source: "agent_mock",
-    prompt,
-    summary: `建议新增 ${stats.nodes} 个节点和 ${stats.edges} 条关系，其中 ${stats.questions} 处需要人工确认。`,
-    baseNodeId: base.id,
-    operations,
+    ...patch,
+    operations: patch.operations.map(({ op, fields, ...operation }) => ({
+      ...operation,
+      op: op === "addNode" ? "add_node" : op === "addEdge" ? "add_edge" : "update_node",
+      ...(fields ? { patch: fields } : {}),
+    })),
   };
 }
 
 export function previewAgentPatchDoc(doc, patch) {
-  if (!patch || !pendingOps(patch).length) return doc;
-  const baseNodeIds = new Set((doc.nodes || []).map((n) => n.id));
-  const addNodes = pendingOps(patch)
-    .filter((op) => op.op === "add_node" && op.node)
-    .map((op) => ({ ...copy(op.node), __agentPreview: true, __patchOpId: op.id }));
-  const previewNodeIds = new Set([...baseNodeIds, ...addNodes.map((n) => n.id)]);
-  const addEdges = pendingOps(patch)
-    .filter((op) => op.op === "add_edge" && op.edge && previewNodeIds.has(op.edge.from) && previewNodeIds.has(op.edge.to))
-    .map((op) => ({ ...copy(op.edge), __agentPreview: true, __patchOpId: op.id }));
-  return { ...doc, nodes: [...doc.nodes, ...addNodes], edges: [...doc.edges, ...addEdges] };
+  return corePreviewAgentPatchDoc(doc, patch);
 }
 
 export function updateAgentPatchOperation(patch, opId, updater) {
-  if (!patch) return patch;
-  return {
-    ...patch,
-    operations: patch.operations.map((op) => {
-      if (op.id !== opId || op.status !== "pending") return op;
-      const next = typeof updater === "function" ? updater(copy(op)) : { ...copy(op), ...updater };
-      return { ...op, ...next, id: op.id, op: op.op, status: op.status };
-    }),
-  };
+  return coreUpdateAgentPatchOperation(patch, opId, updater);
 }
 
 export function rejectAgentPatchOperations(patch, operationIds) {
-  if (!patch) return patch;
-  const ids = new Set(operationIds);
-  const rejectedNodeIds = new Set();
-  for (const op of patch.operations) if (ids.has(op.id) && op.op === "add_node" && op.node?.id) rejectedNodeIds.add(op.node.id);
-  return {
-    ...patch,
-    operations: patch.operations.map((op) => {
-      const blockedByNode = op.op === "add_edge" && (rejectedNodeIds.has(op.edge?.from) || rejectedNodeIds.has(op.edge?.to));
-      return ids.has(op.id) || blockedByNode ? { ...op, status: "rejected" } : op;
-    }),
-  };
+  return coreRejectAgentPatchOperations(patch, operationIds);
 }
 
 export function applyAgentPatchOperations(doc, patch, operationIds) {
-  if (!patch) return { doc, appliedIds: [] };
-  const requested = new Set(operationIds);
-  const ops = patch.operations || [];
-  const include = new Set(requested);
-  const pendingAddNodeByNodeId = new Map();
-  for (const op of ops) if (op.status === "pending" && op.op === "add_node" && op.node?.id) pendingAddNodeByNodeId.set(op.node.id, op);
-  for (const op of ops) {
-    if (!include.has(op.id) || op.status !== "pending" || op.op !== "add_edge") continue;
-    for (const endpoint of [op.edge?.from, op.edge?.to]) {
-      const dep = pendingAddNodeByNodeId.get(endpoint);
-      if (dep) include.add(dep.id);
-    }
-  }
-
-  let next = copy(doc);
-  const nodeIds = new Set(next.nodes.map((n) => n.id));
-  const edgeIds = new Set(next.edges.map((e) => e.id));
-  const appliedIds = [];
-  const cleanPreview = (o) => {
-    const out = { ...o };
-    delete out.__agentPreview;
-    delete out.__patchOpId;
-    return out;
-  };
-
-  for (const op of ops) {
-    if (!include.has(op.id) || op.status !== "pending") continue;
-    if (op.op === "add_node" && op.node && !nodeIds.has(op.node.id)) {
-      const n = cleanPreview(op.node);
-      next.nodes.push(n);
-      nodeIds.add(n.id);
-      appliedIds.push(op.id);
-    } else if (op.op === "update_node" && op.nodeId) {
-      let touched = false;
-      next.nodes = next.nodes.map((n) => {
-        if (n.id !== op.nodeId) return n;
-        touched = true;
-        return { ...n, ...(op.patch || {}) };
-      });
-      if (touched) appliedIds.push(op.id);
-    } else if (op.op === "add_edge" && op.edge && !edgeIds.has(op.edge.id) && nodeIds.has(op.edge.from) && nodeIds.has(op.edge.to)) {
-      const e = cleanPreview(op.edge);
-      next.edges.push(e);
-      edgeIds.add(e.id);
-      appliedIds.push(op.id);
-    }
-  }
-  return { doc: next, appliedIds };
+  return coreApplyAgentPatchOperations(doc, patch, operationIds);
 }
 
 export function markAgentPatchOperations(patch, operationIds, status) {
-  if (!patch) return patch;
-  const ids = new Set(operationIds);
-  return { ...patch, operations: patch.operations.map((op) => ids.has(op.id) ? { ...op, status } : op) };
+  return coreMarkAgentPatchOperations(patch, operationIds, status);
 }
 
 // ---- Validation (plan §4.1 H, §10) ----
 export function validateDoc(doc) {
-  const issues = [];
-  const err = (msg, ref) => issues.push({ level: "error", msg, ref });
-  const warn = (msg, ref) => issues.push({ level: "warning", msg, ref });
-
-  if (!doc || typeof doc !== "object") {
-    err("图谱文档必须是对象");
-    return issues;
-  }
-
-  if (!doc.schema_version) err("缺少 schema_version");
-  else if (!["acm-md/0.1", "0.1"].includes(doc.schema_version)) err(`不支持的 schema_version：${doc.schema_version}`);
-  else if (doc.schema_version === "0.1") warn("旧版 schema_version：导出时应使用 acm-md/0.1");
-  if (!doc.doc_id) err("缺少 doc_id");
-  if (!doc.meta || typeof doc.meta !== "object") err("缺少 meta 对象");
-  else if (!doc.meta.title || !String(doc.meta.title).trim()) err("缺少 meta.title");
-  const nodes = Array.isArray(doc.nodes) ? doc.nodes : [];
-  const edges = Array.isArray(doc.edges) ? doc.edges : [];
-  if (!Array.isArray(doc.nodes)) err("nodes 必须是数组");
-  if (!Array.isArray(doc.edges)) err("edges 必须是数组");
-
-  const nodeIds = new Set();
-  for (const n of nodes) {
-    if (!n || typeof n !== "object") { err("节点必须是对象"); continue; }
-    for (const field of ["id", "type", "title", "status"]) if (!n[field] || !String(n[field]).trim()) err(`节点缺少必填字段 ${field}`, n.id);
-    if (n.id) {
-      if (nodeIds.has(n.id)) err(`节点 id 重复：${n.id}`, n.id);
-      nodeIds.add(n.id);
-    }
-    if (n.type && !NODE_TYPES.includes(n.type)) err(`非法节点类型：${n.type}`, n.id);
-    if (n.status && !NODE_STATUSES.includes(n.status)) err(`非法节点状态：${n.status}`, n.id);
-    if (n.confidence != null && (n.confidence < 0 || n.confidence > 1)) err(`confidence 超出 0–1：${n.id}`, n.id);
-  }
-
-  const edgeIds = new Set();
-  for (const e of edges) {
-    if (!e || typeof e !== "object") { err("边必须是对象"); continue; }
-    for (const field of ["id", "from", "to", "type", "status"]) if (!e[field] || !String(e[field]).trim()) err(`边缺少必填字段 ${field}`, e.id);
-    if (e.id) {
-      if (edgeIds.has(e.id)) err(`边 id 重复：${e.id}`, e.id);
-      edgeIds.add(e.id);
-    }
-    if (e.type && !RELATION_TYPES.includes(e.type)) err(`非法关系类型：${e.type}`, e.id);
-    if (e.status && !NODE_STATUSES.includes(e.status)) err(`非法边状态：${e.status}`, e.id);
-    if (e.from && !nodeIds.has(e.from)) err(`悬空边：${e.id} 的来源 ${e.from} 不存在`, e.id);
-    if (e.to && !nodeIds.has(e.to)) err(`悬空边：${e.id} 的目标 ${e.to} 不存在`, e.id);
-    if (e.confidence != null && (e.confidence < 0 || e.confidence > 1)) err(`confidence 超出 0–1：${e.id}`, e.id);
-  }
-
-  // Warning rules
-  const validNodes = nodes.filter((n) => n && typeof n === "object");
-  const validEdges = edges.filter((e) => e && typeof e === "object");
-  const outFrom = (id) => validEdges.filter((e) => e.from === id);
-  const anyEdge = (id) => validEdges.filter((e) => e.from === id || e.to === id);
-  const goals = validNodes.filter((n) => n.type === "Goal");
-  for (const g of goals) if (outFrom(g.id).length === 0) warn(`核心目标无出边：${g.title}`, g.id);
-  if (goals.length > 1) {
-    const linked = validEdges.some((e) => goals.find((g) => g.id === e.from) && goals.find((g) => g.id === e.to));
-    if (!linked) warn("存在多个 Goal 但未建立关系");
-  }
-  for (const n of validNodes) {
-    if (n.type === "Risk" && !outFrom(n.id).some((e) => e.type === "impacts")) warn(`风险无影响对象：${n.title}`, n.id);
-    if (n.type === "Question" && anyEdge(n.id).length === 0) warn(`问题无待验证对象：${n.title}`, n.id);
-    if (n.type === "Feature") {
-      const inModule = validEdges.some((e) => e.to === n.id && e.type === "contains" && validNodes.find((m) => m.id === e.from && m.type === "Module"));
-      if (!inModule) warn(`功能无所属模块：${n.title}`, n.id);
-    }
-    if (n.confidence == null) warn(`节点缺少 confidence：${n.title}`, n.id);
-    if (!n.source) warn(`节点缺少 source：${n.title}`, n.id);
-  }
-  for (const e of validEdges) if (e.status === "suggested") warn(`存在未确认的 suggested 关系：${RELATION_META[e.type]?.label || e.type}`, e.id);
-
-  return issues;
+  return coreValidateDoc(doc, { mode: "tolerant" });
 }
 
 // ---- Diff (plan §6.6) ----
-const NODE_FIELDS = ["type", "title", "status", "description", "priority", "source", "confidence", "tags", "notes"];
-const EDGE_FIELDS = ["from", "to", "type", "status", "reason", "source", "confidence"];
-
-function eq(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
-
 export function diffDoc(base, cur) {
-  const baseN = new Map(base.nodes.map((n) => [n.id, n]));
-  const curN = new Map(cur.nodes.map((n) => [n.id, n]));
-  const baseE = new Map(base.edges.map((e) => [e.id, e]));
-  const curE = new Map(cur.edges.map((e) => [e.id, e]));
-
-  const added_nodes = [], removed_nodes = [], modified_nodes = [];
-  const added_edges = [], removed_edges = [], modified_edges = [];
-  const layout_changes = [];
-
-  for (const [id, n] of curN) {
-    if (!baseN.has(id)) { added_nodes.push(n); continue; }
-    const b = baseN.get(id);
-    for (const f of NODE_FIELDS) if (!eq(b[f], n[f])) modified_nodes.push({ id, field: f, before: b[f], after: n[f] });
-    if (b.x !== n.x || b.y !== n.y) layout_changes.push({ id, before: { x: b.x, y: b.y }, after: { x: n.x, y: n.y } });
-  }
-  for (const [id, n] of baseN) if (!curN.has(id)) removed_nodes.push({ id, title: n.title });
-
-  for (const [id, e] of curE) {
-    if (!baseE.has(id)) { added_edges.push(e); continue; }
-    const b = baseE.get(id);
-    for (const f of EDGE_FIELDS) if (!eq(b[f], e[f])) modified_edges.push({ id, field: f, before: b[f], after: e[f] });
-  }
-  for (const [id, e] of baseE) if (!curE.has(id)) removed_edges.push({ id, from: e.from, to: e.to, type: e.type });
-
-  return { added_nodes, removed_nodes, modified_nodes, added_edges, removed_edges, modified_edges, layout_changes };
+  return coreDiffDoc(base, cur);
 }
 
 export function diffCount(d) {
-  return d.added_nodes.length + d.removed_nodes.length + d.modified_nodes.length +
-    d.added_edges.length + d.removed_edges.length + d.modified_edges.length;
+  return coreDiffCount(d);
 }
 
 // Deterministic summary + agent_instructions (plan §6.6, no AI)
 export function buildChangeSet(base, cur, d) {
-  const parts = [];
-  if (d.added_nodes.length) parts.push(`新增 ${d.added_nodes.length} 个节点`);
-  if (d.removed_nodes.length) parts.push(`删除 ${d.removed_nodes.length} 个节点`);
-  if (d.modified_nodes.length) parts.push(`修改 ${d.modified_nodes.length} 处节点字段`);
-  if (d.added_edges.length) parts.push(`新增 ${d.added_edges.length} 条关系`);
-  if (d.removed_edges.length) parts.push(`删除 ${d.removed_edges.length} 条关系`);
-  if (d.modified_edges.length) parts.push(`修改 ${d.modified_edges.length} 处关系字段`);
-  const summary = parts.length ? parts.join("，") + "。" : "无结构性变更。";
-
-  const instr = [];
-  const nameOf = (id) => (cur.nodes.find((n) => n.id === id) || base.nodes.find((n) => n.id === id) || {}).title || id;
-  for (const n of d.added_nodes) instr.push(`处理新增${typeLabel(n.type)}「${n.title}」(${n.id})。`);
-  for (const n of d.removed_nodes) instr.push(`移除已删除节点「${n.title}」(${n.id}) 的相关实现。`);
-  for (const m of d.modified_nodes) instr.push(`「${nameOf(m.id)}」的 ${m.field}：${JSON.stringify(m.before)} → ${JSON.stringify(m.after)}。`);
-  for (const e of d.added_edges) instr.push(`建立关系 ${nameOf(e.from)} —${RELATION_META[e.type]?.label}→ ${nameOf(e.to)}。`);
-  for (const e of d.removed_edges) instr.push(`解除关系 ${nameOf(e.from)} → ${nameOf(e.to)}。`);
-  for (const m of d.modified_edges) instr.push(`关系 ${m.id} 的 ${m.field}：${JSON.stringify(m.before)} → ${JSON.stringify(m.after)}。`);
-
-  return {
-    change_set_id: "changes_" + Date.now().toString(36),
-    base_doc_id: base.doc_id,
-    summary,
-    agent_instructions: instr,
-    added_nodes: d.added_nodes,
-    modified_nodes: d.modified_nodes,
-    removed_nodes: d.removed_nodes,
-    added_edges: d.added_edges,
-    modified_edges: d.modified_edges,
-    removed_edges: d.removed_edges,
-    layout_changes: d.layout_changes,
-  };
+  return coreBuildChangeSet(base, cur, d, {
+    typeName: typeLabel,
+    relationName: (type) => RELATION_META[type]?.label || type,
+  });
 }
 
 // ---- Export serializers ----
-function toLayout(doc) {
-  const nodes = {};
-  for (const n of doc.nodes) nodes[n.id] = { x: Math.round(n.x), y: Math.round(n.y) };
-  return { engine: "manual", nodes };
-}
-
-function cleanNode(n) {
-  const o = { id: n.id, type: n.type, title: n.title, status: n.status };
-  if (n.description) o.description = n.description;
-  if (n.priority) o.priority = n.priority;
-  if (n.source) o.source = n.source;
-  if (n.confidence != null) o.confidence = n.confidence;
-  if (n.tags && n.tags.length) o.tags = n.tags;
-  if (n.notes) o.notes = n.notes;
-  return o;
-}
-function cleanEdge(e) {
-  const o = { id: e.id, from: e.from, to: e.to, type: e.type, status: e.status };
-  if (e.reason) o.reason = e.reason;
-  if (e.source) o.source = e.source;
-  if (e.confidence != null) o.confidence = e.confidence;
-  return o;
-}
 
 export function toExportDoc(doc, changeSet) {
-  const out = {
-    schema_version: doc.schema_version,
-    doc_id: doc.doc_id,
-    meta: doc.meta,
-    nodes: doc.nodes.map(cleanNode),
-    edges: doc.edges.map(cleanEdge),
-    layout: toLayout(doc),
-  };
-  if (changeSet && diffCount(changeSet)) out.changes = changeSet;
-  if (doc.validation) out.validation = doc.validation; // passthrough preserved
-  return out;
+  return coreToExportDoc(doc, changeSet);
 }
 
-// Minimal YAML emitter (good enough for the ACM-MD preview)
 export function toYaml(obj, indent = 0) {
-  const pad = "  ".repeat(indent);
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) return "[]";
-    return obj.map((v) => {
-      if (v && typeof v === "object") {
-        const body = toYaml(v, indent + 1).replace(new RegExp("^" + pad + "  "), "");
-        return `${pad}- ${body.trimStart()}`;
-      }
-      return `${pad}- ${yamlScalar(v)}`;
-    }).join("\n");
-  }
-  if (obj && typeof obj === "object") {
-    const keys = Object.keys(obj);
-    if (keys.length === 0) return "{}";
-    return keys.map((k) => {
-      const v = obj[k];
-      if (v && typeof v === "object" && (Array.isArray(v) ? v.length : Object.keys(v).length)) {
-        return `${pad}${k}:\n${toYaml(v, indent + 1)}`;
-      }
-      if (v && typeof v === "object") return `${pad}${k}: ${Array.isArray(v) ? "[]" : "{}"}`;
-      return `${pad}${k}: ${yamlScalar(v)}`;
-    }).join("\n");
-  }
-  return `${pad}${yamlScalar(obj)}`;
-}
-function yamlScalar(v) {
-  if (v == null) return "null";
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  const s = String(v);
-  if (s === "" || /[:#\-?\[\]{}&*!|>'"%@`]/.test(s) || /^\s|\s$/.test(s)) return JSON.stringify(s);
-  return s;
+  return coreToYaml(obj, indent);
 }
 
 export function toAcmMd(doc, changeSet) {
-  const ex = toExportDoc(doc, changeSet);
-  return "```acm\n" + toYaml(ex) + "\n```\n";
+  return coreToAcmMd(doc, changeSet);
 }
 
 export function toMermaid(doc) {
@@ -996,73 +639,6 @@ export function computeGroupOf(doc, mode) {
   return { groupOf, groups: order.map((id) => meta.get(id)) };
 }
 
-// ---- Import: parse an ACM-MD markdown file back into a runtime GraphDocument ----
-// Inverse of toAcmMd: pull the ```acm fenced YAML, merge layout into node x/y, and
-// preserve protocol fields (validation / changes) for lossless round-trip.
 export function parseAcmMd(text) {
-  const warnings = [];
-  if (!text || !text.trim()) return { doc: null, errors: ["文件为空"], warnings };
-
-  const re = /```acm[^\n]*\n([\s\S]*?)```/g;
-  const blocks = [];
-  let m;
-  while ((m = re.exec(text)) !== null) blocks.push(m[1]);
-
-  let yamlText;
-  if (blocks.length === 0) {
-    // tolerate a raw YAML file without a fence as a fallback
-    yamlText = text;
-    warnings.push("未找到 ```acm 代码块，按整份 YAML 尝试解析");
-  } else {
-    if (blocks.length > 1) warnings.push(`发现 ${blocks.length} 个 acm 代码块，仅使用第 1 个`);
-    yamlText = blocks[0];
-  }
-
-  let raw;
-  try { raw = parseYaml(yamlText); }
-  catch (e) { return { doc: null, errors: ["YAML 解析失败：" + (e?.message || e)], warnings }; }
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return { doc: null, errors: ["acm 内容不是有效的图谱对象"], warnings };
-  }
-
-  const nodes = Array.isArray(raw.nodes) ? raw.nodes.map((n) => ({ ...n })) : [];
-  const edges = Array.isArray(raw.edges) ? raw.edges.map((e) => ({ ...e })) : [];
-  // Coordinate sources, in priority order:
-  //   1) layout.nodes[id]   2) inline node.x/y   3) hierarchical auto-layout   4) grid
-  const lay = (raw.layout && raw.layout.nodes) || {};
-  let positioned = 0;
-  nodes.forEach((n) => {
-    const p = lay[n.id];
-    if (p && typeof p.x === "number" && typeof p.y === "number") { n.x = p.x; n.y = p.y; positioned++; }
-    else if (typeof n.x === "number" && typeof n.y === "number") { positioned++; }
-  });
-  // No usable coordinates in the file → lay out by graph structure (layered tree,
-  // grouped by connected component) instead of a structure-blind grid.
-  if (positioned === 0 && nodes.length) {
-    const pos = layoutGraph({ nodes, edges });
-    nodes.forEach((n) => { const p = pos[n.id]; if (p) { n.x = p.x; n.y = p.y; } });
-    if (blocks.length) warnings.push("文件无 layout，已按图谱结构自动布局");
-  }
-  // Final safety net: anything still unplaced (e.g. layout listed only some nodes) gets a grid slot.
-  nodes.forEach((n, i) => {
-    if (typeof n.x !== "number" || typeof n.y !== "number") {
-      n.x = 80 + (i % 4) * 240; n.y = 60 + Math.floor(i / 4) * 150;
-    }
-  });
-
-  const doc = {
-    schema_version: raw.schema_version || "acm-md/0.1",
-    doc_id: raw.doc_id || `acm_import_${Date.now()}`,
-    meta: (raw.meta && typeof raw.meta === "object") ? { ...raw.meta } : {},
-    nodes,
-    edges,
-  };
-  if (!doc.meta.title) doc.meta.title = "导入的图谱";
-  if (raw.changes) doc.changes = raw.changes;       // ChangeSet passthrough
-  if (raw.validation) doc.validation = raw.validation; // validation passthrough (v0.1)
-
-  const errors = [];
-  if (!Array.isArray(raw.nodes)) errors.push("缺少 nodes 数组");
-  if (!Array.isArray(raw.edges)) warnings.push("缺少 edges，按空数组处理");
-  return { doc, errors, warnings };
+  return parseAcmMdPreview(text, { layoutDocument: layoutGraph });
 }

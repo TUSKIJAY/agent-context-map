@@ -1,0 +1,9 @@
+{
+  "operations": [
+    { "id": "legacy_001", "op": "add_node", "node": { "id": "feature_010", "type": "Feature", "title": "Legacy feature", "status": "suggested" } },
+    { "id": "legacy_002", "op": "update_node", "nodeId": "feature_010", "patch": { "title": "Legacy feature updated" } },
+    { "id": "legacy_003", "op": "add_edge", "edge": { "id": "edge_010", "from": "module_001", "to": "feature_010", "type": "contains", "status": "suggested" } }
+  ],
+  "expectedKinds": ["addNode", "updateNodeFields", "addEdge"],
+  "expectedDiagnosticCode": "legacy_operation_kind"
+}

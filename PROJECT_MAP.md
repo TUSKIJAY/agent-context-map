@@ -23,7 +23,7 @@
 | Path | Responsibility |
 | --- | --- |
 | `src/App.jsx` | 应用级状态、布局、工具栏、撤销重做、文件/导出、Agent pending patch 编排 |
-| `src/acm/data.js` | ACM 受控词表、校验、Diff、导入导出和 patch 纯函数 |
+| `src/acm/data.js` | UI 词表/展示、Dagre/ELK 布局，以及到 `acm-core` 的桌面兼容入口 |
 | `src/acm/agentClient.js` | agy / Tauri / MCP / sidecar 适配、结果归一化、mock fallback |
 | `src/acm/FlowCanvas.jsx` | React Flow 画布、Dagre/ELK、分组折叠和建议预览层 |
 | `src/acm/Panels.jsx` | Inspector、Agent、建议变更与校验面板 |
@@ -32,6 +32,21 @@
 | `src/storage/store.js` | SQLite/localStorage 文档、状态、baseline 和快照 |
 | `src/storage/files.js` | Tauri/浏览器文件打开、导入、另存和导出 |
 | `src/main.jsx` | React 挂载入口 |
+
+## 共享核心
+
+| Path | Responsibility |
+| --- | --- |
+| `packages/acm-core/src/schema.js` | ACM-MD v0.1 受控词表、字段与 canonical operation 名称 |
+| `packages/acm-core/src/parse.js` | strict 单 fence 解析与 tolerant preview 导入 |
+| `packages/acm-core/src/serialize.js` | 确定性 ACM-MD 规范化与序列化 |
+| `packages/acm-core/src/validate.js` | JS strict/tolerant validator；与 Python validator 做 golden parity |
+| `packages/acm-core/src/diff.js` | 正式文档 Diff 与确定性 `changes` 构建 |
+| `packages/acm-core/src/operations.js` | 唯一 camelCase operation schema、legacy input adapter、precondition 与原子应用 |
+| `packages/acm-core/src/revision.js` | canonical bytes 与 SHA-256 revision |
+| `packages/acm-core/src/context.js` | selection/subgraph/execution context 安全裁剪 |
+| `packages/acm-core/src/pending.js` | pending proposal 纯函数；不接正式存储 |
+| `packages/acm-core/src/index.js` | platform-free 公共导出 |
 
 ## Tauri 桌面层
 
