@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；尚未设置 upstream
-- 当前 HEAD：Phase 7 local Release Candidate scoped commit 待本次 Gate 收尾创建；接手时以 `git log -1 --oneline` 实测；push 未获授权
+- 当前 HEAD：`bea3a06` Phase 7 local RC；Windows/Linux 跨平台修复 scoped commit 待创建；push 已获本任务明确授权
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 7 in progress；本地 Windows、clean-room、隔离安装生命周期和固定 RC 已通过，远端三平台 CI 待 push 授权
+- 当前 Phase：Phase 7 in progress；本地 Windows + Ubuntu WSL、clean-room、隔离安装生命周期和固定 RC 已通过，远端三平台 CI 待 push 后实跑
 
 ## Navigation
 
@@ -30,7 +30,7 @@
 
 ## Blocked
 
-- Phase 7 远端 matrix 需要把 `codex/acm-pluginization-plan` 推送到 origin；本任务尚未获得 push 明确授权，因此当前不能触发或宣称三平台 CI 绿色。
+- Phase 7 远端 matrix 尚未运行；用户已明确授权 push，需先提交本次 Linux Gate 暴露的修复，再推送并等待三平台结论。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -40,6 +40,7 @@
 - [x] 2026-07-14 — Phase 7 本地 RC：固定插件 `0.3.0-rc.1` 和 Node 24.12.0/npm 11.6.2；生成 13-file source-free release、SHA-256 checksums、deterministic manifest、依赖清单与 CycloneDX SBOM，release tree SHA-256 `accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775`。
 - [x] 2026-07-14 — Phase 7 本地 Gate：Windows 38 files / 105 tests（POSIX-only 1 skipped）；原生 junction/独占锁、隔离 HOME fresh/update/downgrade/uninstall/reinstall、`.acm` hash guard 和 plugin validator 通过。
 - [x] 2026-07-14 — Phase 7 clean-room：不复制 `.git`、`node_modules`、源码生成物或 dist，从隔离副本完成 `npm ci`、全测、Vite build、固定包与两次 bundle；三平台 workflow 已建立但远端 runner 未执行，故 Phase 7 本身未完成。
+- [x] 2026-07-14 — Phase 7 Linux 本地 Gate：Ubuntu WSL 固定 Node 24.12.0/npm 11.6.2，POSIX symlink/permission 与 38 files / 105 tests 通过；修复 Python 命令选择、test-mode JSX 绝对源码路径泄漏和 toolchain 未强制问题，Windows/Ubuntu release tree hash 一致。
 - [x] 2026-07-14 — Phase 6：模型可见 get/validate/write/import/export 与 app-only commit/manual-edit/send 全部落位；write/import 只生成 15 分钟 pending proposal，正式写入必须由当前 Widget 实例的一次性人工 gesture 触发。
 - [x] 2026-07-14 — Phase 6 安全边界：canonical camelCase only、operation 数量/体积上限、锁内 expectedRevision、task/project/document/instance 绑定、idempotency、prompt-injection 和 stale proposal/revision/gesture 全部 fail closed；server 重建 context payload 与 digest。
 - [x] 2026-07-14 — Phase 6 Gate：专项 16 tests、全仓 36 files / 101 tests；标准宿主完成预览不发送、二次确认后仅发送一次以及 proposal 人工采纳；Widget SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`，MCP Release 可复现 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`；Vite、Tauri executable/MSI/NSIS、distribution、harness 与 diff check 通过。
@@ -67,8 +68,8 @@
 
 ## Next
 
-1. 创建 Phase 7 scoped local commit，不 push。
-2. 获得当前任务明确 push 授权后，将 `codex/acm-pluginization-plan` 推送到 origin 并观察 `Plugin Release Candidate` workflow。
+1. 创建 Windows/Linux 跨平台修复 scoped local commit。
+2. 将已获授权的 `codex/acm-pluginization-plan` 推送到 origin 并观察 `Plugin Release Candidate` workflow。
 3. Windows/macOS/Linux matrix 全绿后记录 run URL/结论，标记 Phase 7 complete；任一差异按停止条件修复后重跑。
 4. 只有 Phase 7 完成后才进入 Phase 8 真实 Codex Desktop canary、固定 tag/Release 和 stable 交接。
 
@@ -76,7 +77,7 @@
 
 | Date | Change | Evidence |
 | --- | --- | --- |
-| 2026-07-14 | Phase 7 local RC 就绪，remote matrix pending | Windows 105；clean-room npm ci；lifecycle hash guard；RC checksums/SBOM；workflow added |
+| 2026-07-14 | Phase 7 local RC 就绪，remote matrix pending | Windows + Ubuntu WSL 各 105；clean-room npm ci；native filesystem；RC checksums/SBOM |
 | 2026-07-14 | Phase 6 pending commit 与 click-gated send 完成 | MCP/context/security/concurrency 16；全仓 101；标准宿主二次确认；Tauri bundles |
 | 2026-07-14 | Phase 5 native Widget 与 lifecycle 完成 | standard-host browser replay；Codex canary await Gate；Widget/lifecycle/rebind/policy；88 tests；Tauri bundles |
 | 2026-07-14 | Phase 4 plugin/MCP control plane 完成 | product plugin host replay；schema/runtime/binding/path/distribution；reproducible clean bundle |

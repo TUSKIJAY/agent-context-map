@@ -40,8 +40,10 @@ export async function buildWidget({ outputRoot = widgetDist } = {}) {
   await fs.rm(resolvedOutput, { recursive: true, force: true });
   await build({
     configFile: false,
+    mode: "production",
     plugins: [react()],
     logLevel: "silent",
+    esbuild: { jsxDev: false },
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     resolve: { dedupe: ["react", "react-dom"] },
     build: {

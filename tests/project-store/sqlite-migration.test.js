@@ -15,6 +15,7 @@ import {
 } from "../../packages/project-store/src/sqlite-migration.js";
 import { makeDoc, repoRoot, tempWorkspace } from "./helpers.js";
 
+const pythonExecutable = process.env.PYTHON || (process.platform === "win32" ? "python" : "python3");
 const cleanups = [];
 afterEach(async () => { while (cleanups.length) await cleanups.pop()(); });
 
@@ -58,7 +59,7 @@ describe("legacy SQLite read-only migration", () => {
     const candidate = path.join(workspace.parent, "candidate.acm.md");
     await fs.writeFile(candidate, plan.documents[0].canonicalText, "utf8");
     const validator = path.join(repoRoot, "skills", "acm-md", "scripts", "validate_acm_md.py");
-    expect(() => execFileSync("python", [validator, candidate], { cwd: repoRoot, stdio: "pipe" })).not.toThrow();
+    expect(() => execFileSync(pythonExecutable, [validator, candidate], { cwd: repoRoot, stdio: "pipe" })).not.toThrow();
     expect(await hashFile(dbPath)).toBe(before);
   });
 

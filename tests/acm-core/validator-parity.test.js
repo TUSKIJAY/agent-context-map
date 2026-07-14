@@ -4,6 +4,8 @@ import { spawnSync } from "node:child_process";
 import { describe, expect, test } from "vitest";
 import { validateAcmMd } from "../../packages/acm-core/src/index.js";
 
+const pythonExecutable = process.env.PYTHON || (process.platform === "win32" ? "python" : "python3");
+
 const cases = [
   ["valid-basic.acm.md", false],
   ["invalid-node-type.acm.md", true],
@@ -19,7 +21,7 @@ describe("JavaScript and Python strict validator parity", () => {
   test.each(cases)("matches strict error severity for %s", (name, expectedError) => {
     const path = resolve("tests/fixtures/acm-v0.1", name);
     const js = validateAcmMd(readFileSync(path, "utf8"), { mode: "strict" });
-    const python = spawnSync("python", ["skills/acm-md/scripts/validate_acm_md.py", path, "--mode", "strict"], {
+    const python = spawnSync(pythonExecutable, ["skills/acm-md/scripts/validate_acm_md.py", path, "--mode", "strict"], {
       cwd: resolve("."),
       encoding: "utf8",
     });

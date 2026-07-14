@@ -8,6 +8,10 @@ import { fileURLToPath } from "node:url";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDirectory, "..", "..", "..");
+const npmUserAgent = process.env.npm_config_user_agent ?? "";
+if (process.versions.node !== "24.12.0" || !npmUserAgent.startsWith("npm/11.6.2 ")) {
+  throw new Error(`Clean-room requires Node 24.12.0 and npm 11.6.2; received Node ${process.versions.node}, ${npmUserAgent || "unknown npm"}`);
+}
 const base = await fs.mkdtemp(path.join(os.tmpdir(), "agent-context-map-clean-room-"));
 const checkout = path.join(base, "checkout");
 

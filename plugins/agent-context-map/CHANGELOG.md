@@ -7,6 +7,7 @@
 - Require a current Widget instance, preview, one-time user gesture, and locked revision recheck for commits.
 - Add selected, related, and execution context previews with server-authored click-gated sending.
 - Add deterministic release metadata, checksums, SBOM, and isolated install lifecycle gates.
+- Enforce the pinned release toolchain and strip absolute JSX source metadata from production Widget bundles.
 
 ## 0.2.0 — 2026-07-14
 

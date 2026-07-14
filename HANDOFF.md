@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：Phase 7 本地 Release Candidate 已就绪；在获得明确 push 授权后运行远端 Windows/macOS/Linux matrix，全部绿色前 Phase 7 不完成。
+当前焦点：Phase 7 本地 Windows + Ubuntu Release Candidate Gate 已就绪；push 已获授权，下一步提交跨平台修复、推送并运行远端 Windows/macOS/Linux matrix。
 
 ## Resume Point
 
@@ -50,8 +50,8 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：未设置
-- HEAD：Phase 6 已提交 `ae1050d`；Phase 7 local RC scoped commit 待本次 Gate 收尾创建，接手时以 `git log -1 --oneline` 实测
-- push：未获授权
+- HEAD：Phase 7 local RC 已提交 `bea3a06`；Linux Gate 暴露的跨平台修复 scoped commit 待创建，接手时以 `git log -1 --oneline` 实测
+- push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
 - 当前计划状态：Phase 7 in progress；local RC ready，remote matrix pending push authorization
 
 ## Phase 7 Local Candidate Verification
@@ -75,7 +75,7 @@ npm run harness:budget
 git diff --check
 ```
 
-结果：本机 Windows 全仓 38 files / 105 tests，1 项 POSIX-only permission test 按平台跳过；distribution 6、Windows native filesystem 1、安装生命周期 2 全通过。clean-room 从隔离副本完成 `npm ci`、同一全测、Vite 317 modules、固定包和两次可复现打包。Release tree SHA-256 `accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775`，checksum set digest `c970cac77e0946d1f1d6693c891076451c2a78bb46225e161c85d1bb3c640135`，`SHA256SUMS` 文件 SHA-256 `108d25d65ce217f32c5a16068fe86d1239d699491819d4fc145acd2b4fb8c1f1`。plugin validator 通过。
+结果：Windows 与 Ubuntu WSL 均以固定 Node 24.12.0/npm 11.6.2 完成全仓 38 files / 105 tests，各按平台跳过 1 项异平台测试；Windows junction/locked file 和 Linux symlink/permission 原生 Gate 通过。两侧 clean-room 均从隔离副本完成 `npm ci`、同一全测、Vite 317 modules、固定包和两次可复现打包。首次 Linux replay 暴露的 `python3` 命令选择与 production JSX 绝对源码路径泄漏已修复。Release tree SHA-256 两侧一致为 `accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775`，checksum set digest `c970cac77e0946d1f1d6693c891076451c2a78bb46225e161c85d1bb3c640135`。
 
 生命周期证据：临时安装旧 `0.2.0` fixture、升级到 `0.3.0-rc.1`、降级回滚、卸载并重装；每一步从安装目录启动 bundled MCP、验证 checksums，真实用户全局目录未触及，测试项目 `.acm` hash 和隔离用户状态保持不变。脱敏证据在 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
@@ -98,14 +98,14 @@ git diff --check
 ## Risks
 
 - 本地 Windows/clean-room Gate 不替代 GitHub macOS/Linux 原生 runner；远端 matrix 未运行，Phase 7 仍为 in progress。
-- workflow 只有在分支推送后才能产生三平台证据；push 仍必须取得当前任务明确授权。
+- workflow 只有在分支推送后才能产生三平台证据；push 已获当前任务明确授权，尚待本次修复提交后执行。
 - Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 形成 Phase 7 local RC scoped local commit，不 push。
-2. 获得明确 push 授权后推送 `codex/acm-pluginization-plan`，观察 `Plugin Release Candidate` workflow。
+1. 形成 Linux Gate 暴露问题的 scoped local commit。
+2. 推送已获授权的 `codex/acm-pluginization-plan`，观察 `Plugin Release Candidate` workflow。
 3. Windows/macOS/Linux 与 clean-room jobs 全绿后记录 run URL、产物 checksum，并标记 Phase 7 complete；任一差异按停止条件修复重跑。
 4. Phase 7 complete 后再进入 Phase 8；真实 canary、marketplace、tag/Release/stable 仍分别受计划 Gate 和用户授权约束。
 

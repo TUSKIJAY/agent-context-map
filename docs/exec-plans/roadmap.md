@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 7 本地 Release Candidate、Windows/clean-room/隔离生命周期 Gate 已通过，远端 Windows/macOS/Linux matrix 尚待 push 授权并实跑，Phase 7 未完成。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 7 本地 Windows + Ubuntu Release Candidate、clean-room/隔离生命周期 Gate 已通过，push 已获授权，远端 Windows/macOS/Linux matrix 尚待实跑，Phase 7 未完成。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { buildMcp, workspaceRoot } from "./build-mcp.mjs";
 
 async function hashTree(root) {
@@ -34,7 +35,15 @@ try {
   const secondHash = await hashTree(second);
   const bundle = await fs.readFile(path.join(first, "mcp", "server.mjs"), "utf8");
   if (firstHash !== secondHash) throw new Error(`MCP release bundle is not reproducible: ${firstHash} != ${secondHash}`);
-  if (bundle.includes(workspaceRoot) || /[A-Za-z]:\\Code\\agent-context-map/i.test(bundle)) throw new Error("MCP bundle leaked an absolute development path");
+  const developmentMarkers = new Set([
+    workspaceRoot,
+    workspaceRoot.replaceAll("\\", "/"),
+    pathToFileURL(workspaceRoot).href,
+    JSON.stringify(workspaceRoot).slice(1, -1),
+  ]);
+  if ([...developmentMarkers].some((marker) => bundle.includes(marker)) || /[A-Za-z]:[\\/]Code[\\/]agent-context-map/i.test(bundle)) {
+    throw new Error("MCP bundle leaked an absolute development path");
+  }
   process.stdout.write(`${JSON.stringify({ ok: true, sha256: firstHash })}\n`);
 } finally {
   await fs.rm(base, { recursive: true, force: true });

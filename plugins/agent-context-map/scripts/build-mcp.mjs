@@ -14,6 +14,7 @@ export const defaultReleaseRoot = path.join(workspaceRoot, "dist", "agent-contex
 const entry = path.join(pluginRoot, "mcp", "src", "server.js");
 const sourceSkill = path.join(workspaceRoot, "skills", "acm-md");
 const packageLockPath = path.join(workspaceRoot, "package-lock.json");
+const releaseNodeVersion = "24.12.0";
 
 async function bundleServer(targetRoot, widgetHtml) {
   const mcpDirectory = path.join(targetRoot, "mcp");
@@ -140,6 +141,9 @@ async function writeChecksums(releaseRoot) {
 }
 
 export async function buildMcp({ releaseRoot = defaultReleaseRoot, writeDevelopmentBundle = true, pluginVersion } = {}) {
+  if (process.versions.node !== releaseNodeVersion) {
+    throw new Error(`Release builds require Node ${releaseNodeVersion}; received ${process.versions.node}`);
+  }
   const resolvedRelease = path.resolve(releaseRoot);
   if (resolvedRelease === path.parse(resolvedRelease).root) throw new Error("Refusing to use a filesystem root as release output");
   const widget = await buildWidget();

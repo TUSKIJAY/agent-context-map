@@ -27,7 +27,15 @@ describe("Phase 4 clean plugin distribution", () => {
       await expect(fs.access(path.join(releaseRoot, relative))).resolves.toBeUndefined();
     }
     const bundle = await fs.readFile(path.join(releaseRoot, "mcp", "server.mjs"), "utf8");
-    expect(bundle).not.toContain(workspaceRoot);
+    for (const marker of new Set([
+      workspaceRoot,
+      workspaceRoot.replaceAll("\\", "/"),
+      pathToFileURL(workspaceRoot).href,
+      JSON.stringify(workspaceRoot).slice(1, -1),
+    ])) {
+      const offset = bundle.indexOf(marker);
+      expect(offset, offset < 0 ? undefined : bundle.slice(Math.max(0, offset - 160), offset + marker.length + 160)).toBe(-1);
+    }
     expect(bundle).not.toMatch(/@tauri-apps|plugin-sql|127\.0\.0\.1|0\.0\.0\.0|createServer\(/);
   });
 

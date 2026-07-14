@@ -40,6 +40,37 @@
       "project .acm hash preserved"
     ]
   },
+  "localUbuntuWsl": {
+    "kernel": "Linux 6.18.33.2-microsoft-standard-WSL2",
+    "toolchain": {
+      "node": "24.12.0",
+      "npm": "11.6.2",
+      "python": "3.14.4"
+    },
+    "testAll": {
+      "filesPassed": 38,
+      "testsPassed": 105,
+      "testsSkipped": 1,
+      "skipReason": "Windows-only junction and exclusive-lock test"
+    },
+    "nativeFilesystem": [
+      "symlink escape rejected",
+      "permission-denied destination preserved"
+    ],
+    "cleanRoom": {
+      "npmCi": true,
+      "viteBuild": "passed",
+      "packageBuilds": 2,
+      "treeSha256MatchesWindows": true
+    }
+  },
+  "crossPlatformRegressionsClosed": [
+    "POSIX uses python3 when PYTHON is not set",
+    "Widget build forces production JSX without absolute source file metadata",
+    "release build rejects an unpinned Node version",
+    "clean-room rejects an unpinned Node or npm version",
+    "development path checks cover native, slash-normalized, escaped, and file URL forms"
+  ],
   "release": {
     "fileCount": 13,
     "treeSha256": "accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775",
@@ -56,7 +87,7 @@
   "remoteMatrix": {
     "workflow": ".github/workflows/plugin-release-candidate.yml",
     "runners": ["windows-latest", "macos-latest", "ubuntu-latest"],
-    "status": "pending_push_authorization",
+    "status": "push_authorized_pending_remote_run",
     "claim": "Phase 7 is not complete until all remote runners pass"
   },
   "environmentSafety": {
