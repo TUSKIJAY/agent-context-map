@@ -146,7 +146,7 @@ export async function buildMcp({ releaseRoot = defaultReleaseRoot, writeDevelopm
   }
   const resolvedRelease = path.resolve(releaseRoot);
   if (resolvedRelease === path.parse(resolvedRelease).root) throw new Error("Refusing to use a filesystem root as release output");
-  const widget = await buildWidget();
+  const widget = await buildWidget(writeDevelopmentBundle ? {} : { outputRoot: path.join(resolvedRelease, ".widget-build") });
   if (writeDevelopmentBundle) {
     await bundleServer(pluginRoot, widget.html);
     await copySkill(pluginRoot);

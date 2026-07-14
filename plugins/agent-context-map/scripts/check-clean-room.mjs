@@ -57,9 +57,9 @@ try {
   await runNpm(["ci", "--no-audit", "--no-fund"]);
   await runNpm(["run", "test:all"]);
   await runNpm(["run", "build"]);
-  await runNpm(["run", "build:plugin"]);
+  await runNpm(["run", "test:release-artifact"]);
   await runNpm(["run", "test:mcp-bundle-repro"]);
-  process.stdout.write(`${JSON.stringify({ ok: true, source: "isolated-copy", npmCi: true, packageBuilds: 2 })}\n`);
+  process.stdout.write(`${JSON.stringify({ ok: true, source: "isolated-copy", npmCi: true, packageBuilds: 3 })}\n`);
 } finally {
   await fs.rm(base, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }

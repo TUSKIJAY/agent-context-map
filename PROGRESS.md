@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD：`fb6db74` Phase 7 Windows concurrency test budget；Windows CI 统一真实磁盘测试预算修复在当前工作区，待 scoped commit/push
+- 当前 HEAD：`343b382` Phase 7 Windows hosted filesystem budget；downloaded artifact 完整性 Gate 修复在当前工作区，待 scoped commit/push
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 7 in progress；第三轮 macOS、Ubuntu 与 clean-room 全绿；Windows 并发用例已过，SQLite rollback fixture 随机以 5.039 秒越过同一默认 5 秒，现改为仅 Windows CI 使用统一 30 秒测试预算
+- 当前 Phase：Phase 7 in progress；第四轮 Windows/macOS/Ubuntu/clean-room 全绿，但下载的 artifact 默认排除了 `.codex-plugin/` 与 `.mcp.json`，不可安装；显式 hidden-file 上传与下载后完整性审计待第五轮验证
 
 ## Navigation
 
@@ -26,11 +26,11 @@
 ## In Progress
 
 - Phase 7 本地候选已完成：`0.3.0-rc.1`、Node 24.12.0/npm 11.6.2、checksums/SBOM、clean-room、source-free 启动和隔离 HOME 生命周期 Gate 全通过。
-- Phase 7 当前只剩提交并推送 Windows CI 统一测试预算、确认第四轮 Windows/macOS/Linux workflow 全绿；任一 runner 未绿前不得进入 Phase 8。
+- Phase 7 当前只剩提交并推送 artifact 完整性修复，确认第五轮平台、clean-room 与 downloaded artifact audit 全绿；任一 Gate 未绿前不得进入 Phase 8。
 
 ## Blocked
 
-- Phase 7 第三轮远端 run `29325189353`：macOS、Ubuntu、clean-room 全绿；Windows 上轮并发用例已过，SQLite rollback fixture 以 5.039 秒随机越过默认 5 秒。连续两轮均是不同真实磁盘用例卡在 5 秒边界，现统一为 Windows CI 30 秒，产品与本地默认不变。
+- Phase 7 第四轮远端 run `29325559181` 四个 job 全绿，但实际下载 `agent-context-map-plugin-0.3.0-rc.1` 后发现 GitHub artifact 默认排除点号路径，缺少插件 manifest 与 `.mcp.json`；matrix green 不等于可安装资产，Phase 7 继续保持 in progress。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -44,6 +44,8 @@
 - [x] 2026-07-14 — Phase 7 首轮远端诊断：run `29324137580` 的 Ubuntu platform/clean-room 通过；CI 固定 Python 3.13.5 + PyYAML 6.0.3，distribution fixture 改由真实 release CLI 子进程构建；本地 38 files / 105 tests、RC、clean-room、Vite、harness 与 diff check 通过。
 - [x] 2026-07-14 — Phase 7 第二轮远端诊断：run `29324813249` 的 macOS、Ubuntu、clean-room 全绿；Windows 已通过 PyYAML、release CLI、junction/locked file 与 104 项测试，唯一失败是文件锁竞争用例 5.26 秒越过 Vitest 默认 5 秒；产品 2 秒 lock timeout 不变，仅为磁盘并发测试设置 20 秒预算。
 - [x] 2026-07-14 — Phase 7 第三轮远端诊断：run `29325189353` 的 macOS、Ubuntu、clean-room 全绿；Windows 并发用例通过，另一 SQLite rollback fixture 以 5.039 秒越过默认 5 秒。取消单用例放宽，改为仅 `Windows + CI` 的 Vitest testTimeout 30 秒，本地默认 5 秒和产品 timeout 均不变。
+- [x] 2026-07-14 — Phase 7 第四轮平台 Gate：run `29325559181` 的 Windows、macOS、Ubuntu、clean-room 全绿；Windows 继续通过完整测试、Vite、固定包、reproducibility 与隔离安装生命周期。
+- [x] 2026-07-14 — Phase 7 artifact 审计：第四轮下载资产缺少 `.codex-plugin/plugin.json` 与 `.mcp.json`，checksums 因此不可闭合；新增 `include-hidden-files: true`、下载后独立 audit job 与 standalone release verifier，本地 13 files / 12 checksum entries 完整验证通过。
 - [x] 2026-07-14 — Phase 6：模型可见 get/validate/write/import/export 与 app-only commit/manual-edit/send 全部落位；write/import 只生成 15 分钟 pending proposal，正式写入必须由当前 Widget 实例的一次性人工 gesture 触发。
 - [x] 2026-07-14 — Phase 6 安全边界：canonical camelCase only、operation 数量/体积上限、锁内 expectedRevision、task/project/document/instance 绑定、idempotency、prompt-injection 和 stale proposal/revision/gesture 全部 fail closed；server 重建 context payload 与 digest。
 - [x] 2026-07-14 — Phase 6 Gate：专项 16 tests、全仓 36 files / 101 tests；标准宿主完成预览不发送、二次确认后仅发送一次以及 proposal 人工采纳；Widget SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`，MCP Release 可复现 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`；Vite、Tauri executable/MSI/NSIS、distribution、harness 与 diff check 通过。
@@ -71,15 +73,16 @@
 
 ## Next
 
-1. 创建 Windows CI 统一测试预算 scoped local commit。
-2. 将已获授权的 `codex/acm-pluginization-plan` 推送到 origin 并观察第四轮 `Plugin Release Candidate` workflow。
-3. Windows/macOS/Linux matrix 全绿后记录 run URL/结论，标记 Phase 7 complete；任一差异按停止条件修复后重跑。
+1. 创建 downloaded artifact 完整性 Gate scoped local commit。
+2. 将已获授权的 `codex/acm-pluginization-plan` 推送到 origin 并观察第五轮 `Plugin Release Candidate` workflow。
+3. Windows/macOS/Linux、clean-room 和 downloaded artifact audit 全绿后记录最终 checksum，标记 Phase 7 complete；任一差异按停止条件修复后重跑。
 4. 只有 Phase 7 完成后才进入 Phase 8 真实 Codex Desktop canary、固定 tag/Release 和 stable 交接。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 7 第四轮平台全绿但下载资产不完整 | run 29325559181；4 jobs green；download 缺 `.codex-plugin/`/`.mcp.json`；post-download audit added |
 | 2026-07-14 | Phase 7 第三轮确认 Windows hosted-runner 统一预算需求 | run 29325189353；macOS/Ubuntu/clean-room green；Windows concurrency passed；SQLite rollback 5.039s timeout |
 | 2026-07-14 | Phase 7 第二轮只剩 Windows 测试预算差异 | run 29324813249；macOS/Ubuntu/clean-room green；Windows 104 passed + one 5.26s timeout |
 | 2026-07-14 | Phase 7 首轮远端差异已复现并本地关闭 | run 29324137580；Ubuntu/clean-room green；Python/PyYAML pin；release CLI fixture；105 tests + clean-room |

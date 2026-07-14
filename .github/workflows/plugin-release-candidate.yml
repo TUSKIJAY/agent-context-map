@@ -50,6 +50,8 @@ jobs:
         run: npm run build
       - name: Build fixed plugin candidate
         run: npm run build:plugin
+      - name: Verify fixed plugin candidate
+        run: node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.1
       - name: Distribution and reproducibility gates
         run: |
           npm run test:distribution
@@ -66,6 +68,23 @@ jobs:
           path: dist/agent-context-map-plugin
           if-no-files-found: error
           retention-days: 14
+          include-hidden-files: true
+
+  artifact-audit:
+    name: Downloaded release artifact integrity
+    needs: platform-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.12.0
+      - uses: actions/download-artifact@v8
+        with:
+          name: agent-context-map-plugin-0.3.0-rc.1
+          path: artifact/agent-context-map-plugin
+      - name: Verify downloaded installable artifact
+        run: node plugins/agent-context-map/scripts/verify-release.mjs artifact/agent-context-map-plugin --expected-version 0.3.0-rc.1
 
   clean-room:
     name: Clean-room package replay

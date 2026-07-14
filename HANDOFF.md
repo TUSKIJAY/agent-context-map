@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：Phase 7 第三轮 macOS + Ubuntu + clean-room 已全绿；Windows 连续两轮不同磁盘 fixture 卡在 5 秒边界，下一步提交统一 Windows CI 预算并等待第四轮 matrix。
+当前焦点：Phase 7 第四轮四个 job 全绿，但下载后的 RC 缺少两个必需点号路径；下一步提交 hidden-file 上传与 post-download audit，等待第五轮完整 Gate。
 
 ## Resume Point
 
@@ -50,9 +50,9 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：`fb6db74`；Windows CI 统一真实磁盘测试预算修复在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
+- HEAD：`343b382`；downloaded artifact 完整性 Gate 修复在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
 - push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
-- 当前计划状态：Phase 7 in progress；第三轮 macOS/Ubuntu/clean-room 全绿，Windows CI 统一测试预算待第四轮
+- 当前计划状态：Phase 7 in progress；第四轮平台/clean-room 全绿，downloaded artifact audit 待第五轮
 
 ## Phase 7 Local Candidate Verification
 
@@ -83,6 +83,10 @@ git diff --check
 
 第三轮 run `29325189353` 中 macOS、Ubuntu 与 clean-room 再次全绿；Windows 的并发用例已通过，但 SQLite rollback fixture 随机用时 5.039 秒，仍只超默认 5 秒。连续两轮落在不同真实磁盘用例，说明应统一配置 hosted Windows CI 预算；当前撤销单用例 20 秒覆盖，改为 `process.platform === "win32" && CI` 时 Vitest `testTimeout=30000`，本地默认 5 秒和所有产品 timeout 不变。
 
+第四轮 run `29325559181` 的 Windows、macOS、Ubuntu、clean-room 全绿；但真实下载 artifact 后只剩 11 个非隐藏文件，`.codex-plugin/plugin.json` 与 `.mcp.json` 被 upload action 的默认 hidden-file 规则排除，`SHA256SUMS` 无法闭合。当前 workflow 显式 `include-hidden-files: true`，并新增依赖 platform matrix 的 `Downloaded release artifact integrity` job：下载 immutable artifact 后独立校验必需文件、全量 SHA256SUMS、release manifest、版本和 tree hash。
+
+当前本地 standalone verifier 对完整 13-file RC 校验通过：12 个 checksum targets，tree SHA-256 `7665ffaf6e096f9335657ecff518cdd473a01a8989efb5bc6c90db37bf61a4df`，checksum set digest `1dc8a3f37d3a078f5262a93e424387ded9b779cc96c79b72e01d0aadb58c166d`，`SHA256SUMS` 文件 SHA-256 `356b13e2477d0bb2b1d2eae3ced3f668e894664a71e8b1461f4c02c5a3dfb2a3`；第五轮下载资产必须复现这些值。
+
 生命周期证据：临时安装旧 `0.2.0` fixture、升级到 `0.3.0-rc.1`、降级回滚、卸载并重装；每一步从安装目录启动 bundled MCP、验证 checksums，真实用户全局目录未触及，测试项目 `.acm` hash 和隔离用户状态保持不变。脱敏证据在 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
 关键实现：
@@ -103,16 +107,16 @@ git diff --check
 
 ## Risks
 
-- 第三轮远端 macOS、Ubuntu 与 clean-room 已通过；Windows CI 统一预算尚未在 runner 重放，Phase 7 仍为 in progress。
-- push 已获当前任务明确授权，尚待本次修复提交后执行并观察第四轮 matrix。
+- 第四轮平台与 clean-room 已通过，但上传产物不可安装；第五轮 downloaded artifact audit 未通过前，Phase 7 仍为 in progress。
+- push 已获当前任务明确授权，尚待本次修复提交后执行并观察第五轮完整 Gate。
 - Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 形成 Windows CI 统一真实磁盘测试预算的 scoped local commit。
-2. 推送已获授权的 `codex/acm-pluginization-plan`，观察第四轮 `Plugin Release Candidate` workflow。
-3. Windows/macOS/Linux 与 clean-room jobs 全绿后记录 run URL、产物 checksum，并标记 Phase 7 complete；任一差异按停止条件修复重跑。
+1. 形成 downloaded artifact 完整性 Gate 的 scoped local commit。
+2. 推送已获授权的 `codex/acm-pluginization-plan`，观察第五轮 `Plugin Release Candidate` workflow。
+3. Windows/macOS/Linux、clean-room 与 downloaded artifact audit 全绿后记录 run URL、产物 checksum，并标记 Phase 7 complete；任一差异按停止条件修复重跑。
 4. Phase 7 complete 后再进入 Phase 8；真实 canary、marketplace、tag/Release/stable 仍分别受计划 Gate 和用户授权约束。
 
 ## History

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase7-gate/v1",
   "date": "2026-07-14",
-  "status": "local_candidate_ready_remote_matrix_pending",
+  "status": "fourth_run_platform_green_artifact_correction_ready",
   "pluginVersion": "0.3.0-rc.1",
   "buildToolchain": {
     "node": "24.12.0",
@@ -73,9 +73,9 @@
   ],
   "release": {
     "fileCount": 13,
-    "treeSha256": "accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775",
-    "checksumSetDigest": "c970cac77e0946d1f1d6693c891076451c2a78bb46225e161c85d1bb3c640135",
-    "sha256SumsFileSha256": "108d25d65ce217f32c5a16068fe86d1239d699491819d4fc145acd2b4fb8c1f1",
+    "treeSha256": "7665ffaf6e096f9335657ecff518cdd473a01a8989efb5bc6c90db37bf61a4df",
+    "checksumSetDigest": "1dc8a3f37d3a078f5262a93e424387ded9b779cc96c79b72e01d0aadb58c166d",
+    "sha256SumsFileSha256": "356b13e2477d0bb2b1d2eae3ced3f668e894664a71e8b1461f4c02c5a3dfb2a3",
     "metadata": [
       "SHA256SUMS",
       "dist/manifest.json",
@@ -133,6 +133,19 @@
         "failure": "SQLite rollback fixture completed in 5.039s and exceeded Vitest default 5s timeout"
       },
       "correction": "Windows CI receives a 30s Vitest test budget; local default and every product timeout remain unchanged"
+    },
+    "fourthRun": {
+      "id": 29325559181,
+      "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29325559181",
+      "commit": "343b382",
+      "windowsPlatform": "passed",
+      "ubuntuPlatform": "passed",
+      "macosPlatform": "passed",
+      "ubuntuCleanRoom": "passed",
+      "downloadedArtifact": "failed_integrity",
+      "missingRequiredFiles": [".codex-plugin/plugin.json", ".mcp.json"],
+      "cause": "upload-artifact excludes dot-prefixed files and directories unless include-hidden-files is enabled",
+      "correction": "Upload hidden plugin metadata explicitly and audit the downloaded immutable artifact in a dependent job"
     },
     "claim": "Phase 7 is not complete until all remote runners pass"
   },
