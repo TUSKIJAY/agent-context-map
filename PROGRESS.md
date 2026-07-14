@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD：`bd082e9` Phase 7 skill 字节规范化；发布元数据 LF 规范化在当前工作区，待 scoped commit/push
+- 当前 HEAD：`28425f8` Phase 7 全部发布文本 LF 规范化；Phase 7 closeout 文档在当前工作区，待 scoped commit/push
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 7 in progress；第六轮 run `29327155930` 的 macOS、Ubuntu、clean-room 通过，Windows 因 `.mcp.json`/README/CHANGELOG 的 CRLF 仍未命中 canonical tree；现已规范化全部直接复制文本，待第七轮三平台与下载资产验证
+- 当前 Phase：Phase 7 Completed；run `29327685652` 五 job 全绿，artifact `8308656602` 本机独立复核通过；Phase 8 Pending，等待真实 canary、marketplace、tag/Release/stable 独立授权
 
 ## Navigation
 
@@ -25,12 +25,12 @@
 
 ## In Progress
 
-- Phase 7 本地候选已完成：`0.3.0-rc.1`、Node 24.12.0/npm 11.6.2、checksums/SBOM、clean-room、source-free 启动和隔离 HOME 生命周期 Gate 全通过。
-- Phase 7 当前只剩提交并推送发布元数据 LF 规范化，确认第七轮每个平台构建及 downloaded artifact 都命中同一 tree SHA-256；任一 Gate 未绿前不得进入 Phase 8。
+- Phase 7 已完成：`0.3.0-rc.1`、Node 24.12.0/npm 11.6.2、checksums/SBOM、三平台、clean-room、source-free 启动、隔离 HOME 生命周期与下载资产复核全部通过。
+- Phase 8 等待用户独立批准真实 Codex Desktop canary、repo-local/private marketplace、固定 tag/GitHub Release 与 stable 发布范围；批准前不创建或发布这些外部状态。
 
 ## Blocked
 
-- Phase 7 第六轮 run `29327155930` 中 macOS、Ubuntu、clean-room 通过；全新 Windows checkout 的直接复制插件元数据仍为 CRLF，tree `5fa654...` 未命中 canonical `2664e1...`，下载审计因此跳过。元数据与 skill 现统一规范化为 LF，需第七轮证明三平台同字节。
+- Phase 8 的真实 canary、repo-local/private marketplace、固定 tag/GitHub Release 与 stable 发布需要用户再次明确批准；当前 `/goal` 与 branch push 授权不能替代该 Gate。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -49,6 +49,7 @@
 - [x] 2026-07-14 — Phase 7 第五轮完整 Gate：run `29326418297` 的 Windows、macOS、Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿；artifact id `8308154998`，archive digest `sha256:b6a055b181f2a2d1896ab4d54a77d0eb10c38f4b0e18d38025bd4421606569dc`。
 - [x] 2026-07-14 — Phase 7 跨平台字节诊断：Windows 与 Ubuntu 仅 4 个 skill 文本文件因 CRLF/LF 不同，连带 manifest/checksum 改变；发布 copy 现规范化 CRLF/CR 为 LF，并把三平台及下载 audit 固定到 canonical tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`。
 - [x] 2026-07-14 — Phase 7 第六轮 canonical Gate：run `29327155930` 的 macOS、Ubuntu、clean-room 通过；Windows 全测和 Vite 通过，但 `.mcp.json`/README/CHANGELOG 在 fresh checkout 保留 CRLF，tree `5fa654...` 被固定 hash Gate 正确拒绝；现把全部直接复制发布文本统一写为 LF。
+- [x] 2026-07-14 — Phase 7 Completed：run `29327685652` 的 Windows、macOS、Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿；artifact `8308656602`（archive digest `sha256:2cc0e1889f8883ac168407b38541ddf8b875d09197aa295dfbb7fcd99f04a53c`）本机再次下载并验证 canonical tree、checksums 与版本全部闭合。
 - [x] 2026-07-14 — Phase 6：模型可见 get/validate/write/import/export 与 app-only commit/manual-edit/send 全部落位；write/import 只生成 15 分钟 pending proposal，正式写入必须由当前 Widget 实例的一次性人工 gesture 触发。
 - [x] 2026-07-14 — Phase 6 安全边界：canonical camelCase only、operation 数量/体积上限、锁内 expectedRevision、task/project/document/instance 绑定、idempotency、prompt-injection 和 stale proposal/revision/gesture 全部 fail closed；server 重建 context payload 与 digest。
 - [x] 2026-07-14 — Phase 6 Gate：专项 16 tests、全仓 36 files / 101 tests；标准宿主完成预览不发送、二次确认后仅发送一次以及 proposal 人工采纳；Widget SHA-256 `abc2e2e4b55e19961748877e6e1ee9eb559e3da01636f0c3c9c044be8ab6f4e0`，MCP Release 可复现 SHA-256 `4ddc0e0c6cb576d254bc1763c0c64b7432bf50e3f3963a38316cb3e3604e1f52`；Vite、Tauri executable/MSI/NSIS、distribution、harness 与 diff check 通过。
@@ -76,15 +77,16 @@
 
 ## Next
 
-1. 创建发布元数据 LF 规范化 scoped local commit。
-2. 将已获授权的 `codex/acm-pluginization-plan` 推送到 origin 并观察第七轮 `Plugin Release Candidate` workflow。
-3. Windows/macOS/Linux、clean-room、downloaded artifact audit 均命中固定 tree hash 后标记 Phase 7 complete；任一差异按停止条件修复后重跑。
-4. 只有 Phase 7 完成后才进入 Phase 8 真实 Codex Desktop canary、固定 tag/Release 和 stable 交接。
+1. 提交并推送 Phase 7 closeout 文档与最终证据。
+2. 等待用户独立批准 Phase 8 真实 Codex Desktop canary 与 repo-local/private marketplace 范围。
+3. 等待用户独立批准固定 tag/GitHub Release、先 canary 后 stable 的正式发布动作。
+4. 获批后执行真实多 task/多项目/冲突/升级回滚/卸载恢复验收，完成 runbook、handoff 与 plan 生命周期收尾。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 7 Completed | run 29327685652 five jobs green；artifact 8308656602；local download verify；canonical tree 2664e1... |
 | 2026-07-14 | Phase 7 第六轮拒绝 Windows fresh-checkout 元数据 CRLF | run 29327155930；macOS/Ubuntu/clean-room green；Windows tree 5fa654...；全部发布文本 LF 化 |
 | 2026-07-14 | Phase 7 第五轮全绿后补获跨平台字节差异 | run 29326418297 five jobs green；artifact 8308154998；CRLF/LF only；canonical tree 2664e1... |
 | 2026-07-14 | Phase 7 第四轮平台全绿但下载资产不完整 | run 29325559181；4 jobs green；download 缺 `.codex-plugin/`/`.mcp.json`；post-download audit added |

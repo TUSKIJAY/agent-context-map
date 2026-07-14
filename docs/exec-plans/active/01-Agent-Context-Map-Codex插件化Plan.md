@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 7 第六轮拒绝 Windows 元数据 CRLF；全部发布文本 canonical LF 待第七轮三平台验证
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 7 Completed / Phase 8 等待真实 canary、marketplace、tag/Release/stable 独立授权
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -104,6 +104,7 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 7 远端执行：run `29325559181` 的 Windows、macOS、Ubuntu 与 clean-room 全绿；真实下载上传资产时发现默认排除 `.codex-plugin/` 与 `.mcp.json`，因此平台 matrix green 尚不能构成可安装 Release Gate。当前新增 hidden-file 显式上传、standalone release verifier 和下载后独立 audit job；第五轮 audit 全绿前 Phase 7 保持 in progress，证据见 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 - Phase 7 第五轮：run `29326418297` 的三平台、clean-room 与 downloaded artifact audit 全绿，下载资产完整可校验；补充逐文件比较发现 Windows checkout 的 4 个 skill 文本因 CRLF/LF 与 Ubuntu canonical tree hash 不同。当前发布 copy 规范化文本为 LF，并要求三平台和下载资产都命中固定 tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；第六轮通过前仍不标记 Phase 7 Completed。
 - Phase 7 第六轮：run `29327155930` 的 macOS、Ubuntu、clean-room 通过；Windows 全测、Vite 和候选构建通过，但 fresh checkout 的 `.mcp.json`、README、CHANGELOG 仍以 CRLF 原样复制，tree `5fa654a5f9e13ee527f09c257aa1872e22059fd17adc1d14fbaffb826451e181` 被固定 hash Gate 拒绝，download audit 按依赖跳过。当前全部直接复制发布文本统一 LF，并新增分发断言；第七轮完整通过前仍不标记 Phase 7 Completed。
+- Phase 7 第七轮 Completed：run `29327685652` 的 Windows、macOS、Ubuntu、clean-room 与 downloaded artifact integrity 五 job 全绿；artifact `8308656602` 由本机再次下载并独立验证 13 files / 12 checksum entries、版本与固定 tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e` 全部闭合。Phase 8 的真实 canary、marketplace、tag/Release/stable 尚未获独立授权。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1356,7 +1357,7 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 7：跨平台、干净包与发布候选验证
 
-执行状态：In Progress — 本地 Windows、Ubuntu WSL 与 clean-room Gate 已通过；push 已获授权，远端 Windows/macOS/Linux CI 尚待实跑，不得提前标记 Completed。
+执行状态：Completed — run `29327685652` 的 Windows/macOS/Linux、clean-room 与 downloaded artifact audit 全绿；下载 artifact `8308656602` 经本机 standalone verifier 再验证通过。
 
 输入：
 
@@ -1407,6 +1408,8 @@ Phase 0B — 独立可信宿主 spike：
 - 更新触碰项目图谱或丢失本机状态无告警。
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
+
+执行状态：Pending — Phase 7 已完成；真实 Codex Desktop canary、repo-local/private marketplace、固定 tag/GitHub Release 与 stable 发布等待用户再次明确批准。
 
 输入：
 
@@ -1672,4 +1675,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 7 第六轮已验证固定 tree Gate 能拒绝 Windows 元数据 CRLF；当前下一闸门是第七轮跨平台 canonical tree hash，所有构建与下载资产命中同一固定 SHA-256 前 Phase 7 不标记 Completed。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 7 已由第七轮跨平台 canonical tree Gate 与本机下载复核完成；当前下一闸门是用户独立批准 Phase 8 的真实 canary、repo-local/private marketplace、固定 tag/GitHub Release 和 stable 发布范围。

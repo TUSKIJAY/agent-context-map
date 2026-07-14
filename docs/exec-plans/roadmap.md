@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 7 第六轮的 macOS、Ubuntu、clean-room 通过，Windows 固定 tree Gate 拒绝 fresh-checkout 元数据 CRLF；全部直接复制发布文本已 LF 化，尚待第七轮三平台与下载资产验证，Phase 7 未完成。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 7 已由 run `29327685652` 的三平台、clean-room、下载资产审计和本机独立复核完成。Phase 8 尚未开始，等待用户独立批准真实 Codex Desktop canary、private/repo-local marketplace、固定 tag/GitHub Release 与 stable 发布。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

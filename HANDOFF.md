@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：Phase 7 第六轮的 macOS、Ubuntu、clean-room 通过，Windows fresh checkout 因插件元数据 CRLF 被固定 tree Gate 拒绝；全部直接复制文本现已 LF 化，下一步提交并等待第七轮。
+当前焦点：Phase 7 已由第七轮五 job 全绿和本机下载 artifact 独立复核完成；Phase 8 等待真实 canary、marketplace、tag/Release/stable 独立授权。
 
 ## Resume Point
 
@@ -50,9 +50,9 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：`bd082e9`；插件元数据 LF 规范化修复在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
+- HEAD：`28425f8`；Phase 7 closeout 文档与最终证据在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
 - push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
-- 当前计划状态：Phase 7 in progress；第六轮固定 tree Gate 正确拒绝 Windows 元数据 CRLF，完整三平台与下载验证待第七轮
+- 当前计划状态：Phase 7 Completed；Phase 8 Pending / explicit user approval gate
 
 ## Phase 7 Local Candidate Verification
 
@@ -91,6 +91,8 @@ git diff --check
 
 第六轮 run `29327155930` 中 macOS、Ubuntu 与 clean-room 通过；Windows 的 38 files / 105 tests、Vite build 和候选构建均通过，但 fresh checkout 直接复制的 `.mcp.json`、README、CHANGELOG 仍为 CRLF，实际 tree `5fa654a5f9e13ee527f09c257aa1872e22059fd17adc1d14fbaffb826451e181`，因此下载审计按依赖关系跳过。当前 `copyPluginMetadata` 同样规范化 CRLF/CR 为 LF，并以 distribution test 覆盖全部直接复制文本；本地 `test:release-candidate` 再次命中 canonical tree。
 
+第七轮 run `29327685652` 的 Windows、macOS、Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿。artifact id `8308656602`、size `749113`、archive digest `sha256:2cc0e1889f8883ac168407b38541ddf8b875d09197aa295dfbb7fcd99f04a53c`、有效期至 2026-07-28；本机下载后 standalone verifier 再次确认 13 files / 12 checksum entries、tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`、checksum set `144a68a5b97b87c12177e32859f0715976b0d4bfcfea1853579d3f22089c7b13` 与 `SHA256SUMS` hash `5d8f0efd0d64f23182b018b37690786f0aeea9a1b2dc55d05219e24d1885b501` 全部闭合。Phase 7 Completed。
+
 生命周期证据：临时安装旧 `0.2.0` fixture、升级到 `0.3.0-rc.1`、降级回滚、卸载并重装；每一步从安装目录启动 bundled MCP、验证 checksums，真实用户全局目录未触及，测试项目 `.acm` hash 和隔离用户状态保持不变。脱敏证据在 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
 关键实现：
@@ -111,17 +113,17 @@ git diff --check
 
 ## Risks
 
-- 第六轮固定 hash Gate 已证明能阻断 Windows 字节差异；发布元数据 LF 修复尚待 runner 重放，Phase 7 仍为 in progress。
-- push 已获当前任务明确授权，尚待本次修复提交后执行并观察第七轮 canonical tree Gate。
+- Phase 7 已完成；closeout 文档与最终证据尚待 scoped commit/push。
+- push 已获当前任务明确授权，可用于本 branch 的 Phase 7 closeout。
 - Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 形成发布元数据 LF 规范化的 scoped local commit。
-2. 推送已获授权的 `codex/acm-pluginization-plan`，观察第七轮 `Plugin Release Candidate` workflow。
-3. Windows/macOS/Linux、clean-room 与 downloaded artifact audit 都命中固定 tree hash 后标记 Phase 7 complete；任一差异按停止条件修复重跑。
-4. Phase 7 complete 后再进入 Phase 8；真实 canary、marketplace、tag/Release/stable 仍分别受计划 Gate 和用户授权约束。
+1. 形成并推送 Phase 7 closeout 的 scoped local commit。
+2. 等待用户独立批准 Phase 8 真实 Codex Desktop canary 与 repo-local/private marketplace 范围。
+3. 等待用户独立批准固定 tag/GitHub Release、canary 与 stable 发布动作。
+4. 获批后完成真实多 task/多项目/冲突/升级回滚/卸载恢复验收、runbook 和 plan 生命周期收尾。
 
 ## History
 

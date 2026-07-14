@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase7-gate/v1",
   "date": "2026-07-14",
-  "status": "fifth_run_green_cross_platform_bytes_correction_ready",
+  "status": "completed",
   "pluginVersion": "0.3.0-rc.1",
   "buildToolchain": {
     "node": "24.12.0",
@@ -87,7 +87,7 @@
   "remoteMatrix": {
     "workflow": ".github/workflows/plugin-release-candidate.yml",
     "runners": ["windows-latest", "macos-latest", "ubuntu-latest"],
-    "status": "third_run_windows_ci_timeout_correction_ready",
+    "status": "completed",
     "firstRun": {
       "id": 29324137580,
       "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29324137580",
@@ -180,7 +180,27 @@
       "cause": "Fresh Windows checkout preserved CRLF in directly copied .mcp.json, README.md, and CHANGELOG.md metadata",
       "correction": "Canonicalize every directly copied release text file to LF and assert CR-free metadata in distribution tests"
     },
-    "claim": "Phase 7 is not complete until all remote runners pass"
+    "seventhRun": {
+      "id": 29327685652,
+      "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29327685652",
+      "commit": "28425f8",
+      "windowsPlatform": "passed",
+      "ubuntuPlatform": "passed",
+      "macosPlatform": "passed",
+      "ubuntuCleanRoom": "passed",
+      "downloadedArtifact": "passed_integrity",
+      "artifact": {
+        "id": 8308656602,
+        "sizeBytes": 749113,
+        "archiveDigest": "sha256:2cc0e1889f8883ac168407b38541ddf8b875d09197aa295dfbb7fcd99f04a53c",
+        "expiresAt": "2026-07-28T11:08:03Z",
+        "treeSha256": "2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e",
+        "checksumSetDigest": "144a68a5b97b87c12177e32859f0715976b0d4bfcfea1853579d3f22089c7b13",
+        "sha256SumsFileSha256": "5d8f0efd0d64f23182b018b37690786f0aeea9a1b2dc55d05219e24d1885b501"
+      },
+      "localDownloadVerification": "passed"
+    },
+    "claim": "Phase 7 completed after every platform, clean-room replay, downloaded artifact audit, and independent local artifact verification passed"
   },
   "environmentSafety": {
     "realGlobalCodexHomeModified": false,
