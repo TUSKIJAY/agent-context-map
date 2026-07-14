@@ -166,6 +166,20 @@
       "postGateFinding": "Windows checkout copied four skill text files with CRLF while Ubuntu used LF, producing a different otherwise-valid tree hash",
       "correction": "Canonicalize released skill text to LF and require the Ubuntu canonical tree hash on every platform and downloaded artifact"
     },
+    "sixthRun": {
+      "id": 29327155930,
+      "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29327155930",
+      "commit": "bd082e9",
+      "windowsPlatform": "failed_tree_gate",
+      "ubuntuPlatform": "passed",
+      "macosPlatform": "passed",
+      "ubuntuCleanRoom": "passed",
+      "downloadedArtifact": "skipped_dependency_failure",
+      "expectedTreeSha256": "2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e",
+      "windowsTreeSha256": "5fa654a5f9e13ee527f09c257aa1872e22059fd17adc1d14fbaffb826451e181",
+      "cause": "Fresh Windows checkout preserved CRLF in directly copied .mcp.json, README.md, and CHANGELOG.md metadata",
+      "correction": "Canonicalize every directly copied release text file to LF and assert CR-free metadata in distribution tests"
+    },
     "claim": "Phase 7 is not complete until all remote runners pass"
   },
   "environmentSafety": {

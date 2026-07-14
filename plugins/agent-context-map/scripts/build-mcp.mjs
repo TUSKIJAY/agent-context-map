@@ -61,9 +61,10 @@ async function copyPluginMetadata(targetRoot, pluginVersion) {
   const sourceManifest = JSON.parse(await fs.readFile(path.join(pluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
   const manifest = { ...sourceManifest, version: pluginVersion ?? sourceManifest.version };
   await fs.writeFile(path.join(targetRoot, ".codex-plugin", "plugin.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-  await fs.copyFile(path.join(pluginRoot, ".mcp.json"), path.join(targetRoot, ".mcp.json"));
-  await fs.copyFile(path.join(pluginRoot, "README.md"), path.join(targetRoot, "README.md"));
-  await fs.copyFile(path.join(pluginRoot, "CHANGELOG.md"), path.join(targetRoot, "CHANGELOG.md"));
+  for (const relative of [".mcp.json", "README.md", "CHANGELOG.md"]) {
+    const text = await fs.readFile(path.join(pluginRoot, relative), "utf8");
+    await fs.writeFile(path.join(targetRoot, relative), text.replace(/\r\n?/gu, "\n"), "utf8");
+  }
   return manifest;
 }
 

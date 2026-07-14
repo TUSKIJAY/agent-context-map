@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 7 第五轮三平台、clean-room 与 downloaded artifact audit 已全绿，补充发现并关闭 skill 文本 CRLF/LF 字节差异；固定 canonical tree hash 尚待第六轮三平台验证，Phase 7 未完成。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 7 第六轮的 macOS、Ubuntu、clean-room 通过，Windows 固定 tree Gate 拒绝 fresh-checkout 元数据 CRLF；全部直接复制发布文本已 LF 化，尚待第七轮三平台与下载资产验证，Phase 7 未完成。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 
