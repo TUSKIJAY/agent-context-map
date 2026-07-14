@@ -23,6 +23,8 @@
   },
   "readOnlyPreflight": {
     "officialManualCurrent": true,
+    "pluginValidation": "passed",
+    "realRepoMarketplaceAbsent": true,
     "repoMarketplacePath": ".agents/plugins/marketplace.json",
     "marketplacePluginPath": "./dist/agent-context-map-plugin",
     "existingPluginTags": [],

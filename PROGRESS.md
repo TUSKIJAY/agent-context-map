@@ -87,7 +87,7 @@
 
 | Date | Change | Evidence |
 | --- | --- | --- |
-| 2026-07-14 | Phase 8 无副作用准备完成 | official Codex Manual current；runbook/evidence prepared；Windows failure budget 1；external state unchanged |
+| 2026-07-14 | Phase 8 无副作用准备完成 | official Codex Manual current；plugin validator/runbook/evidence/harness passed；Windows failure budget 1；external state unchanged |
 | 2026-07-14 | Phase 7 closeout 已推送且最新 HEAD 复跑全绿 | commit ba9d1dc；run 29328130052 five jobs green |
 | 2026-07-14 | Phase 7 Completed | run 29327685652 five jobs green；artifact 8308656602；local download verify；canonical tree 2664e1... |
 | 2026-07-14 | Phase 7 第六轮拒绝 Windows fresh-checkout 元数据 CRLF | run 29327155930；macOS/Ubuntu/clean-room green；Windows tree 5fa654...；全部发布文本 LF 化 |

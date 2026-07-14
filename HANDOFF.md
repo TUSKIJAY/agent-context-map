@@ -54,6 +54,7 @@
 - push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
 - 当前计划状态：Phase 7 Completed；Phase 8 Pending / explicit user approval gate
 - Phase 8 准备：`docs/runbooks/agent-context-map-plugin-release.md` 与 `plugins/agent-context-map/tests/evidence/phase8-canary.json`；未修改真实 Codex、marketplace、tag、Release 或 stable
+- Phase 8 准备验证：Codex Manual current；official plugin validator passed；evidence JSON parse、marketplace-absent、harness check/budget 与 diff check 通过
 
 ## Phase 7 Local Candidate Verification
 
