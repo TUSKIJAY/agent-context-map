@@ -2,6 +2,8 @@
 
 更新日期：2026-07-14
 
+交付规则（覆盖本页下方规则生效前的旧提交描述）：每个仓库修改任务在验收和状态同步后自动创建 scoped local commit；每次 `git push` 仍需用户明确确认。本轮规则已形成未 push 的最新本地提交；旧 HEAD/ahead 数字以当前 Git 命令为准。
+
 当前焦点：governed harness retrofit 收尾与分支同步决策
 
 ## Resume Point
@@ -37,6 +39,8 @@
 - 没有改动产品源码或 ACM-MD 协议。
 
 ## Verification
+
+本轮自动 commit 规则变更验证：harness skill 100/100、critical failures 0；`npm run harness:check`、`npm run harness:budget`、`git diff --check` 全部通过。该规则变更应形成独立 scoped local commit，不 push。
 
 已运行：
 

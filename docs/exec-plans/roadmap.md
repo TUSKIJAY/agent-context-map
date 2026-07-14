@@ -13,7 +13,7 @@
 3. proposed 计划必须接受独立 review；review 不自动等于 activation。
 4. 只有 review 通过且用户明确批准后，计划才能移动到 `active/`。
 5. active 计划按 phase 执行；每次 start、complete、block、reject 或 scope change 都先更新 `PROGRESS.md`。
-6. 每个 phase 记录验证证据、刷新 `HANDOFF.md`，并按仓库规则形成 scoped commit。
+6. 每个 phase 记录验证证据、刷新 `HANDOFF.md`，并按仓库规则自动形成 scoped local commit；push 仍需用户逐次明确确认。
 7. 全部范围完成、验证和收尾后，计划移动到 `completed/`。
 
 `proposed`、`active`、`completed` 与 `review` 是不同状态，不得仅靠措辞相互替代。
@@ -30,6 +30,7 @@
 
 - 不得静默合并 phase。
 - phase 未形成状态、证据、handoff 和必要提交闭环前，不得宣布完成。
+- 修改任务和 active phase 验收结束后默认自动 commit，不再把“是否 commit”列为人工闸门；自动提交只能包含当前范围，push 始终保留为人工闸门。
 - 发现无关脏改动时保护它们；无法形成干净范围时记录阻塞并暂停。
 - 决策、优化记录、review 或聊天认可不能绕过 active 状态与用户批准。
 

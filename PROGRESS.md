@@ -3,6 +3,7 @@
 ## Current Snapshot
 
 - 更新日期：2026-07-14
+- Git 状态说明：自动 scoped commit 规则已形成最新本地提交且尚未 push；本页若仍含规则生效前的旧 HEAD/ahead 数字，以 `git log -1` 和 `git rev-list --count origin/codex/agy_agent..HEAD` 为准。
 - 当前分支：`codex/agy_agent`
 - 当前源码提交：`154bf75`（agy CLI 协作建议桥）
 - 对应远端分支：`origin/codex/agy_agent` 停在 `077dbec`；本地尚有 1 个既有提交未推送
@@ -32,6 +33,7 @@
 
 ## Completed
 
+- [x] 2026-07-14 — 将交付闭环改为“每个修改任务验收后自动 scoped local commit；每次 push 仍需人工明确确认”；规则生效前的既有脏改动不追溯并入新 commit。
 - [x] 2026-07-14 — 安装并校准 governed harness 控制面。
 - [x] 2026-07-14 — 将旧长篇 handoff 的稳定历史迁入带索引的 progress archive。
 - [x] 2026-07-14 — `npm run harness:check` 通过；缺失文件 0，config error 0。
@@ -42,7 +44,8 @@
 
 ## Next
 
-- 验证通过后，由用户决定是否将本次 harness 改造与本地未推送的 `154bf75` 一并或分开提交/推送。
+- 新产生的修改在验收与状态同步后自动形成 scoped local commit；push 仍需用户在当前任务明确确认。
+- 本规则生效前已经存在的治理、评审与迁移脏改动保持原样，不追溯混入本次 policy commit；后续应按来源分批处理。
 - 后续产品工作开始前，先确认是否属于直接窄范围任务，或需要进入 proposed → review → approval → active 生命周期。
 
 ## Recent Log

@@ -81,7 +81,11 @@ git status --short --branch
 
 完整外置规则见 `C:\Users\LENOVO\Desktop\工作\星际之门\GIT_EXTERNAL_STORE_RULES.md`。只处理本项目，不扫描或迁移其他仓库。
 
-提交时只暂存本次明确相关路径；工作区存在不明改动时禁止 `git add -A`。除非用户明确要求，不自动 commit 或 push。
+提交时只暂存本次明确相关路径；工作区存在不明改动时禁止 `git add -A`。
+
+- 每个发生仓库修改的任务或 active phase，在完成验证、diff 复核以及 `PROGRESS.md` / `HANDOFF.md` 同步后，默认自动创建 scoped local commit，不再逐次等待用户确认；文档-only 和直接授权的窄范围维护同样适用。
+- 自动 commit 只授权本次任务范围。存在无关或规则生效前遗留改动时必须局部暂存；无法安全隔离则记录阻塞，不得夹带提交，也不得静默跳过提交闭环。
+- `git push` 不在自动授权范围内。每次 push 都必须等待用户在当前任务中明确确认；本地 commit、计划批准或历史 push 授权都不能替代本次确认。
 
 ## 验证与完成
 
