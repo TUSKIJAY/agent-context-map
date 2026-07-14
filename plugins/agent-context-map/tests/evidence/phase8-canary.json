@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "agent-context-map-phase8-gate/v1",
+  "date": "2026-07-14",
+  "status": "prepared_waiting_authorization",
+  "authorizations": {
+    "realCodexCanaryAndRepoMarketplace": false,
+    "fixedTagGithubReleaseCanaryStable": false
+  },
+  "windowsPolicy": {
+    "failureBudget": 1,
+    "failuresAfterDirective": 0,
+    "onNextFailure": "stop_without_retry",
+    "docsOnlyPushesSkipCi": true
+  },
+  "candidate": {
+    "version": "0.3.0-rc.1",
+    "sourceCommit": "28425f8",
+    "workflowRun": 29327685652,
+    "artifactId": 8308656602,
+    "treeSha256": "2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e",
+    "checksumSetDigest": "144a68a5b97b87c12177e32859f0715976b0d4bfcfea1853579d3f22089c7b13",
+    "sha256SumsFileSha256": "5d8f0efd0d64f23182b018b37690786f0aeea9a1b2dc55d05219e24d1885b501"
+  },
+  "readOnlyPreflight": {
+    "officialManualCurrent": true,
+    "repoMarketplacePath": ".agents/plugins/marketplace.json",
+    "marketplacePluginPath": "./dist/agent-context-map-plugin",
+    "existingPluginTags": [],
+    "existingGithubReleases": []
+  },
+  "gates": {
+    "fixedAsset": "pending",
+    "windowsCodexCanary": "pending",
+    "multiTaskMultiProjectReload": "pending",
+    "widgetProposalCommitSend": "pending",
+    "contentContentConflict": "pending",
+    "layoutLayoutConflict": "pending",
+    "layoutContentConflict": "pending",
+    "upgradeRollbackUninstallRecovery": "pending",
+    "noRemoteBusinessTraffic": "pending",
+    "canaryRelease": "pending",
+    "stableRelease": "pending"
+  },
+  "externalState": {
+    "realGlobalCodexHomeModified": false,
+    "repoMarketplaceCreated": false,
+    "gitTagCreated": false,
+    "githubReleaseCreated": false,
+    "stablePublished": false
+  },
+  "projectDataModified": false,
+  "rawTaskIdsRetained": false,
+  "rawWorkspacePathsRetained": false
+}

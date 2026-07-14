@@ -27,10 +27,12 @@
 
 - Phase 7 已完成：`0.3.0-rc.1`、Node 24.12.0/npm 11.6.2、checksums/SBOM、三平台、clean-room、source-free 启动、隔离 HOME 生命周期与下载资产复核全部通过。
 - Phase 8 等待用户独立批准真实 Codex Desktop canary、repo-local/private marketplace、固定 tag/GitHub Release 与 stable 发布范围；批准前不创建或发布这些外部状态。
+- Phase 8 repo-local runbook 与 `phase8-canary.json` 待执行证据已准备；marketplace 固定指向验证后解压的 `./dist/agent-context-map-plugin`，不提交构建产物、不指向浮动 main。
 
 ## Blocked
 
 - Phase 8 的真实 canary、repo-local/private marketplace、固定 tag/GitHub Release 与 stable 发布需要用户再次明确批准；当前 `/goal` 与 branch push 授权不能替代该 Gate。
+- Windows failure budget = 1；从用户 2026-07-14 指令起，下一次 Windows canary 或必要 release Gate 失败后立即停止重试，只保留证据与安全清理。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -85,6 +87,7 @@
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 8 无副作用准备完成 | official Codex Manual current；runbook/evidence prepared；Windows failure budget 1；external state unchanged |
 | 2026-07-14 | Phase 7 closeout 已推送且最新 HEAD 复跑全绿 | commit ba9d1dc；run 29328130052 five jobs green |
 | 2026-07-14 | Phase 7 Completed | run 29327685652 five jobs green；artifact 8308656602；local download verify；canonical tree 2664e1... |
 | 2026-07-14 | Phase 7 第六轮拒绝 Windows fresh-checkout 元数据 CRLF | run 29327155930；macOS/Ubuntu/clean-room green；Windows tree 5fa654...；全部发布文本 LF 化 |

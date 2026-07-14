@@ -139,6 +139,7 @@ npm run tauri:build -- --no-bundle
 | `docs/decisions/` | Accepted/Proposed 决策记录 |
 | `docs/optimization/` | record-only 优化 intake |
 | `docs/progress-archive/` | 从启动文档迁出的历史证据 |
+| `docs/runbooks/` | 发布、真实试点、恢复与回滚操作手册；不替代 active plan 与用户授权 |
 
 所有新的计划、评审、决策、优化记录、进度归档和 Agent 过程文档都必须通过上述 `docs/` 入口落位并维护索引。
 

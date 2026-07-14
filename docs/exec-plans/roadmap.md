@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 7 已由 run `29327685652` 的三平台、clean-room、下载资产审计和本机独立复核完成。Phase 8 尚未开始，等待用户独立批准真实 Codex Desktop canary、private/repo-local marketplace、固定 tag/GitHub Release 与 stable 发布。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 7 已由 run `29327685652` 的三平台、clean-room、下载资产审计和本机独立复核完成。Phase 8 runbook 与待执行证据已准备，但真实动作尚未开始，等待用户独立批准。Windows 自 2026-07-14 起只有 1 次失败额度，下一次失败后停止重试。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

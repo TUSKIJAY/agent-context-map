@@ -1409,7 +1409,9 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Pending — Phase 7 已完成；真实 Codex Desktop canary、repo-local/private marketplace、固定 tag/GitHub Release 与 stable 发布等待用户再次明确批准。
+执行状态：Pending — Phase 7 已完成；真实 Codex Desktop canary、repo-local/private marketplace、固定 tag/GitHub Release 与 stable 发布等待用户再次明确批准。repo-local runbook 与待执行证据已准备，未创建任何真实外部状态。
+
+Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 
 输入：
 
