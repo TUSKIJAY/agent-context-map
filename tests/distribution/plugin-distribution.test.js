@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { buildMcp, workspaceRoot } from "../../plugins/agent-context-map/scripts/build-mcp.mjs";
 import { createMcpHarness, trustedMeta } from "../../plugins/agent-context-map/tests/helpers/mcp-harness.js";
+import { buildPluginRelease, workspaceRoot } from "../helpers/plugin-release.js";
 
 let base;
 let releaseRoot;
@@ -17,7 +17,7 @@ beforeAll(async () => {
   workspace = path.join(base, "workspace");
   await fs.mkdir(path.join(workspace, ".acm"), { recursive: true });
   await fs.writeFile(path.join(workspace, ".acm", "sentinel"), "unchanged\n");
-  await buildMcp({ releaseRoot, writeDevelopmentBundle: false });
+  await buildPluginRelease({ releaseRoot });
 }, 30_000);
 afterAll(async () => { await fs.rm(base, { recursive: true, force: true }); });
 

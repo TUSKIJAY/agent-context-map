@@ -161,8 +161,26 @@ export async function buildMcp({ releaseRoot = defaultReleaseRoot, writeDevelopm
   return { releaseRoot: resolvedRelease, files: manifest.files, checksum, pluginVersion: manifestMetadata.version };
 }
 
+function parseCliOptions(args) {
+  const options = {};
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--release-root" || argument === "--plugin-version") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--")) throw new Error(`${argument} requires a value`);
+      options[argument === "--release-root" ? "releaseRoot" : "pluginVersion"] = value;
+      index += 1;
+    } else if (argument === "--no-development-bundle") {
+      options.writeDevelopmentBundle = false;
+    } else {
+      throw new Error(`Unknown build option: ${argument}`);
+    }
+  }
+  return options;
+}
+
 const isMain = process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
 if (isMain) {
-  const result = await buildMcp();
+  const result = await buildMcp(parseCliOptions(process.argv.slice(2)));
   process.stdout.write(`${JSON.stringify({ ok: true, releaseRoot: result.releaseRoot, fileCount: result.files.length, pluginVersion: result.pluginVersion, checksum: result.checksum })}\n`);
 }

@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { buildMcp } from "../../plugins/agent-context-map/scripts/build-mcp.mjs";
 import { createMcpHarness, trustedMeta } from "../../plugins/agent-context-map/tests/helpers/mcp-harness.js";
+import { buildPluginRelease } from "../helpers/plugin-release.js";
 
 let suiteRoot;
 let currentRelease;
@@ -149,7 +149,7 @@ beforeAll(async () => {
   suiteRoot = await fs.mkdtemp(path.join(os.tmpdir(), "acm-release-fixtures-"));
   currentRelease = path.join(suiteRoot, "current");
   previousRelease = path.join(suiteRoot, "previous");
-  const built = await buildMcp({ releaseRoot: currentRelease, writeDevelopmentBundle: false });
+  const built = await buildPluginRelease({ releaseRoot: currentRelease });
   currentVersion = built.pluginVersion;
   await makePreviousRelease(currentRelease, previousRelease);
 }, 30_000);

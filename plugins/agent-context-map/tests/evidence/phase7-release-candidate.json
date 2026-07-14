@@ -87,13 +87,26 @@
   "remoteMatrix": {
     "workflow": ".github/workflows/plugin-release-candidate.yml",
     "runners": ["windows-latest", "macos-latest", "ubuntu-latest"],
-    "status": "push_authorized_pending_remote_run",
+    "status": "first_run_failed_corrections_ready",
+    "firstRun": {
+      "id": 29324137580,
+      "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29324137580",
+      "commit": "c1441f0",
+      "ubuntuPlatform": "passed",
+      "ubuntuCleanRoom": "passed",
+      "windowsPlatform": "failed",
+      "macosPlatform": "failed",
+      "closedLocally": [
+        "CI installs pinned Python 3.13.5 and PyYAML 6.0.3",
+        "distribution fixtures invoke the real release CLI in a child process"
+      ]
+    },
     "claim": "Phase 7 is not complete until all remote runners pass"
   },
   "environmentSafety": {
     "realGlobalCodexHomeModified": false,
     "marketplaceCreated": false,
     "networkServiceCreated": false,
-    "pushPerformed": false
+    "pushPerformed": true
   }
 }

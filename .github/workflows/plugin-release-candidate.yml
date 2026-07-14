@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHON: python
+
 concurrency:
   group: plugin-rc-${{ github.ref }}
   cancel-in-progress: true
@@ -23,13 +26,18 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24.12.0
           cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.13.5
       - name: Pin npm
         run: npm install --global npm@11.6.2
+      - name: Install Python validator dependency
+        run: python -m pip install --disable-pip-version-check --requirement requirements-ci.txt
       - name: Verify toolchain
         run: |
           node --version
@@ -52,7 +60,7 @@ jobs:
           npm run test:uninstall-reinstall
       - name: Upload fixed release candidate
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: agent-context-map-plugin-0.3.0-rc.1
           path: dist/agent-context-map-plugin
@@ -63,13 +71,18 @@ jobs:
     name: Clean-room package replay
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24.12.0
           cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.13.5
       - name: Pin npm
         run: npm install --global npm@11.6.2
+      - name: Install Python validator dependency
+        run: python -m pip install --disable-pip-version-check --requirement requirements-ci.txt
       - name: Bootstrap checker
         run: npm ci --no-audit --no-fund
       - name: Rebuild from an isolated source copy

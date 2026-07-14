@@ -2,11 +2,11 @@
 
 更新日期：2026-07-14
 
-当前焦点：Phase 7 本地 Windows + Ubuntu Release Candidate Gate 已就绪；push 已获授权，下一步提交跨平台修复、推送并运行远端 Windows/macOS/Linux matrix。
+当前焦点：Phase 7 首轮远端 Ubuntu + clean-room 已通过；Windows/macOS 差异已本地关闭，下一步提交、推送并等待第二轮 Windows/macOS/Linux matrix。
 
 ## Resume Point
 
-- 权威仓库：`D:\Code\agent-context-map`，项目内普通 `.git/`，分支 `codex/acm-pluginization-plan`，origin `https://github.com/TUSKIJAY/agent-context-map.git`；该分支尚无 upstream。
+- 权威仓库：`D:\Code\agent-context-map`，项目内普通 `.git/`，分支 `codex/acm-pluginization-plan`，origin `https://github.com/TUSKIJAY/agent-context-map.git`；upstream `origin/codex/acm-pluginization-plan`。
 - active plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`；review-002 = approve；用户于 2026-07-14 批准。
 - Phase 0A/0B：baseline/ADR 与真实 Codex Desktop host identity Gate 已完成；提交 `8162e6e`、`06c2502`。
 - Phase 1：platform-free `packages/acm-core` 与 JS/Python validator parity 已完成；提交 `d386246`。
@@ -49,10 +49,10 @@
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
-- upstream：未设置
-- HEAD：Phase 7 local RC 已提交 `bea3a06`；Linux Gate 暴露的跨平台修复 scoped commit 待创建，接手时以 `git log -1 --oneline` 实测
+- upstream：`origin/codex/acm-pluginization-plan`
+- HEAD 基线：`c1441f0`；首轮远端 CI 修复在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
 - push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
-- 当前计划状态：Phase 7 in progress；local RC ready，remote matrix pending push authorization
+- 当前计划状态：Phase 7 in progress；首轮 remote matrix 部分通过，修复已本地验证，第二轮待 push
 
 ## Phase 7 Local Candidate Verification
 
@@ -77,6 +77,8 @@ git diff --check
 
 结果：Windows 与 Ubuntu WSL 均以固定 Node 24.12.0/npm 11.6.2 完成全仓 38 files / 105 tests，各按平台跳过 1 项异平台测试；Windows junction/locked file 和 Linux symlink/permission 原生 Gate 通过。两侧 clean-room 均从隔离副本完成 `npm ci`、同一全测、Vite 317 modules、固定包和两次可复现打包。首次 Linux replay 暴露的 `python3` 命令选择与 production JSX 绝对源码路径泄漏已修复。Release tree SHA-256 两侧一致为 `accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775`，checksum set digest `c970cac77e0946d1f1d6693c891076451c2a78bb46225e161c85d1bb3c640135`。
 
+首轮 GitHub Actions run `29324137580` 中 Ubuntu platform 与 Ubuntu clean-room 通过；Windows/macOS 缺少 PyYAML，Windows 另在 Vitest 直接导入 executable release script 时失败。当前修复固定 Python 3.13.5/PyYAML 6.0.3，并让 distribution fixture 通过真实 CLI 子进程生成候选包；本地再次通过 38 files / 105 tests、`test:release-candidate`、`test:clean-room`、Vite、harness 与 `git diff --check`。
+
 生命周期证据：临时安装旧 `0.2.0` fixture、升级到 `0.3.0-rc.1`、降级回滚、卸载并重装；每一步从安装目录启动 bundled MCP、验证 checksums，真实用户全局目录未触及，测试项目 `.acm` hash 和隔离用户状态保持不变。脱敏证据在 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
 关键实现：
@@ -97,15 +99,15 @@ git diff --check
 
 ## Risks
 
-- 本地 Windows/clean-room Gate 不替代 GitHub macOS/Linux 原生 runner；远端 matrix 未运行，Phase 7 仍为 in progress。
-- workflow 只有在分支推送后才能产生三平台证据；push 已获当前任务明确授权，尚待本次修复提交后执行。
+- 首轮远端 Ubuntu 已通过，但 Windows/macOS 修复尚未在 runner 重放；Phase 7 仍为 in progress。
+- push 已获当前任务明确授权，尚待本次修复提交后执行并观察第二轮 matrix。
 - Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 形成 Linux Gate 暴露问题的 scoped local commit。
-2. 推送已获授权的 `codex/acm-pluginization-plan`，观察 `Plugin Release Candidate` workflow。
+1. 形成首轮远端 CI 修复的 scoped local commit。
+2. 推送已获授权的 `codex/acm-pluginization-plan`，观察第二轮 `Plugin Release Candidate` workflow。
 3. Windows/macOS/Linux 与 clean-room jobs 全绿后记录 run URL、产物 checksum，并标记 Phase 7 complete；任一差异按停止条件修复重跑。
 4. Phase 7 complete 后再进入 Phase 8；真实 canary、marketplace、tag/Release/stable 仍分别受计划 Gate 和用户授权约束。
 
