@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：Phase 7 第二轮 macOS + Ubuntu + clean-room 已全绿；Windows 唯一差异是慢磁盘测试预算，下一步提交、推送并等待第三轮 matrix。
+当前焦点：Phase 7 第三轮 macOS + Ubuntu + clean-room 已全绿；Windows 连续两轮不同磁盘 fixture 卡在 5 秒边界，下一步提交统一 Windows CI 预算并等待第四轮 matrix。
 
 ## Resume Point
 
@@ -50,9 +50,9 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：`f43f7e5`；Windows 慢文件系统测试预算修复在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
+- HEAD：`fb6db74`；Windows CI 统一真实磁盘测试预算修复在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
 - push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
-- 当前计划状态：Phase 7 in progress；第二轮 macOS/Ubuntu/clean-room 全绿，Windows 专属测试预算修复待第三轮
+- 当前计划状态：Phase 7 in progress；第三轮 macOS/Ubuntu/clean-room 全绿，Windows CI 统一测试预算待第四轮
 
 ## Phase 7 Local Candidate Verification
 
@@ -81,6 +81,8 @@ git diff --check
 
 第二轮 run `29324813249` 中 macOS、Ubuntu 与 clean-room 全绿；Windows 已越过上述问题并通过 junction/locked destination、release CLI 与 104 项测试，唯一失败是 20 路真实文件锁竞争在 Windows Server 2025 runner 用时 5.26 秒，超过 Vitest 默认 5 秒。断言和产品锁语义没有失败；当前只把两个磁盘并发测试预算提高到 20 秒，`DocumentLockManager` 的 2 秒产品 timeout 保持不变。
 
+第三轮 run `29325189353` 中 macOS、Ubuntu 与 clean-room 再次全绿；Windows 的并发用例已通过，但 SQLite rollback fixture 随机用时 5.039 秒，仍只超默认 5 秒。连续两轮落在不同真实磁盘用例，说明应统一配置 hosted Windows CI 预算；当前撤销单用例 20 秒覆盖，改为 `process.platform === "win32" && CI` 时 Vitest `testTimeout=30000`，本地默认 5 秒和所有产品 timeout 不变。
+
 生命周期证据：临时安装旧 `0.2.0` fixture、升级到 `0.3.0-rc.1`、降级回滚、卸载并重装；每一步从安装目录启动 bundled MCP、验证 checksums，真实用户全局目录未触及，测试项目 `.acm` hash 和隔离用户状态保持不变。脱敏证据在 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
 关键实现：
@@ -101,15 +103,15 @@ git diff --check
 
 ## Risks
 
-- 第二轮远端 macOS、Ubuntu 与 clean-room 已通过；Windows 测试预算修复尚未在 runner 重放，Phase 7 仍为 in progress。
-- push 已获当前任务明确授权，尚待本次修复提交后执行并观察第三轮 matrix。
+- 第三轮远端 macOS、Ubuntu 与 clean-room 已通过；Windows CI 统一预算尚未在 runner 重放，Phase 7 仍为 in progress。
+- push 已获当前任务明确授权，尚待本次修复提交后执行并观察第四轮 matrix。
 - Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 形成 Windows 慢文件系统测试预算的 scoped local commit。
-2. 推送已获授权的 `codex/acm-pluginization-plan`，观察第三轮 `Plugin Release Candidate` workflow。
+1. 形成 Windows CI 统一真实磁盘测试预算的 scoped local commit。
+2. 推送已获授权的 `codex/acm-pluginization-plan`，观察第四轮 `Plugin Release Candidate` workflow。
 3. Windows/macOS/Linux 与 clean-room jobs 全绿后记录 run URL、产物 checksum，并标记 Phase 7 complete；任一差异按停止条件修复重跑。
 4. Phase 7 complete 后再进入 Phase 8；真实 canary、marketplace、tag/Release/stable 仍分别受计划 Gate 和用户授权约束。
 

@@ -87,7 +87,7 @@
   "remoteMatrix": {
     "workflow": ".github/workflows/plugin-release-candidate.yml",
     "runners": ["windows-latest", "macos-latest", "ubuntu-latest"],
-    "status": "second_run_windows_timeout_correction_ready",
+    "status": "third_run_windows_ci_timeout_correction_ready",
     "firstRun": {
       "id": 29324137580,
       "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29324137580",
@@ -116,6 +116,23 @@
         "failure": "20-writer filesystem concurrency completed in 5.26s and exceeded Vitest default 5s timeout"
       },
       "correction": "Two real-filesystem concurrency tests receive a 20s test-only timeout; product lock timeout remains 2s"
+    },
+    "thirdRun": {
+      "id": 29325189353,
+      "url": "https://github.com/TUSKIJAY/agent-context-map/actions/runs/29325189353",
+      "commit": "fb6db74",
+      "ubuntuPlatform": "passed",
+      "macosPlatform": "passed",
+      "ubuntuCleanRoom": "passed",
+      "windowsPlatform": "failed_test_budget_only",
+      "windowsTests": {
+        "passed": 104,
+        "failed": 1,
+        "skipped": 1,
+        "previousConcurrencyTest": "passed",
+        "failure": "SQLite rollback fixture completed in 5.039s and exceeded Vitest default 5s timeout"
+      },
+      "correction": "Windows CI receives a 30s Vitest test budget; local default and every product timeout remain unchanged"
     },
     "claim": "Phase 7 is not complete until all remote runners pass"
   },
