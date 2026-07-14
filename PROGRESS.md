@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；尚未设置 upstream
-- 当前 HEAD：Phase 2 scoped commit；接手时以 `git log -1 --oneline` 实测；push 未获授权
+- 当前 HEAD：Phase 3 scoped commit；接手时以 `git log -1 --oneline` 实测；push 未获授权
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 2 complete；下一 Gate 为 Phase 3 editor 与 platform adapters 解耦
+- 当前 Phase：Phase 3 complete；下一 Gate 为 Phase 4 插件壳、MCP control plane 与安全根绑定
 
 ## Navigation
 
@@ -25,8 +25,8 @@
 
 ## In Progress
 
-- Phase 3 待开始：抽取 `packages/acm-editor`、document controller 和 Tauri/Browser composition adapters，同时保持 Tauri 行为。
-- Phase 3 必须迁移产品内部 legacy snake_case operations，并证明 editor 依赖闭包不含 Tauri/SQLite 或宿主全局自发现。
+- Phase 4 待开始：建立正式 plugin manifest、bundled stdio MCP、UI resource 与可信项目根绑定。
+- Phase 4 必须复用 Phase 0B 的 host-owned identity 证据，任何 tool arguments 都不能覆盖 binding；字段漂移必须 fail closed。
 
 ## Blocked
 
@@ -36,6 +36,9 @@
 
 ## Completed
 
+- [x] 2026-07-14 — Phase 3：抽出 platform-free `packages/acm-editor`、document controller 和能力 contracts；Desktop composition root 注入 Tauri/Browser store、files、Agent、export 与 host capabilities。
+- [x] 2026-07-14 — Phase 3 边界收敛：editor 依赖闭包不含 Tauri/SQLite/宿主全局发现；FlowCanvas 使用 export adapter；pending proposal 与正式 Diff 分栏；产品 Agent operations 全部改为 camelCase，legacy 仅保留显式 diagnostics adapter。
+- [x] 2026-07-14 — Phase 3 Gate：editor 4 files / 7 tests、import-boundaries 4 tests、全仓 19 files / 60 tests、Vite 317 modules、Tauri release bundle、harness 与 diff check 全通过；桌面 smoke 覆盖项目绑定、新建/打开/编辑/撤销/重做/校验/Diff/保存/重开。
 - [x] 2026-07-14 — Phase 2：新增 `packages/project-store`，实现项目 `.acm` 扫描、strict validation、canonical SHA-256 revision、expectedRevision、公平锁、跨进程 lock file、幂等 mutation、same-directory temp/safe replace、recovery evidence 和可重建 index。
 - [x] 2026-07-14 — Phase 2 真源切换：Tauri 正式存储改为用户原生选择的 `.acm/documents/*.acm.md`；移除 SQL write backend、`tauri-plugin-sql` 依赖和全部 SQL capabilities；浏览器 localStorage 明示 isolated demo。
 - [x] 2026-07-14 — Phase 2 迁移：legacy SQLite 使用只读 preview、JS/Python strict validation、round-trip、用户状态目录 backup、逐文档确认与 rollback；原库不删除、不双写。
@@ -50,15 +53,16 @@
 
 ## Next
 
-1. 执行 Phase 3：抽取 editor shell/controller，并在 composition root 注入 Tauri/Browser adapters。
-2. 给 FlowCanvas 注入 host/export capabilities，保持 pending proposal 与正式 Diff 分离。
-3. 迁移产品内部 legacy snake_case operations；完成 mock editor、import boundary、Tauri regression Gate。
+1. 执行 Phase 4：创建正式插件壳、bundled stdio MCP 与 MCP UI resource。
+2. 把 Phase 0B identity evidence 接入产品 server 的 host-owned binding，严格拒绝模型参数覆盖和越界路径。
+3. 建立 session/openAttempt 生命周期、只读工具与写操作人工门控的安全测试。
 4. Phase 验收后 scoped local commit；每次 push 仍需用户明确确认。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 3 editor/platform adapters 解耦完成 | editor 7、import-boundaries 4、全仓 60；Vite 317；Tauri release bundle；桌面 smoke |
 | 2026-07-14 | Phase 2 项目文件单真源与 SQLite 只读迁移完成 | project-store 23 tests；Rust 3；Vite 308；Tauri release；DEC-004/007 implemented |
 | 2026-07-14 | Phase 1 acm-core 协议等价完成 | `packages/acm-core/`；core 16、全仓 31、parity 8；Tauri release build |
 | 2026-07-14 | Phase 0B trusted host identity Gate 通过 | `spikes/codex-host-binding/evidence/gate-report.json`；6 spike tests |

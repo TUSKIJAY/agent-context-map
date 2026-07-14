@@ -22,17 +22,29 @@
 
 | Path | Responsibility |
 | --- | --- |
-| `src/App.jsx` | 应用级状态、布局、工具栏、撤销重做、文件/导出、Agent pending patch 编排 |
-| `src/acm/data.js` | UI 词表/展示、Dagre/ELK 布局，以及到 `acm-core` 的桌面兼容入口 |
-| `src/acm/agentClient.js` | agy / Tauri / MCP / sidecar 适配、结果归一化、mock fallback |
-| `src/acm/FlowCanvas.jsx` | React Flow 画布、Dagre/ELK、分组折叠和建议预览层 |
-| `src/acm/Panels.jsx` | Inspector、Agent、建议变更与校验面板 |
-| `src/acm/Home.jsx` | 最近文档、新建、示例和导入入口 |
-| `src/acm/TweaksPanel.jsx` | 节点、网格和主色等显示偏好 |
-| `src/storage/store.js` | 桌面 project-store / 浏览器 localStorage demo 的存储 facade |
+| `src/App.jsx` | Desktop composition root；选择并注入 Tauri / Browser platform adapters |
+| `src/platform/index.js` | 唯一运行时平台选择入口；editor 内部不得自行探测宿主 |
+| `src/platform/tauri/` | Tauri store、文件导出与 Agent command adapters |
+| `src/platform/browser/` | 明示为 isolated demo 的 localStorage、浏览器文件和下载 adapters |
+| `src/acm/data.js` | 到 `packages/acm-editor/src/data.js` 的兼容导出；新实现从 editor package 引用 |
+| `src/acm/agentClient.js` | Tauri Agent command 结果归一化与显式 legacy diagnostics adapter；产品操作只产出 camelCase |
+| `src/storage/store.js` | 旧调用方到 composition-selected store adapter 的兼容 facade |
 | `src/storage/tauriProjectStore.js` | Tauri 项目根选择、ACM-MD 扫描/校验、revision 前置条件、index 重建与 legacy SQLite 迁移 UI adapter |
 | `src/storage/files.js` | Tauri/浏览器文件打开、导入、另存和导出 |
 | `src/main.jsx` | React 挂载入口 |
+
+## 共享编辑器
+
+| Path | Responsibility |
+| --- | --- |
+| `packages/acm-editor/src/AcmEditorShell.jsx` | 平台无关 editor shell；工具栏、文档会话、pending proposal 与正式 Diff 编排 |
+| `packages/acm-editor/src/document-controller.js` | create/open/save/import、baseline、undo/redo 和 dirty state controller |
+| `packages/acm-editor/src/contracts.js` | Store / files / Agent / export / host capability 契约与 mock adapter |
+| `packages/acm-editor/src/FlowCanvas.jsx` | React Flow 画布；PNG/SVG 通过注入的 export adapter 执行 |
+| `packages/acm-editor/src/Panels.jsx` | Inspector、Agent、待采纳 proposal、正式 Diff 与校验面板 |
+| `packages/acm-editor/src/data.js` | UI 词表、布局和到 `acm-core` 的 editor 兼容入口 |
+| `tests/acm-editor/` | document controller、mock adapter 与 pending-only contract 回归 |
+| `tests/import-boundaries/` | editor 依赖闭包、composition 注入、最小 capability 与 canonical operation 静态 Gate |
 
 ## 共享核心
 

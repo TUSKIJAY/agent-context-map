@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 2 项目文件单真源与 SQLite 只读迁移兼容已完成，下一 Gate 为 Phase 3 editor 与 platform adapters 解耦。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 3 editor 与 platform adapters 解耦已完成，下一 Gate 为 Phase 4 插件壳、MCP control plane 与安全根绑定。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

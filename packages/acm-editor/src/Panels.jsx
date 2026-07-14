@@ -395,7 +395,7 @@ export function SuggestionsPanel({ doc, pendingAgentPatch, onAcceptOp, onRejectO
   return (
     <div style={panelBody}>
       <div style={{ border: "1px solid #e8e5ff", background: "linear-gradient(135deg,#fbfaff,#ffffff)", borderRadius: 10, padding: 11, marginBottom: 12 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, color: "#6d28d9", letterSpacing: ".05em", marginBottom: 5 }}>PENDING GRAPH PATCH</div>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: "#6d28d9", letterSpacing: ".05em", marginBottom: 5 }}>PENDING PROPOSAL · 尚未进入正式 DIFF</div>
         <div style={{ fontSize: 12.5, color: "#312e81", lineHeight: 1.5 }}>{pendingAgentPatch.summary}</div>
         <div style={{ fontSize: 10.5, color: pendingAgentPatch.source === "agy_sdk" ? "#16a34a" : "#d97706", marginTop: 6, fontFamily: "var(--mono)" }}>
           source: {pendingAgentPatch.source}{pendingAgentPatch.fallbackReason ? ` · ${pendingAgentPatch.fallbackReason}` : ""}
@@ -424,19 +424,19 @@ export function SuggestionsPanel({ doc, pendingAgentPatch, onAcceptOp, onRejectO
 
 function OperationCard({ op, doc, nameOf, onAccept, onReject, onUpdate, onGoTo }) {
   const pending = op.status === "pending";
-  const c = op.op === "add_node" ? "#16a34a" : op.op === "add_edge" ? "#2563eb" : "#d97706";
-  const typeText = op.op === "add_node" ? "新增节点" : op.op === "add_edge" ? "新增关系" : "修改节点";
+  const c = op.op === "addNode" ? "#16a34a" : op.op === "addEdge" ? "#2563eb" : "#d97706";
+  const typeText = op.op === "addNode" ? "新增节点" : op.op === "addEdge" ? "新增关系" : "修改节点";
   const targetId = op.node?.id || op.edge?.id || op.nodeId;
   return (
     <div style={{ border: `1px solid ${pending ? "#e7e9ee" : "#eef0f3"}`, background: pending ? "#fff" : "#fafbfc", borderRadius: 9, padding: 10, opacity: pending ? 1 : 0.62 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
-        <span style={{ width: 18, height: 18, borderRadius: 6, background: `color-mix(in oklch, ${c} 12%, white)`, color: c, display: "grid", placeItems: "center", fontSize: 11, fontFamily: "var(--mono)", fontWeight: 700 }}>{op.op === "add_edge" ? "→" : "+"}</span>
+        <span style={{ width: 18, height: 18, borderRadius: 6, background: `color-mix(in oklch, ${c} 12%, white)`, color: c, display: "grid", placeItems: "center", fontSize: 11, fontFamily: "var(--mono)", fontWeight: 700 }}>{op.op === "addEdge" ? "→" : "+"}</span>
         <span style={{ fontSize: 11.5, fontWeight: 700, color: "#344054", flex: 1 }}>{typeText}</span>
         <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: pending ? c : "#98a2b3" }}>{op.status}</span>
       </div>
-      {op.op === "add_node" && <NodeOpEditor op={op} onUpdate={onUpdate} />}
-      {op.op === "add_edge" && <EdgeOpEditor op={op} doc={doc} nameOf={nameOf} onUpdate={onUpdate} />}
-      {op.op === "update_node" && <UpdateOpEditor op={op} nameOf={nameOf} onUpdate={onUpdate} />}
+      {op.op === "addNode" && <NodeOpEditor op={op} onUpdate={onUpdate} />}
+      {op.op === "addEdge" && <EdgeOpEditor op={op} doc={doc} nameOf={nameOf} onUpdate={onUpdate} />}
+      {op.op === "updateNodeFields" && <UpdateOpEditor op={op} nameOf={nameOf} onUpdate={onUpdate} />}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
         <button onClick={() => targetId && onGoTo(targetId)} disabled={!targetId} style={{ ...ghostBtn, padding: "4px 8px", fontSize: 11 }}>定位</button>
         <span style={{ flex: 1, fontSize: 9.5, color: "#cbd2dc", fontFamily: "var(--mono)", overflow: "hidden", textOverflow: "ellipsis" }}>{op.id}</span>
@@ -479,8 +479,8 @@ function UpdateOpEditor({ op, nameOf, onUpdate }) {
   return (
     <div style={{ display: "grid", gap: 7 }}>
       <div style={{ fontSize: 12, color: "#344054" }}>修改「{nameOf(op.nodeId)}」</div>
-      <TextArea value={JSON.stringify(op.patch || {}, null, 2)} onChange={(e) => {
-        try { onUpdate({ patch: JSON.parse(e.target.value || "{}") }); } catch {}
+      <TextArea value={JSON.stringify(op.fields || {}, null, 2)} onChange={(e) => {
+        try { onUpdate({ fields: JSON.parse(e.target.value || "{}") }); } catch {}
       }} style={{ minHeight: 70, fontFamily: "var(--mono)", fontSize: 11 }} />
     </div>
   );

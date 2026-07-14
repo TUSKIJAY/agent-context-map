@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 2 已完成，下一 Gate 为 Phase 3
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 3 已完成，下一 Gate 为 Phase 4
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -91,6 +91,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 1 验证通过：core 16 tests、全仓 31 tests、JS/Python strict parity 8 fixtures、generated round-trip Python strict、Vite build、Tauri release `--no-bundle`、platform import static Gate 和 `git diff --check`。
 - 2026-07-14，Phase 2 完成：新增 `packages/project-store`；Tauri 正式 store 切到用户选择项目的 `.acm/documents/*.acm.md`，移除 SQLite write backend / plugin / capabilities；legacy SQLite 只读 preview、backup、逐文档确认与 rollback 落位；DEC-004、DEC-007 和 `INSTRUCTIONS.md` 同步为当前事实。
 - Phase 2 验证通过：专项 23 tests、Rust 3 tests、20 路 stale revision 竞争、crash-point/recovery/index rebuild、SQLite 原库 hash/Python strict/rollback、Vite 308 modules、Tauri release `--no-bundle` 和 `git diff --check`；当前 Gate：进入 Phase 3。
+- 2026-07-14，Phase 3 完成：抽出 platform-free `packages/acm-editor`、document controller 与能力 contracts；Desktop composition root 注入 Tauri/Browser adapters；FlowCanvas export capability、pending proposal/正式 Diff 分离和 canonical camelCase 产品调用方落位。
+- Phase 3 验证通过：editor 4 files / 7 tests、import-boundaries 4 tests、全仓 19 files / 60 tests、Vite 317 modules、Tauri release executable/MSI/NSIS、harness 和 `git diff --check`；桌面 smoke 覆盖项目绑定、新建/打开/编辑/撤销/重做/校验/Diff/保存/重开。当前 Gate：进入 Phase 4。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1653,4 +1655,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 2 已完成；下一步执行 Phase 3 editor/platform adapters 解耦，Phase 4 仍必须在产品 MCP 生命周期复验宿主字段。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 3 已完成；下一步执行 Phase 4 插件壳、MCP control plane 与安全根绑定，并在产品 MCP 生命周期复验宿主字段。

@@ -14,7 +14,6 @@ import {
   Handle, Position, MarkerType, useReactFlow, useNodesState, getNodesBounds, getViewportForBounds,
   BaseEdge, getStraightPath,
 } from "@xyflow/react";
-import { toPng, toSvg } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 import { NODE_TYPE_META, STATUS_META, RELATION_META, typeLabel } from "./data.js";
 
@@ -165,14 +164,9 @@ function ElkEdge({ data, style, markerEnd, label, labelStyle, labelShowBg, label
 }
 const edgeTypes = { elkEdge: ElkEdge };
 
-function download(dataUrl, name) {
-  const a = document.createElement("a");
-  a.download = name; a.href = dataUrl; a.click();
-}
-
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveAgentNode, fitSignal, typeFilter, rankdir, showGrid,
   hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes,
-  collapsedGroups, onToggleGroup, showToast }) {
+  collapsedGroups, onToggleGroup, showToast, exportAdapter, hostCapabilities, imageExportEnabled = true }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -300,8 +294,9 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveA
   const onEdgeClick = useCallback((_, edge) => onSelect({ kind: "edge", id: edge.id }), [onSelect]);
   const onPaneClick = useCallback(() => onSelect(null), [onSelect]);
   const onConnect = useCallback((c) => {
-    if (c.source && c.target && c.source !== c.target) onCreateEdge(c.source, c.target, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  }, [onCreateEdge]);
+    const viewport = hostCapabilities.getViewportSize();
+    if (c.source && c.target && c.source !== c.target) onCreateEdge(c.source, c.target, { x: viewport.width / 2, y: viewport.height / 2 });
+  }, [onCreateEdge, hostCapabilities]);
 
   // ---- export the whole graph (not just the visible part) to PNG / SVG ----
   const exportImage = useCallback(async (fmt) => {
@@ -320,7 +315,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveA
     setExporting(true);
     const opts = {
       backgroundColor: "#ffffff", width: w, height: h, pixelRatio: 2,
-      // skipFonts avoids html-to-image trying to read cssRules from the cross-origin
+      // skipFonts prevents the injected image serializer from reading cssRules from the cross-origin
       // Google Fonts stylesheet (a SecurityError that aborts the export); fonts are
       // already loaded in the page, so the rasterised text still renders correctly.
       skipFonts: true,
@@ -331,13 +326,12 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveA
     const fileName = `${safe}.${fmt}`;
     try {
       showToast?.(`正在生成 ${label} 下载…`);
-      if (fmt === "svg") download(await toSvg(viewportEl, opts), fileName);
-      else download(await toPng(viewportEl, opts), fileName);
+      await exportAdapter.exportGraph({ format: fmt, element: viewportEl, options: opts, defaultName: fileName });
       showToast?.(`已开始下载 ${label}：${fileName}`);
     } catch (e) {
       showToast?.(`${label} 下载失败：${e?.message || e}`);
     } finally { setExporting(false); }
-  }, [rf, doc.meta, showToast]);
+  }, [rf, doc.meta, showToast, exportAdapter]);
 
   const pillBtn = {
     border: "1px solid #e3e6eb", background: "#fff", borderRadius: 8, padding: "5px 10px",
@@ -371,10 +365,10 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, onMoveA
             <span style={{ ...pillBtn, cursor: "default", color: "#667085", display: "flex", alignItems: "center" }}
               title="ELK 引擎下连线由布局自动正交路由（绕开节点，减少交叉）">⌐ 正交（ELK）</span>
           )}
-          <button style={pillBtn} disabled={exporting} title="导出当前图谱为 PNG" onClick={() => exportImage("png")}>
+          <button style={pillBtn} disabled={exporting || !imageExportEnabled} title="导出当前图谱为 PNG" onClick={() => exportImage("png")}>
             {exporting ? "导出中…" : "⤓ PNG"}
           </button>
-          <button style={pillBtn} disabled={exporting} title="导出当前图谱为矢量 SVG" onClick={() => exportImage("svg")}>⤓ SVG</button>
+          <button style={pillBtn} disabled={exporting || !imageExportEnabled} title="导出当前图谱为矢量 SVG" onClick={() => exportImage("svg")}>⤓ SVG</button>
         </Panel>
       </ReactFlow>
     </div>

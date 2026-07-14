@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：插件化 active plan 的 Phase 2 已完成；下一步执行 Phase 3 editor 与 platform adapters 解耦并保持 Tauri 回归。
+当前焦点：插件化 active plan 的 Phase 3 已完成；下一步执行 Phase 4 插件壳、MCP control plane 与安全根绑定。
 
 ## Resume Point
 
@@ -15,40 +15,43 @@
   - Tauri 正式正文只写用户原生选择项目的 `.acm/documents/*.acm.md`，index 只作 cache；
   - SQLite write backend、SQL plugin 和 SQL capability 已移除，legacy 数据只由 `src-tauri/src/legacy_sqlite.rs` 以 read-only preview/backup 读取；
   - `INSTRUCTIONS.md`、DEC-004/DEC-007 已在 Gate 后同步为当前事实。
+- Phase 3：
+  - `packages/acm-editor` 承担 editor shell、document controller、能力 contracts、画布与面板；不依赖 Tauri、SQLite、Node fs、MCP SDK 或宿主全局自发现；
+  - `src/App.jsx` 是 Desktop composition root，`src/platform/tauri` 与 `src/platform/browser` 提供可注入 adapters；
+  - FlowCanvas export 由 adapter 注入；pending proposal 与正式 Diff 已分栏；产品 Agent 调用方只产出 canonical camelCase operations；
+  - Tauri capability 已收敛到 dialog open/save 与 text write，文件 scope 只由原生对话框动态授予。
 
 ## Current Repository Facts
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：未设置
-- HEAD：Phase 2 scoped commit；接手时以 `git log -1 --oneline` 实测
+- HEAD：Phase 3 scoped commit；接手时以 `git log -1 --oneline` 实测
 - push：未获授权
-- 当前计划状态：Phase 2 complete；Phase 3 next
+- 当前计划状态：Phase 3 complete；Phase 4 next
 
-## Phase 2 Verification
+## Phase 3 Verification
 
 已运行并通过：
 
 ```powershell
-npm run test:project-store
-npm run test:concurrency
-npm run test:atomic-recovery
-npm run test:sqlite-migration
-npm run test:acm-roundtrip
+npm test -- --run acm-editor
+npm run test:import-boundaries
+npm test
 npm run build
-cargo test --manifest-path src-tauri\Cargo.toml --lib
-npm run tauri:build -- --no-bundle
+npm run tauri -- build
+npm run harness:check
 git diff --check
 ```
 
-结果：专项 23 tests；Rust 3 tests；20 路同 revision 竞争只有 1 次提交、其余 100% conflict；故障点前后只保留完整原文或完整新文；SQLite 原库 hash 不变、非法批次不写入、失败 apply 可 rollback；JS 迁移候选同时通过 Python strict validator；Vite 308 modules；Tauri release executable 构建成功。
+结果：editor 命令 4 files / 7 tests；import-boundaries 1 file / 4 tests；全仓 19 files / 60 tests；Vite 317 modules；Tauri release executable、MSI 与 NSIS bundle 构建成功；harness 与 diff check 通过。桌面 smoke 绑定临时项目后完成新建、编辑、撤销/重做、校验、正式 Diff、保存，并从最近文档重开验证 `Phase 3 smoke 目标` 持久化。
 
 关键实现：
 
-- `packages/project-store/src/project-store.js`：truth scan、revision、write/delete、index rebuild。
-- `packages/project-store/src/locks.js` 与 `src-tauri/src/project_store.rs`：相同 canonical root + SHA-256 lock filename 协议；锁/临时文件不自动清理。
-- `src/storage/tauriProjectStore.js`：native picker、严格解析、旧 bytes 前置条件、冲突暂停、迁移逐份确认。
-- `tests/project-store/source-switch.test.js`：静态证明产品不再注册 SQLite write backend/capability。
+- `packages/acm-editor/src/AcmEditorShell.jsx` 与 `document-controller.js`：platform-free UI 与文档会话控制。
+- `packages/acm-editor/src/contracts.js`：可执行 mock platform，证明 editor 可脱离 Tauri 加载。
+- `src/platform/index.js`：唯一平台选择点；Tauri/Browser adapters 在 composition root 注入。
+- `tests/import-boundaries/acm-editor-boundary.test.js`：静态证明 editor closure、canonical operations、composition injection 与最小 capabilities。
 
 ## Governance Boundary
 
@@ -61,16 +64,16 @@ git diff --check
 ## Risks
 
 - Phase 4 必须在产品 MCP 生命周期复验 DEC-005 host identity；字段漂移即 fail closed。
-- legacy snake_case operations 仍只在显式 adapter 接受；Phase 3 必须迁移产品调用方，Phase 6 必须拒绝 legacy 名称。
+- legacy snake_case operations 已从产品调用方移除，只在显式 fixture/import diagnostics adapter 接受；Phase 6 必须按计划彻底拒绝 legacy 名称。
 - Windows safe replace 已原生执行；portable tests 已建立，macOS/Linux 真实矩阵留在计划 Phase 7，不把它写成已运行证据。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 抽 `packages/acm-editor` 的 AcmEditorShell 与 document controller。
-2. 将 Tauri/Browser store、file、export、Agent capabilities 在 composition root 注入，editor 不再自发现 `window.__TAURI_INTERNALS__` 或 SQLite。
-3. FlowCanvas/Panels 保持 pending-only；产品内部 operations 全部迁到 canonical camelCase。
-4. 运行 `acm-editor`、import-boundaries、Vite、Tauri、harness 和 diff Gate。
+1. 创建 `plugins/agent-context-map` 正式插件壳、manifest、bundled stdio MCP 与 UI resource。
+2. 复用 Phase 0B host identity contract，把 project binding 完全建立在 host-owned evidence 上，拒绝 tool arguments 覆盖。
+3. 实现 session/openAttempt、safe path、read-only tools 与写操作 confirmation/token/revision Gate。
+4. 运行 plugin manifest、MCP lifecycle/security、构建、Tauri regression、harness 和 diff Gate。
 
 ## History
 
