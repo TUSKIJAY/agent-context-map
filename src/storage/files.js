@@ -3,12 +3,13 @@
 //   • Open:  uses a hidden <input type=file>, which works in BOTH the browser
 //            (npm run dev) and the Tauri WebView2, so no fs read permission is
 //            needed. The OS file path is not exposed by the input, so opened
-//            files have no source_path (the document is persisted to SQLite).
+//            files have no source_path; imports are copied into the selected
+//            project's canonical `.acm/documents` store after validation.
 //   • Save:  desktop uses the native save dialog + fs writeTextFile (so it can
 //            track a real path); browser falls back to an <a download> blob.
 import { persistenceMode } from "./store.js";
 
-const inTauri = persistenceMode === "sqlite";
+const inTauri = persistenceMode === "project";
 
 export async function openTextFile() {
   return new Promise((resolve) => {

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "projectId": "fixture-project-id",
+  "defaultDocumentId": "missing_document",
+  "documents": [
+    {
+      "id": "stale_cache_only",
+      "relativePath": ".acm/documents/stale_cache_only.acm.md",
+      "titleCache": "This cache must never create or overwrite a document",
+      "contentRevisionCache": "stale",
+      "updatedAtCache": "2000-01-01T00:00:00.000Z"
+    }
+  ]
+}

@@ -43,7 +43,7 @@ Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器�
   </tr>
   <tr>
     <td align="center"><b>导出给 Agent</b><br/>完整 ACM-MD / Agent Diff / 图谱 JSON / Mermaid 预览</td>
-    <td align="center"><b>开始页</b><br/>新建、导入、查看示例，编辑自动保存到本地</td>
+    <td align="center"><b>开始页</b><br/>选择项目，新建、导入或迁移，编辑自动保存为项目 ACM-MD</td>
   </tr>
 </table>
 
@@ -147,7 +147,7 @@ skills/acm-md/
 - React Flow（@xyflow/react）画布与连线
 - 双布局引擎：Dagre（默认，同步）+ elkjs（ELK 嵌套布局 / 正交边路由，按需动态加载、不增重默认包）
 - html-to-image 画布导出（PNG / SVG）
-- Tauri 2 桌面打包（绿色版 exe，SQLite 本地持久化）
+- Tauri 2 桌面打包（绿色版 exe，项目 `.acm/documents/*.acm.md` 单真源；SQLite 仅作只读迁移）
 - 原生 CSS / 内联样式，纯前端本地状态管理
 
 ## 适用场景

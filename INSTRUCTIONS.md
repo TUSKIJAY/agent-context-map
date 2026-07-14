@@ -8,7 +8,7 @@
 
 - 前端：Vite 5、React 18、React Flow、原生 CSS / 内联样式。
 - 布局：Dagre 默认，ELK 按需加载；分组、折叠、边折点与引擎选择均为派生视图状态。
-- 桌面：Tauri 2，SQLite 本地持久化，浏览器开发模式使用 localStorage fallback。
+- 桌面：Tauri 2；用户明确选择的项目内 `.acm/documents/*.acm.md` 是业务内容单真源，`.acm/index.json` 只是可扫描重建的导航缓存。legacy SQLite 只保留显式、只读、带备份的迁移入口，不双写；浏览器开发模式的 localStorage 仅为隔离 demo，不与项目文件同步。
 - Agent 协作：前端将外部结果归一化为 `pendingAgentPatch`；桌面端可调用 agy CLI，不可用时保留 mock fallback。
 - 数据契约：ACM-MD v0.1；正式规范位于 `skills/acm-md/references/acm-md-v0.1.md`。
 
@@ -20,7 +20,7 @@
 2. 布局、折叠、分组、选择态和未采纳 Agent 建议不得污染正式协议数据。
 3. Agent 输出必须先归一化和校验，再作为 pending patch 展示；只有人工采纳的 operation 才可进入正式图谱。
 4. 外部 Agent 建议不得直接成为 `confirmed`。
-5. 图谱正文按整份 JSON 本地保存；修改存储层时保持浏览器 fallback 与桌面路径的兼容边界。
+5. 正式图谱正文只保存为项目 ACM-MD；所有覆盖写必须在文档锁内校验 expected revision，并以同目录临时文件和安全替换提交。index、浏览器 localStorage、legacy SQLite、UI state 与 pending proposal 都不得成为并行业务真源。
 6. 依赖和 Tauri 权限按最小必要原则调整。
 
 ## Responsibility Routing

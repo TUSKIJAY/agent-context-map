@@ -7,7 +7,7 @@
 
 ## Context
 
-当前桌面端的 `documents.body` 与 `base_snapshot` 是 JSON blob；`snapshots` 和 `app_state` 也位于 SQLite。DEC-004 已选定项目 `.acm/documents/*.acm.md` 为未来业务单真源，但迁移不能修改原库、丢字段或在失败时留下半切换状态。
+Phase 2 前，桌面端的 `documents.body` 与 `base_snapshot` 是 JSON blob；`snapshots` 和 `app_state` 也位于 SQLite。DEC-004 已选定项目 `.acm/documents/*.acm.md` 为业务单真源，但迁移不能修改原库、丢字段或在失败时留下半切换状态。
 
 ## Decision
 
@@ -25,5 +25,5 @@
 
 ## Consequences
 
-- Phase 2 只有在迁移、expectedRevision、锁、原子替换、故障恢复和 Tauri project-store Gate 全部通过后，才更新 INSTRUCTIONS.md 并切换业务真源。
+- Phase 2 已通过迁移、expectedRevision、锁、安全替换、故障恢复和 Tauri project-store Gate；`INSTRUCTIONS.md` 与业务真源已同步切换。Node fixture migration 使用 read-only SQLite 并做 JS/Python strict parity、原库 hash、备份和 rollback 验证；产品 UI 使用 `sqlx read_only(true)`，每次只预览并确认一份文档。
 - 原库保持可审计；失败文档不会阻断其他文档的报告，但不会被悄悄部分提交。

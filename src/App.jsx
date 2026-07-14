@@ -68,6 +68,9 @@ export default function App() {
   const [exportTab, setExportTab] = useState(null);  // null | acmmd | diff | json | mermaid
   const [picker, setPicker] = useState(false);       // new-document template picker
   const [toast, setToast] = useState(null);
+  const [projectInfo, setProjectInfo] = useState(() => store.getProjectInfo());
+  const [projectDiagnostics, setProjectDiagnostics] = useState(() => store.getProjectDiagnostics());
+  const persistenceBlockedRef = useRef(false);
   const toastTimerRef = useRef(null);
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
@@ -159,9 +162,15 @@ export default function App() {
     }, 1900);
   };
 
-  // ---- persistence (local store: SQLite on desktop, localStorage in browser dev) ----
+  // ---- persistence (project ACM-MD on desktop, isolated localStorage browser demo) ----
   const saveTimer = useRef(null);
-  const refreshRecent = useCb(() => { store.listDocuments().then(setRecent).catch(() => {}); }, []);
+  const refreshRecent = useCb(() => {
+    store.listDocuments().then((list) => {
+      setRecent(list);
+      setProjectInfo(store.getProjectInfo());
+      setProjectDiagnostics(store.getProjectDiagnostics());
+    }).catch((error) => console.warn("[acm] project refresh failed", error));
+  }, []);
 
   const loadRecord = (rec, savedVp) => {
     const pid = rec.domain_profile || "software";
@@ -169,6 +178,7 @@ export default function App() {
     setProfile(pid); setActiveProfile(pid);
     setDoc(rec.body);
     setBase(rec.base_snapshot ? rec.base_snapshot : clone(rec.body));
+    persistenceBlockedRef.current = false;
     setDocId(rec.doc_id);
     setSelection(null);
     setCollapsed(new Set()); // collapse is per-document view state — reset on open/switch
@@ -182,15 +192,25 @@ export default function App() {
   };
 
   const persistAndOpen = async (body, profileId, sourcePath = null) => {
+    if (store.persistenceMode === "project" && !store.getProjectInfo()) {
+      const selected = await store.selectProjectRoot();
+      if (!selected) return false;
+      setProjectInfo(selected);
+    }
     const id = body.doc_id;
     const title = (body.meta && body.meta.title) || "未命名图谱";
     try {
       await store.upsertDocument({ doc_id: id, title, domain_profile: profileId, body,
         base_snapshot: body, source_path: sourcePath, dirty: false, created_at: body.meta && body.meta.created_at });
       await store.setAppState("last_opened_doc_id", id);
-    } catch (e) { console.warn("[acm] create failed", e); }
+    } catch (e) {
+      console.warn("[acm] create failed", e);
+      showToast("创建失败：" + (e?.message || e));
+      return false;
+    }
     loadRecord({ doc_id: id, title, domain_profile: profileId, body, base_snapshot: clone(body) });
     refreshRecent();
+    return true;
   };
 
   // boot: restore last working session if any, otherwise show the Home page
@@ -220,8 +240,15 @@ export default function App() {
     if (view !== "editor" || !docId) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
+      if (persistenceBlockedRef.current) return;
       store.saveBody(docId, { title: (doc.meta && doc.meta.title) || "未命名图谱",
-        domain_profile: profile, body: doc, dirty }).then(refreshRecent).catch(() => {});
+        domain_profile: profile, body: doc, dirty }).then(refreshRecent).catch((error) => {
+        console.warn("[acm] autosave failed", error);
+        if (["revision_conflict", "document_busy", "invalid_current_document"].includes(error?.code)) {
+          persistenceBlockedRef.current = true;
+          showToast("项目文件已变化，自动保存已暂停；请返回首页重新打开。");
+        }
+      });
     }, 800);
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
   }, [doc, dirty, view, docId, profile]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -404,6 +431,10 @@ export default function App() {
 
   const onSave = async () => {
     if (view !== "editor" || !docId) return;
+    if (persistenceBlockedRef.current) {
+      showToast("保存已暂停：请返回首页重新打开最新项目文件。");
+      return;
+    }
     setBase(clone(doc));
     undoRef.current = []; redoRef.current = []; lastKeyRef.current = null;
     try {
@@ -414,14 +445,13 @@ export default function App() {
       showToast("已保存（新版基线已更新）");
     } catch (e) { showToast("保存失败：" + (e?.message || e)); }
   };
-  const createFromTemplate = (profileId) => {
+  const createFromTemplate = async (profileId) => {
     setPicker(false);
-    persistAndOpen(minimalDoc(profileId), profileId);
-    showToast(`已新建「${DOMAIN_PROFILE_META[profileId].label}」模板`);
+    if (await persistAndOpen(minimalDoc(profileId), profileId)) showToast(`已新建「${DOMAIN_PROFILE_META[profileId].label}」模板`);
   };
   // onNew(): open template picker; onNew("generic"): create that template directly.
   const onNew = (presetProfile) => { if (typeof presetProfile === "string") createFromTemplate(presetProfile); else setPicker(true); };
-  const viewSample = () => { persistAndOpen(sampleDoc(), "software"); showToast("已载入示例图谱"); };
+  const viewSample = async () => { if (await persistAndOpen(sampleDoc(), "software")) showToast("已载入示例图谱"); };
   const openRecent = async (id) => {
     const rec = await store.getDocument(id);
     if (!rec) { showToast("记录不存在或已删除"); refreshRecent(); return; }
@@ -431,10 +461,15 @@ export default function App() {
   };
   const renameDoc = (title) => commit((d) => ({ ...d, meta: { ...(d.meta || {}), title } }), "meta:title");
   const deleteRecent = async (id) => {
-    await store.deleteDocument(id);
-    if (id === docId) { setDocId(null); try { await store.setAppState("last_opened_doc_id", null); } catch {} }
-    refreshRecent();
-    showToast("已从本地删除该图谱");
+    if (store.persistenceMode === "project" && !window.confirm("这会删除项目中的正式 ACM-MD 文件，并在本机状态目录保留恢复副本。确定继续吗？")) return;
+    try {
+      await store.deleteDocument(id);
+      if (id === docId) { setDocId(null); try { await store.setAppState("last_opened_doc_id", null); } catch {} }
+      refreshRecent();
+      showToast(store.persistenceMode === "project" ? "已删除项目文档（本机保留恢复副本）" : "已从本地删除该图谱");
+    } catch (error) {
+      showToast("删除失败：" + (error?.message || error));
+    }
   };
   const goHome = () => { refreshRecent(); setSelection(null); setView("home"); };
   const onImport = async () => {
@@ -442,9 +477,57 @@ export default function App() {
     if (!f) return;
     const res = parseAcmMd(f.text);
     if (!res.doc) { showToast("导入失败：" + (res.errors[0] || "无法解析")); return; }
-    await persistAndOpen(res.doc, "generic", f.path);
+    if (!await persistAndOpen(res.doc, "generic", f.path)) return;
     const note = res.warnings && res.warnings.length ? "（" + res.warnings.join("；") + "）" : "";
     showToast("已导入 " + (f.name || "文件") + note);
+  };
+
+  const chooseProject = async () => {
+    try {
+      const selected = await store.selectProjectRoot();
+      if (!selected) return;
+      setProjectInfo(selected);
+      setView("home");
+      refreshRecent();
+      showToast(`已切换项目：${selected.name}`);
+    } catch (error) {
+      showToast("项目选择失败：" + (error?.message || error));
+    }
+  };
+
+  const migrateLegacy = async () => {
+    try {
+      let target = store.getProjectInfo();
+      if (!target) {
+        target = await store.selectProjectRoot();
+        if (!target) return;
+        setProjectInfo(target);
+      }
+      const { snapshot, plan } = await store.previewLegacyMigration();
+      if (!plan.documents.length) { showToast("旧 SQLite 中没有可迁移文档"); return; }
+      const invalid = plan.documents.filter((item) => !item.ok);
+      if (invalid.length) {
+        const summary = invalid.slice(0, 3).map((item) => `${item.documentId}: ${item.issues[0]?.code || "invalid"}`).join("\n");
+        window.alert(`迁移预览发现 ${invalid.length} 份非法文档；它们不会被自动修补或写入。\n\n${summary}`);
+      }
+      const existingIds = new Set((await store.listDocuments()).map((item) => item.doc_id));
+      const candidate = plan.documents.find((item) => item.ok && !existingIds.has(item.documentId));
+      if (!candidate) { showToast("没有可安全迁移且未重名的文档"); return; }
+      const confirmed = window.confirm(
+        `迁移预览（每次仅切换一份）\n\n标题：${candidate.title || "未命名"}\ndoc_id：${candidate.documentId}\n` +
+        `round-trip：通过\n旧 baseline：${candidate.baseSnapshotStatus}\n目标项目：${target.name}\n\n` +
+        "原 SQLite、snapshots 和 app_state 会完整备份到本机状态目录；不会双写、不会删除原库。确认迁移这份文档吗？"
+      );
+      if (!confirmed) return;
+      const backup = await store.backupLegacyMigration(snapshot.sourceToken);
+      await store.migrateLegacyDocument(candidate);
+      refreshRecent();
+      const migrated = await store.getDocument(candidate.documentId);
+      if (migrated) loadRecord(migrated, null);
+      showToast(`已迁移 1 份文档；备份：${backup.backupDirectory}`);
+    } catch (error) {
+      showToast("迁移失败：" + (error?.message || error));
+    }
   };
   // Hierarchical tree auto-layout (shared with import). The `contains` tree is the
   // backbone; parents are centered over their children; annotation nodes sit to the
@@ -584,7 +667,9 @@ export default function App() {
     <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#fff", color: "#1d2433" }}>
       {view === "home" ? (
         <Home recent={recent} onNew={onNew} onViewSample={viewSample} onOpenRecent={openRecent}
-          onDeleteRecent={deleteRecent} onImport={onImport} persistenceMode={store.persistenceMode} accent={accent} />
+          onDeleteRecent={deleteRecent} onImport={onImport} persistenceMode={store.persistenceMode}
+          projectInfo={projectInfo} projectDiagnostics={projectDiagnostics} onSelectProject={chooseProject}
+          onMigrateLegacy={migrateLegacy} accent={accent} />
       ) : (
       <>
       <Toolbar {...{ onHome: goHome, onNew, onImport, onSave, onRename: renameDoc, undo, redo, autoLayout, toggleDir, rankdir, dirty, errCount,

@@ -29,7 +29,8 @@
 | `src/acm/Panels.jsx` | Inspector、Agent、建议变更与校验面板 |
 | `src/acm/Home.jsx` | 最近文档、新建、示例和导入入口 |
 | `src/acm/TweaksPanel.jsx` | 节点、网格和主色等显示偏好 |
-| `src/storage/store.js` | SQLite/localStorage 文档、状态、baseline 和快照 |
+| `src/storage/store.js` | 桌面 project-store / 浏览器 localStorage demo 的存储 facade |
+| `src/storage/tauriProjectStore.js` | Tauri 项目根选择、ACM-MD 扫描/校验、revision 前置条件、index 重建与 legacy SQLite 迁移 UI adapter |
 | `src/storage/files.js` | Tauri/浏览器文件打开、导入、另存和导出 |
 | `src/main.jsx` | React 挂载入口 |
 
@@ -48,11 +49,24 @@
 | `packages/acm-core/src/pending.js` | pending proposal 纯函数；不接正式存储 |
 | `packages/acm-core/src/index.js` | platform-free 公共导出 |
 
+## 项目文件存储
+
+| Path | Responsibility |
+| --- | --- |
+| `packages/project-store/src/project-store.js` | Node project store：`.acm` 扫描、strict validation、revision、expectedRevision、写入和可重建 index |
+| `packages/project-store/src/locks.js` | 公平进程内互斥、跨进程 SHA-256 lock-file 协议和幂等 mutation registry |
+| `packages/project-store/src/safe-replace.js` | 同目录 temp、flush/fsync、安全替换和故障注入 |
+| `packages/project-store/src/migration-preview.js` | platform-free legacy row 预览、字段保留检查和 round-trip 判定 |
+| `packages/project-store/src/sqlite-migration.js` | Node fixture/CLI 的只读 SQLite、备份、apply 与 rollback |
+| `tests/fixtures/project-store/` | 可重建 index 与项目 ACM-MD fixture |
+
 ## Tauri 桌面层
 
 | Path | Responsibility |
 | --- | --- |
-| `src-tauri/src/lib.rs` | Tauri builder、SQLite migration、`request_agent_patch` 命令和 agy CLI bridge |
+| `src-tauri/src/lib.rs` | Tauri builder、project-store / migration 命令注册和 agy CLI bridge |
+| `src-tauri/src/project_store.rs` | 原生项目扫描、跨运行时锁、same-volume safe replace、delete recovery copy 与 recovery evidence |
+| `src-tauri/src/legacy_sqlite.rs` | `sqlx` read-only legacy SQLite preview 与用户状态目录备份；不提供 SQL write path |
 | `src-tauri/src/main.rs` | 桌面进程入口 |
 | `src-tauri/tauri.conf.json` | 应用标识、窗口、构建和前端产物配置 |
 | `src-tauri/capabilities/default.json` | Tauri 权限声明 |

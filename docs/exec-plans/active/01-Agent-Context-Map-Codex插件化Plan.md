@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 1 已完成，下一 Gate 为 Phase 2
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 2 已完成，下一 Gate 为 Phase 3
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -78,7 +78,7 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - 生命周期：由 `docs/exec-plans/proposed/` 迁入 `docs/exec-plans/active/`。
 - activation 当时的 Phase：Phase 0 未开始；该次 lifecycle move 未创建 spike、安装 Vitest、修改 AGENTS.md/INSTRUCTIONS.md 或执行数据迁移。后续执行状态见 §0.7。
 - 决策口径：采用 §14.2 的推荐值；条件项 9 保持 fail closed，只有 Phase 0B 产生真实宿主证据后才能重新提交用户决定。
-- 数据真源决策：Accepted `DEC-004`；它约束未来 Phase 2，但在 Phase 2 Gate 通过前不改变当前 SQLite 事实。
+- 数据真源决策：Accepted `DEC-004`；Phase 2 Gate 已通过并实施，项目 ACM-MD 现为业务内容单真源，SQLite 只保留显式只读迁移入口。
 - 用户范围澄清：“解耦”只指 `acm-core`、`acm-editor` 与 platform adapters 的模块边界；不是拆远程后端、微服务化或推倒重写。必须保持 local-first、保留 Tauri、不引入远程后端或云数据库，并在每个 Phase 以现有 Tauri 构建和核心功能不回退为 Gate。
 
 ### 0.7 执行记录
@@ -86,9 +86,11 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - 2026-07-14，Phase 0A 完成：AGENTS.md 两条已批准精确化已原文落位；DEC-004 至 DEC-007 覆盖数据真源、可信 host identity、single stdio MCP 默认值和 SQLite 只读迁移；固定 `vitest@3.2.7`，建立 ACM-MD 合法/非法、round-trip、confirmed inference、SQLite v1 和 distribution baseline。
 - Phase 0A 验证通过：baseline 4 files / 8 tests，distribution 1 test，Python strict valid fixture，harness、budget、Vite build 和 `git diff --check`；Vitest 3.2.4 因 critical advisory 被拒绝，固定到同系列已修复的 3.2.7。
 - 2026-07-14，Phase 0B 完成：隔离的 repo-local plugin + read-only stdio MCP 在真实 Codex Desktop 验证 new task、same-task follow-up、second task、cachebuster reload 与伪造 identity arguments；Gate = `trusted_host_identity`。单一 host-owned workspace 可绑定，多候选只返回 `trusted_native_picker_required`，附加可写目录不进入授权 workspace。
-- Phase 0B 脱敏证据与复现边界见 `spikes/codex-host-binding/evidence/gate-report.json`；当前 Gate：进入 Phase 1 acm-core 协议等价。
+- Phase 0B 脱敏证据与复现边界见 `spikes/codex-host-binding/evidence/gate-report.json`；该 Gate 已满足并由后续 Phase 继续复用。
 - 2026-07-14，Phase 1 完成：`packages/acm-core` 抽取 schema/model/strict parse/deterministic serialize/validator/diff/canonical operations/revision/context/pending；`src/acm/data.js` 成为 UI/布局兼容入口。legacy snake_case 只在显式 adapter 接受并诊断，core 与新调用方只产出 camelCase `op`。
-- Phase 1 验证通过：core 16 tests、全仓 31 tests、JS/Python strict parity 8 fixtures、generated round-trip Python strict、Vite build、Tauri release `--no-bundle`、platform import static Gate 和 `git diff --check`；当前 Gate：进入 Phase 2。
+- Phase 1 验证通过：core 16 tests、全仓 31 tests、JS/Python strict parity 8 fixtures、generated round-trip Python strict、Vite build、Tauri release `--no-bundle`、platform import static Gate 和 `git diff --check`。
+- 2026-07-14，Phase 2 完成：新增 `packages/project-store`；Tauri 正式 store 切到用户选择项目的 `.acm/documents/*.acm.md`，移除 SQLite write backend / plugin / capabilities；legacy SQLite 只读 preview、backup、逐文档确认与 rollback 落位；DEC-004、DEC-007 和 `INSTRUCTIONS.md` 同步为当前事实。
+- Phase 2 验证通过：专项 23 tests、Rust 3 tests、20 路 stale revision 竞争、crash-point/recovery/index rebuild、SQLite 原库 hash/Python strict/rollback、Vite 308 modules、Tauri release `--no-bundle` 和 `git diff --check`；当前 Gate：进入 Phase 3。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1064,6 +1066,8 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 2：项目文件真源与 SQLite 迁移兼容
 
+执行状态：Completed（2026-07-14）。本 Phase 已实际切换桌面业务真源并同步稳定章程；证据见本节验收命令、`PROGRESS.md`、`HANDOFF.md`、DEC-004 与 DEC-007。
+
 输入：
 
 - acm-core；
@@ -1649,4 +1653,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 1 已完成；下一步执行 Phase 2 项目文件真源与 SQLite 迁移兼容，Phase 4 仍必须在产品 MCP 生命周期复验宿主字段。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 2 已完成；下一步执行 Phase 3 editor/platform adapters 解耦，Phase 4 仍必须在产品 MCP 生命周期复验宿主字段。

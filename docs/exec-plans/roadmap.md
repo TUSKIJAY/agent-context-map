@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 1 acm-core 协议等价已完成，下一 Gate 为 Phase 2 项目文件真源与 SQLite 迁移兼容。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 2 项目文件单真源与 SQLite 只读迁移兼容已完成，下一 Gate 为 Phase 3 editor 与 platform adapters 解耦。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

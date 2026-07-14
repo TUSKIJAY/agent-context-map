@@ -3,11 +3,11 @@
 - Status: Accepted
 - Date: 2026-07-14
 - Scope: Codex 插件化 active plan 的业务内容真源、SQLite 迁移边界与 INSTRUCTIONS.md 更新时机
-- Supersedes: Phase 2 Gate 成功并完成真源切换后，取代“SQLite JSON blob 是桌面业务内容真源”的既有架构决策；在此之前不取代当前事实
+- Implementation: Applied by Phase 2 on 2026-07-14；已取代“SQLite JSON blob 是桌面业务内容真源”的既有架构事实
 
 ## Context
 
-当前 Tauri 桌面端把图谱正文以整份 JSON 保存在 SQLite，浏览器开发模式使用 localStorage fallback。已通过 review-002 的 Codex 插件化计划要求 Tauri 与 Codex Widget 共享同一项目内容真源；若 SQLite、项目 ACM-MD 和 Widget session 同时可写，会形成三套冲突真源。
+Phase 2 前，Tauri 桌面端把图谱正文以整份 JSON 保存在 SQLite，浏览器开发模式使用 localStorage fallback。已通过 review-002 的 Codex 插件化计划要求 Tauri 与 Codex Widget 共享同一项目内容真源；若 SQLite、项目 ACM-MD 和 Widget session 同时可写，会形成三套冲突真源。
 
 用户于 2026-07-14 明确批准将该计划迁入 active，并采用计划 §14.2 的推荐数据真源与迁移口径。
 
@@ -24,7 +24,7 @@
 
 - Tauri 与插件未来围绕同一项目文件做 revision、锁和冲突控制，避免多真源漂移。
 - 迁移成为显式用户操作并保留原 SQLite 数据，不允许以安装、启动或插件更新隐式触发。
-- Phase 2 前的当前运行时行为不变；本决策不会提前把目标架构写成已实现事实。
+- Phase 2 已移除桌面 SQLite write backend 与 SQL capability；当前运行时只把项目 ACM-MD 作为业务内容真源。
 - 若任一平台无法证明安全替换、迁移丢失语义或必须长期双写，Phase 2 必须停止。
 
 ## Alternatives Considered
@@ -36,4 +36,4 @@
 
 ## Activation Boundary
 
-本决策随 Codex 插件化 plan 的 activation 生效，约束后续 Phase 2 的设计和 Gate；它不启动 Phase 0，不迁移数据，不修改当前 SQLite、项目 `.acm`、INSTRUCTIONS.md 或产品源码。任何真实切换仍必须等待 active plan 的 Phase 2 验收闭环。
+本决策随 Codex 插件化 plan 的 activation 生效，并已由 Phase 2 验收闭环实施：专项 23 tests、Rust 3 tests、Vite build、Tauri release build 和 source-switch static Gate 通过；`INSTRUCTIONS.md` 已在同一 Phase 更新。原 SQLite 未删除，仍只有显式只读迁移入口。
