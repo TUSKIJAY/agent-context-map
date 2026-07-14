@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "codex_host_binding_spike": {
+      "command": "node",
+      "args": ["./mcp/server.mjs"],
+      "cwd": ".",
+      "tool_timeout_sec": 15
+    }
+  }
+}

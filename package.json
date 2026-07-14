@@ -12,6 +12,7 @@
     "test:acm-roundtrip": "vitest run tests/baseline/acm-roundtrip.test.js",
     "test:acm-schema": "vitest run tests/baseline/acm-schema.test.js",
     "test:distribution": "vitest run tests/distribution",
+    "test:host-binding-spike": "vitest run spikes/codex-host-binding/tests",
     "harness:check": "python scripts/check-project-harness.py --root . --profile auto",
     "harness:budget": "python scripts/check-startup-doc-budget.py --root .",
     "harness:validate": "npm run harness:check && npm run harness:budget && npm run build",

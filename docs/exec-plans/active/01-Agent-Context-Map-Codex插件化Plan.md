@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 0A 已完成，下一 Gate 为 Phase 0B
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 0B 已完成，下一 Gate 为 Phase 1
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -85,7 +85,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 
 - 2026-07-14，Phase 0A 完成：AGENTS.md 两条已批准精确化已原文落位；DEC-004 至 DEC-007 覆盖数据真源、可信 host identity、single stdio MCP 默认值和 SQLite 只读迁移；固定 `vitest@3.2.7`，建立 ACM-MD 合法/非法、round-trip、confirmed inference、SQLite v1 和 distribution baseline。
 - Phase 0A 验证通过：baseline 4 files / 8 tests，distribution 1 test，Python strict valid fixture，harness、budget、Vite build 和 `git diff --check`；Vitest 3.2.4 因 critical advisory 被拒绝，固定到同系列已修复的 3.2.7。
-- 当前 Gate：只能进入 Phase 0B 隔离 host-binding spike；未取得真实 Codex Desktop 的可信 root/task 证据前不得进入 Phase 1。
+- 2026-07-14，Phase 0B 完成：隔离的 repo-local plugin + read-only stdio MCP 在真实 Codex Desktop 验证 new task、same-task follow-up、second task、cachebuster reload 与伪造 identity arguments；Gate = `trusted_host_identity`。单一 host-owned workspace 可绑定，多候选只返回 `trusted_native_picker_required`，附加可写目录不进入授权 workspace。
+- Phase 0B 脱敏证据与复现边界见 `spikes/codex-host-binding/evidence/gate-report.json`；当前 Gate：进入 Phase 1 acm-core 协议等价。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1646,4 +1647,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 0A 已完成；下一步只能执行 Phase 0B 隔离的真实 Codex Desktop host-binding spike，Gate 未过不得进入 Phase 1。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 0B 已完成且 Gate = `trusted_host_identity`；下一步执行 Phase 1 acm-core 协议等价，Phase 4 仍必须在产品 MCP 生命周期复验宿主字段。

@@ -1,0 +1,20 @@
+{
+  "name": "acm-host-binding-spike",
+  "interface": {
+    "displayName": "Acm Host Binding Spike"
+  },
+  "plugins": [
+    {
+      "name": "codex-host-binding-spike",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-host-binding-spike"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

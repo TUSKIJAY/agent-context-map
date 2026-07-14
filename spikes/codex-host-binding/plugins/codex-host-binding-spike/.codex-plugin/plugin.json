@@ -1,0 +1,23 @@
+{
+  "name": "codex-host-binding-spike",
+  "version": "0.1.0+codex.20260714061610",
+  "description": "Read-only Phase 0B probe for Codex host task and workspace identity evidence.",
+  "author": {
+    "name": "Agent Context Map maintainers"
+  },
+  "interface": {
+    "displayName": "Codex Host Binding Spike",
+    "shortDescription": "Inspect read-only host binding evidence.",
+    "longDescription": "A temporary, read-only Phase 0B diagnostic plugin that records only field shapes and hashes for Codex host identity evidence.",
+    "developerName": "Agent Context Map maintainers",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Diagnostic"
+    ],
+    "defaultPrompt": [
+      "Run the Codex host binding identity probe and report only its structured result."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

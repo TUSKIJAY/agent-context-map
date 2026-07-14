@@ -1,6 +1,6 @@
 # DEC-005 — Codex Host Identity And Project Root
 
-- Status: Accepted, evidence-gated
+- Status: Accepted, Phase 0B evidence gate satisfied
 - Date: 2026-07-14
 - Scope: Codex 插件 MCP 的 task/workspace identity、项目根授权与 Phase 0B Gate
 - Reopen: Codex host metadata、MCP roots、原生目录选择器或插件进程生命周期的公开/实测契约发生变化
@@ -27,3 +27,9 @@
 
 - Phase 0B 可能合法阻断整个插件化计划；这是安全 Gate，不是可绕过的测试缺口。
 - spike 证据只记录字段名、类型、来源、稳定性、Codex 版本和脱敏 correlation ID，不记录图谱正文或凭证。
+
+## Phase 0B Evidence Result
+
+2026-07-14 的 repo-local read-only spike 在 Codex Desktop 宿主（embedded `codex-cli 0.144.2`）验证到 host-owned `threadId`、`x-codex-turn-metadata.session_id/thread_id/workspaces`。模型可见 `projectPath/workspaceRoot/threadId/taskId` 被忽略，不能覆盖 binding；同任务 identity 稳定、不同任务隔离、cachebuster reload 后项目 root fingerprint 稳定。Gate 结论为 `trusted_host_identity`，证据见 `spikes/codex-host-binding/evidence/gate-report.json`。
+
+该结论只批准“恰好一个 host-owned workspace 候选”的 binding。多候选必须由可信原生 UI 选择，否则返回 `trusted_native_picker_required`；缺少 task 或 root 证据继续 `unavailable`。Phase 4 必须在产品 MCP 生命周期重放，字段来源或稳定性漂移时立即重开本 ADR。

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "host-binding-gate-report/v1",
+  "capturedAt": "2026-07-14",
+  "runtime": {
+    "codexCliVersion": "0.144.2",
+    "host": "Codex Desktop local project tasks plus one ephemeral Codex runtime probe",
+    "pluginManifestVersions": [
+      "0.1.0+codex.20260714061327",
+      "0.1.0+codex.20260714061610"
+    ],
+    "installation": "repo-local marketplace copied into the user-local Codex plugin cache; absolute cache path omitted"
+  },
+  "conclusion": "trusted_host_identity",
+  "trustedSources": {
+    "task": [
+      "tool-call _meta.threadId",
+      "tool-call _meta.x-codex-turn-metadata.session_id",
+      "tool-call _meta.x-codex-turn-metadata.thread_id"
+    ],
+    "workspace": [
+      "tool-call _meta.x-codex-turn-metadata.workspaces object keys"
+    ]
+  },
+  "rejectedSources": [
+    "tool arguments projectPath/workspaceRoot/threadId/taskId",
+    "plugin process cwd",
+    "process environment",
+    "recent project state"
+  ],
+  "stableWorkspaceRootHash": "457d13cf04e44e9ecf58e61654b2e6243bab9fc65ed3a72aac91782b96ebac53",
+  "scenarios": [
+    {
+      "name": "desktop_forged_arguments",
+      "correlationId": "b6e007cd-1a55-405a-a8d8-d6fccd28c3f1",
+      "instanceId": "87c12f3c-089d-4535-8d54-f87bf7d198fd",
+      "threadHash": "5cbb197b08fd9f6024640478c2e3e65e7eea3dea36dbb51d84f2d2503b745003",
+      "rootCandidateCount": 1,
+      "ignoredArgumentKeys": ["projectPath", "taskId", "threadId", "workspaceRoot"],
+      "modelArgumentsUsedForAuthorization": false,
+      "result": "trusted_host_identity"
+    },
+    {
+      "name": "desktop_same_task_followup",
+      "correlationId": "9249c1c5-43af-420a-971f-24fa1d29fb59",
+      "instanceId": "87c12f3c-089d-4535-8d54-f87bf7d198fd",
+      "threadHash": "5cbb197b08fd9f6024640478c2e3e65e7eea3dea36dbb51d84f2d2503b745003",
+      "rootCandidateCount": 1,
+      "result": "trusted_host_identity"
+    },
+    {
+      "name": "desktop_second_task",
+      "correlationId": "8e949556-9033-4849-94e6-8dfed8b2ef59",
+      "instanceId": "ad0a68e5-c25e-48fd-9c35-461d755462bd",
+      "threadHash": "f1fb0b550b653bad691560166c1508b16517c065f752f638c841322b04215a05",
+      "rootCandidateCount": 1,
+      "result": "trusted_host_identity"
+    },
+    {
+      "name": "desktop_plugin_reload_final_cachebuster",
+      "correlationId": "510e4033-c41b-4678-a1ff-c118fe453ad5",
+      "instanceId": "0bff4788-0444-48e1-94af-c90e1709c1e0",
+      "threadHash": "da4efea122138bce6c792dc1618dafedad19011c691df22656448a2d63ebe173",
+      "rootCandidateCount": 1,
+      "result": "trusted_host_identity"
+    },
+    {
+      "name": "ephemeral_runtime_with_additional_writable_directory",
+      "correlationId": "eb6afd22-0634-48e4-ad03-ed439921c69b",
+      "instanceId": "d3075775-92ef-438c-a337-dfc551a4f975",
+      "threadHash": "46578bdd14c0eba4d329466875809ff086360a3b01f94b5b6d14bc5ddb26e417",
+      "rootCandidateCount": 1,
+      "observation": "the additional writable directory was not exposed as an authorization workspace and therefore was not authorized",
+      "result": "trusted_host_identity"
+    },
+    {
+      "name": "automated_multiple_host_workspaces",
+      "rootCandidateCount": 2,
+      "result": "trusted_native_picker_required",
+      "observation": "mock schema coverage only; it verifies fail-closed behavior and does not claim real Desktop multi-root support"
+    }
+  ],
+  "lifecycleFindings": {
+    "sameTask": "instance, task fingerprint, and workspace fingerprint remained stable across a follow-up turn",
+    "secondTask": "a separate MCP instance and separate task fingerprint were created while the workspace fingerprint remained stable",
+    "pluginReload": "a cachebuster reinstall created a new MCP instance while preserving the same host workspace fingerprint",
+    "multiWorkspace": "additional writable directories are not workspace authorization roots; multiple host workspace candidates require a trusted native picker and remain fail closed"
+  },
+  "privacyChecks": {
+    "rawProjectPathPresent": false,
+    "rawForgedPathPresent": false,
+    "projectAcmReadOrWritten": false,
+    "temporaryNdjsonCommitted": false
+  },
+  "gate": {
+    "phase0B": "pass",
+    "phase1MayStart": true,
+    "constraints": [
+      "only exactly one host-owned workspace candidate is auto-bound",
+      "multiple workspace candidates require trusted native UI selection",
+      "missing task or workspace evidence fails closed",
+      "Phase 4 must replay this evidence against the product MCP lifecycle"
+    ]
+  }
+}

@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 0A 已完成，下一 Gate 为 Phase 0B 真实宿主 identity spike。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 0B 已完成并取得 `trusted_host_identity`，下一 Gate 为 Phase 1 acm-core 协议等价。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

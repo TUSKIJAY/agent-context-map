@@ -2,45 +2,44 @@
 
 更新日期：2026-07-14
 
-当前焦点：插件化 active plan 的 Phase 0A 已完成；下一步只能执行 Phase 0B 真实 Codex Desktop host-binding spike，Gate 未过不得进入 Phase 1。
+当前焦点：插件化 active plan 的 Phase 0B 已完成并得到 `trusted_host_identity`；下一步执行 Phase 1 acm-core 协议等价抽取。
 
 ## Resume Point
 
-- 权威仓库：`D:\Code\agent-context-map`，项目内普通 `.git/`，分支 `codex/agy_agent`，origin `https://github.com/TUSKIJAY/agent-context-map.git`。
+- 权威仓库：`D:\Code\agent-context-map`，项目内普通 `.git/`，分支 `codex/acm-pluginization-plan`，origin `https://github.com/TUSKIJAY/agent-context-map.git`；该分支尚无 upstream。
 - active plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`；review-002 = approve；用户于 2026-07-14 批准。
-- Phase 0A 已完成：
-  - AGENTS.md 已落位获批的 loopback MCP 与 pending 本机缓存精确化；
-  - DEC-004/005/006/007 分别冻结数据真源、host identity、single stdio MCP 默认值和 SQLite 只读迁移；
-  - 固定 `vitest@3.2.7`，建立合法/非法 ACM-MD、round-trip、Agent confirmed 降级、SQLite v1 和 distribution baseline；
-  - Phase 0A 全部自动化 Gate 通过。
-- 当前没有创建产品插件、core/editor 重构、项目 store、数据迁移或 `.acm` 写路径。
+- Phase 0A/0B 已完成：
+  - Phase 0A 固定决策与 baseline，提交 `8162e6e`；
+  - Phase 0B 在 `spikes/codex-host-binding/` 建立最小 repo-local plugin、只读 stdio MCP、6 个自动化 tests 和脱敏 Gate report；
+  - Codex Desktop new task、same-task follow-up、second task、cachebuster reload 与伪造 identity args 均验证；最终 Gate = `trusted_host_identity`；
+  - 单一 host workspace 可绑定；多 workspace 候选只返回 `trusted_native_picker_required`，缺任一 task/root 证据均 `unavailable`。
+- 当前仍没有创建产品插件、core/editor 重构、项目 store、数据迁移或 `.acm` 写路径；Phase 0B spike 与产品代码完全隔离。
 
 ## Current Repository Facts
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
-- upstream：`origin/codex/agy_agent`
-- HEAD / ahead：接手时重新运行 Git 三项检查，不从本页静态数字推断
+- upstream：未设置
+- HEAD：Phase 0B scoped commit；接手时以 `git log -1 --oneline` 实测
 - push：未获授权
-- 当前计划状态：Phase 0A complete；Phase 0B next
+- 当前计划状态：Phase 0B complete；Phase 1 next
 
-## Phase 0A Verification
+## Phase 0B Verification
 
 已运行并通过：
 
 ```powershell
+npm run test:host-binding-spike
+python "$env:USERPROFILE\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py" spikes\codex-host-binding\plugins\codex-host-binding-spike
+npm run harness:check
+npm run harness:budget
 npm run test -- --run tests/baseline
 npm run test:distribution
 npm run build
-npm run harness:check
-npm run harness:budget
-python skills/acm-md/scripts/validate_acm_md.py tests/fixtures/acm-v0.1/valid-basic.acm.md --mode strict
 git diff --check
 ```
 
-结果：baseline 4 files / 8 tests；distribution 1 test；Vite build 295 modules，仅保留既有大 chunk warning；ACM-MD strict validation、harness、budget、diff 全通过。
-
-依赖审核：最初候选 Vitest 3.2.4 命中 critical advisory，已改为固定 3.2.7。`npm audit` 仍有现有 Vite 5 / esbuild 的 1 high + 1 moderate advisory，修复要求 major upgrade，本 Phase 未扩大范围且未运行 `audit fix --force`。
+真实宿主证据见 `spikes/codex-host-binding/evidence/gate-report.json`。同一任务 instance/task/root hash 稳定；第二任务产生独立 instance/task hash；cachebuster 重装后 root hash 不变；伪造 `projectPath/workspaceRoot/threadId/taskId` 全部被记录为 ignored，`modelArgumentsUsedForAuthorization=false`。临时证据不含仓库路径或伪造路径明文，不提交 raw NDJSON。
 
 ## Governance Boundary
 
@@ -51,16 +50,15 @@ git diff --check
 
 ## Blockers And Risks
 
-- P0 风险尚未裁决：Codex Desktop 是否向 bundled stdio MCP 提供不可由模型覆盖的 task/workspace identity。官方手册未承诺该字段，必须以 Phase 0B 真实宿主证据为准。
-- 若 Phase 0B 结论为 `trusted_native_picker_required` 或 `unavailable`，必须立即停止，记录证据并保持计划 active/blocked；不得用 mock 或模型路径参数继续 Phase 1。
+- DEC-005 的 Phase 0B evidence Gate 已满足，但公开文档仍未承诺这些 host-owned 字段；Phase 4 必须在产品 MCP 中复验，字段漂移即 fail closed 并重开 ADR。
+- 多 root 真实 Desktop 选择器尚未作为自动授权路径开放；当前策略是多候选返回 `trusted_native_picker_required`。任何实现不得把附加可写目录或模型参数提升为 workspace root。
 - Vite 5 audit advisory 需在后续获授权依赖升级范围内解决，不影响本地 production build，但影响 dev-server 安全基线。
 
 ## Next Gate
 
-1. 使用 plugin-creator 约束在 `spikes/codex-host-binding/` 建最小 repo-local plugin、bundled read-only stdio MCP、schema tests 和 evidence validator。
-2. 验证 spike 不引用业务 core/editor/SQLite，不读取或写入 `.acm`，运行前后测试项目 hash 不变。
-3. 在真实 Codex Desktop 记录 new task、reload、第二 task、多 workspace root、伪造 `projectPath/threadId/root` 的脱敏协议证据。
-4. 只在结论为 `trusted_host_identity` 时进入 Phase 1；否则按 plan 停止。
+1. 从 `src/acm/data.js` 抽取纯 Node `acm-core`；React/layout/display helpers 留在 UI 层。
+2. 建 JS/Python strict validator parity、确定性 round-trip、规范 camelCase operations/preconditions/changes projection 和 legacy input diagnostics。
+3. 运行 Phase 1 全部自动化 Gate、Vite/Tauri 回归与 scoped commit；未过停止条件不得进入 Phase 2。
 
 ## History
 
