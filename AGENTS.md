@@ -7,7 +7,7 @@
 每次接手依次阅读：
 
 1. `AGENTS.md` — 入口地图与硬边界。
-2. `INSTRUCTIONS.md` — 稳定项目事实、架构与验证命令。
+2. `INSTRUCTIONS.md` — 稳定项目事实与架构不变量。
 3. `PROGRESS.md` — 当前生命周期真相和短日志。
 4. `HANDOFF.md` — 最新恢复点、证据、阻塞与下一闸门。
 5. `PROJECT_MAP.md` — 文件职责与修改入口。
@@ -17,9 +17,10 @@
 
 ## 项目边界
 
-- 保持本地优先的 Vite + React 18 + Tauri 2 应用；不得擅自引入后端、数据库服务或云端依赖。
-- 正式图谱与导出必须遵守 `ACM-MD v0.1`。协议的可追踪规范位于 `skills/acm-md/references/acm-md-v0.1.md`；`doc/03-ACM-MD格式规范指导文件.md` 是当前同内容的本地过程文档。协议变更必须同步二者并验证 skill。
-- Agent 建议在人工采纳前只能存在于 pending view state；不得写入正式 `doc`、保存、导出或 Agent Diff。
+- 保持本地优先的 Vite + React 18 + Tauri 2 应用；不引入远程业务服务、云数据库或遥测；允许 Codex 插件包含仅监听 loopback 的本地 MCP 桥接进程。该进程只能访问当前可信 Codex 任务绑定项目内的 `.acm` 范围，并必须遵守随机 token、最小权限、人工写入门控和卸载数据保留规则。
+- 正式图谱与导出必须遵守 `ACM-MD v0.1`。唯一可追踪规范位于 `skills/acm-md/references/acm-md-v0.1.md`；协议变更必须同步校验器、样例和 skill 验证。`doc/` 中的历史镜像不再参与规范维护。
+- Agent 建议在人工采纳前只能存在于 pending view state；不得写入正式图谱数据、保存、导出或 Agent Diff。
+- pending 建议可以只在本机用户状态目录持久化，作为 pending view state 的恢复缓存；它不得进入项目目录、正式图谱、常规保存、导出、Agent Diff 或 Git 跟踪，且恢复时必须重新核对 task/project/doc/baseRevision/instance 与 TTL 并由用户重新预览。未批准本机持久化时，pending 只能存在于进程内存。
 - Agent 推断不得直接标记为 `confirmed`；默认使用 `suggested`，需要人工判断时使用 `needs_validation`。
 - 不提交依赖、缓存、构建产物、环境文件、凭证或本地私有配置。
 - 保护用户和其他 Agent 的无关改动；不要为清理工作区而回滚、覆盖或批量格式化。
@@ -47,8 +48,8 @@
 - `PROGRESS.md`：当前状态、在制事项、短生命周期日志及归档指针。
 - `HANDOFF.md`：当前恢复点；保持紧凑，不积累历史叙事。
 - `PROJECT_MAP.md`：维护者路径地图。
-- `docs/`：被 Git 跟踪的 harness 治理层，包括计划生命周期、决策、优化 intake 和历史索引。
-- `doc/`：被 `.gitignore` 排除的本地产品过程资料、旧计划与评审；现存内容不自动获得执行权限。
+- `docs/`：被 Git 跟踪的唯一文档治理层。所有新的计划、评审、决策、优化 intake、进度归档和 Agent 过程文档都必须进入本目录规定的生命周期。
+- `doc/`：被冻结的本地 legacy 目录；只允许历史回查，不得新增、更新、同步或作为当前规范、状态、计划及执行权限来源。
 
 详细历史从 `PROGRESS.md` 或 `HANDOFF.md` 迁到 `docs/progress-archive/` 后，必须保留索引和回链。
 
@@ -60,13 +61,15 @@
 - 用户直接提出并授权的明确、窄范围维护任务可直接实施；不得借此扩大到未请求的计划范围。
 - 计划状态变化必须同步对应索引、`PROGRESS.md` 和 `HANDOFF.md`。
 
-## Git 外置规则
+## Git 仓库规则
 
-本项目是独立嵌套仓库。真实 Git 数据必须位于：
+本项目唯一权威工作目录是：
 
-`D:\git-stores\stargate\LLM_project_agent思维导图.git`
+`D:\Code\agent-context-map`
 
-项目目录内的 `.git` 只能是指针文件。任何 `git add`、`commit`、`push`、初始化或迁移前必须运行：
+该目录不位于 Google Drive 同步根内，使用项目内普通 `.git/` 保存完整 Git 历史。原目录 `C:\Users\LENOVO\Desktop\工作\星际之门\LLM\project\agent思维导图` 及原外置 Git store 只作为迁移来源保留，不再作为开发、状态或提交入口。
+
+任何 `git add`、`commit`、`push`、初始化或迁移前必须在权威目录运行：
 
 ```powershell
 git rev-parse --show-toplevel
@@ -76,10 +79,11 @@ git status --short --branch
 
 期望：
 
-- top-level：当前 `agent思维导图` 目录。
-- git-dir：`D:/git-stores/stargate/LLM_project_agent思维导图.git`。
+- top-level：`D:/Code/agent-context-map`。
+- git-dir：`.git`（即 `D:/Code/agent-context-map/.git`）。
+- origin：`https://github.com/TUSKIJAY/agent-context-map.git`。
 
-完整外置规则见 `C:\Users\LENOVO\Desktop\工作\星际之门\GIT_EXTERNAL_STORE_RULES.md`。只处理本项目，不扫描或迁移其他仓库。
+迁移前的独立 D 盘快照只通过 `archive/pre-migration-d-snapshot` 留档，不得作为新的开发基线。只处理本项目，不扫描或迁移其他仓库。
 
 提交时只暂存本次明确相关路径；工作区存在不明改动时禁止 `git add -A`。
 

@@ -1,0 +1,11 @@
+{
+  "doc_id": "acm_sqlite_fixture",
+  "title": "SQLite v1 baseline",
+  "domain_profile": "generic",
+  "body": "{\"schema_version\":\"acm-md/0.1\",\"doc_id\":\"acm_sqlite_fixture\",\"meta\":{\"title\":\"SQLite v1 baseline\"},\"nodes\":[],\"edges\":[]}",
+  "base_snapshot": null,
+  "source_path": null,
+  "dirty": 0,
+  "created_at": "2026-07-14T00:00:00.000Z",
+  "updated_at": "2026-07-14T00:00:00.000Z"
+}

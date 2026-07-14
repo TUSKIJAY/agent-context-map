@@ -1,0 +1,19 @@
+{
+  "id": "agent_patch_confirmed_inference",
+  "summary": "Attempt to escalate an inferred node",
+  "operations": [
+    {
+      "id": "op_confirmed_inference",
+      "op": "add_node",
+      "status": "pending",
+      "node": {
+        "id": "feature_inferred",
+        "type": "Feature",
+        "title": "Agent inferred feature",
+        "status": "confirmed",
+        "source": "agent",
+        "confidence": 0.9
+      }
+    }
+  ]
+}

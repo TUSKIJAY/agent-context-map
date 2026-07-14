@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-07-14
 - Scope: 项目级 Agent 启动、状态、计划权限与文档放置
+- Supersession: 第 4 项及其 `doc/` / `docs/` 双目录分工由 `DEC-002-docs-only-governance.md` 取代；其余 harness 控制面决策继续有效。
 
 ## Context
 

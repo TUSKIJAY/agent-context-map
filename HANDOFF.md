@@ -2,76 +2,66 @@
 
 更新日期：2026-07-14
 
-交付规则（覆盖本页下方规则生效前的旧提交描述）：每个仓库修改任务在验收和状态同步后自动创建 scoped local commit；每次 `git push` 仍需用户明确确认。本轮规则已形成未 push 的最新本地提交；旧 HEAD/ahead 数字以当前 Git 命令为准。
-
-当前焦点：governed harness retrofit 收尾与分支同步决策
+当前焦点：插件化 active plan 的 Phase 0A 已完成；下一步只能执行 Phase 0B 真实 Codex Desktop host-binding spike，Gate 未过不得进入 Phase 1。
 
 ## Resume Point
 
-项目已从“只有 `AGENTS.md` + 长篇 `HANDOFF.md`”增量改造成可重启的 governed harness。改造与验证已完成，当前变更尚未 commit 或 push。
+- 权威仓库：`D:\Code\agent-context-map`，项目内普通 `.git/`，分支 `codex/agy_agent`，origin `https://github.com/TUSKIJAY/agent-context-map.git`。
+- active plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`；review-002 = approve；用户于 2026-07-14 批准。
+- Phase 0A 已完成：
+  - AGENTS.md 已落位获批的 loopback MCP 与 pending 本机缓存精确化；
+  - DEC-004/005/006/007 分别冻结数据真源、host identity、single stdio MCP 默认值和 SQLite 只读迁移；
+  - 固定 `vitest@3.2.7`，建立合法/非法 ACM-MD、round-trip、Agent confirmed 降级、SQLite v1 和 distribution baseline；
+  - Phase 0A 全部自动化 Gate 通过。
+- 当前没有创建产品插件、core/editor 重构、项目 store、数据迁移或 `.acm` 写路径。
 
-源码基线：
+## Current Repository Facts
 
-- 分支：`codex/agy_agent`
-- HEAD：`154bf75 feat(agent): 接入 agy CLI 协作建议桥`
-- `origin/codex/agy_agent`：`077dbec`
-- harness 改造前工作区：干净
+- top-level：`D:/Code/agent-context-map`
+- git-dir：`.git`
+- upstream：`origin/codex/agy_agent`
+- HEAD / ahead：接手时重新运行 Git 三项检查，不从本页静态数字推断
+- push：未获授权
+- 当前计划状态：Phase 0A complete；Phase 0B next
 
-最近产品状态：
+## Phase 0A Verification
 
-- `077dbec` 已接入 Agent 协作前端、agy SDK 适配和 mock fallback。
-- `154bf75` 已在 Tauri 端加入 `request_agent_patch` 命令，通过本机 agy CLI 生成建议 patch。
-- pending patch 仍是 view state；未采纳前不进入正式 ACM-MD 数据或导出。
-
-## Harness Change Scope
-
-本轮新增或更新：
-
-- 入口与稳定状态：`AGENTS.md`、`INSTRUCTIONS.md`、`PROGRESS.md`、`HANDOFF.md`、`PROJECT_MAP.md`。
-- 机器配置与校验：`.harness/config.json`、`scripts/check-project-harness.py`、`scripts/check-startup-doc-budget.py`。
-- 治理层：`docs/README.md`、`docs/exec-plans/`、`docs/decisions/`、`docs/optimization/`、`docs/progress-archive/`。
-- npm 入口：`harness:check`、`harness:budget`、`harness:validate`。
-
-保留边界：
-
-- `doc/` 仍是被忽略的本地产品过程资料，不迁移、不删除。
-- 没有把任何旧 `doc/` 计划自动标成 active。
-- 没有改动产品源码或 ACM-MD 协议。
-
-## Verification
-
-本轮自动 commit 规则变更验证：harness skill 100/100、critical failures 0；`npm run harness:check`、`npm run harness:budget`、`git diff --check` 全部通过。该规则变更应形成独立 scoped local commit，不 push。
-
-已运行：
+已运行并通过：
 
 ```powershell
+npm run test -- --run tests/baseline
+npm run test:distribution
+npm run build
 npm run harness:check
 npm run harness:budget
-npm run build
+python skills/acm-md/scripts/validate_acm_md.py tests/fixtures/acm-v0.1/valid-basic.acm.md --mode strict
 git diff --check
 ```
 
-结果：
+结果：baseline 4 files / 8 tests；distribution 1 test；Vite build 295 modules，仅保留既有大 chunk warning；ACM-MD strict validation、harness、budget、diff 全通过。
 
-- Harness 结构：通过，governed 必需文件全部存在，config/profile 一致。
-- 启动文档预算：通过，无文件触发 archive 或 hard limit。
-- Skill 结构评分：最终 100/100，critical failures 0。
-- Vite production build：通过，295 modules transformed；仅有既有大 chunk warning。
-- Diff whitespace：通过。
+依赖审核：最初候选 Vitest 3.2.4 命中 critical advisory，已改为固定 3.2.7。`npm audit` 仍有现有 Vite 5 / esbuild 的 1 high + 1 moderate advisory，修复要求 major upgrade，本 Phase 未扩大范围且未运行 `audit fix --force`。
+
+## Governance Boundary
+
+- ACM-MD v0.1 不变；正式规范仍只在 `skills/acm-md/references/acm-md-v0.1.md`。
+- pending proposal 仍不得进入项目、正式图谱、保存、导出或 Agent Diff；本机缓存也必须短 TTL、完整 binding 和重新预览。
+- 模型参数、插件 cwd、最近项目或任意绝对路径不能成为项目授权来源。
+- 自动 commit 只包含当前可证明范围；push 仍须用户在当前任务明确确认。
 
 ## Blockers And Risks
 
-- 当前无技术阻塞。
-- 当前分支的 `154bf75` 尚未出现在 `origin/codex/agy_agent`；不要把“harness 未提交”和“既有源码提交未推送”混成同一个事实。
-- `doc/` 与 `docs/` 职责不同：前者是本地产品过程资料，后者是被跟踪的治理控制面。
-- 任何 Agent/agy 建议都不得绕过人工采纳边界。
+- P0 风险尚未裁决：Codex Desktop 是否向 bundled stdio MCP 提供不可由模型覆盖的 task/workspace identity。官方手册未承诺该字段，必须以 Phase 0B 真实宿主证据为准。
+- 若 Phase 0B 结论为 `trusted_native_picker_required` 或 `unavailable`，必须立即停止，记录证据并保持计划 active/blocked；不得用 mock 或模型路径参数继续 Phase 1。
+- Vite 5 audit advisory 需在后续获授权依赖升级范围内解决，不影响本地 production build，但影响 dev-server 安全基线。
 
 ## Next Gate
 
-1. 核对本轮验证结果和 diff，仅保留 harness 范围。
-2. 用户决定是否提交，以及是否推送 `codex/agy_agent`。
-3. 后续若启动多 phase 产品改造，先在 `docs/exec-plans/proposed/` 起草并完成 review/approval/activation；窄范围直接请求按用户明确授权执行。
+1. 使用 plugin-creator 约束在 `spikes/codex-host-binding/` 建最小 repo-local plugin、bundled read-only stdio MCP、schema tests 和 evidence validator。
+2. 验证 spike 不引用业务 core/editor/SQLite，不读取或写入 `.acm`，运行前后测试项目 hash 不变。
+3. 在真实 Codex Desktop 记录 new task、reload、第二 task、多 workspace root、伪造 `projectPath/threadId/root` 的脱敏协议证据。
+4. 只在结论为 `trusted_host_identity` 时进入 Phase 1；否则按 plan 停止。
 
 ## History
 
-改造前长篇交接的稳定摘要已迁入 `docs/progress-archive/2026-06-to-2026-07-pre-harness-history.md`；更细证据仍可从 Git 历史和本地 `doc/` 记录回查。
+迁移前稳定历史见 `docs/progress-archive/2026-06-to-2026-07-pre-harness-history.md`；冻结 `doc/` 仅可只读回查。

@@ -12,7 +12,7 @@
 | Exec plans | `exec-plans/` | proposed、active、completed 与 reviews 生命周期 | 仅经评审、用户批准并位于 active 的计划授权 phase 工作 |
 | Optimization intake | `optimization/` | 摩擦和改进想法记录 | 只记录，不授权实施 |
 | Progress archive | `progress-archive/` | 从启动路径迁出的长期历史 | 证据检索；当前状态仍在根状态文件 |
-| Local product records | `../doc/` | 早期产品计划、评审和过程 handoff；被 `.gitignore` 排除 | 仅历史证据；不自动获得执行权限 |
+| Frozen legacy records | `../doc/` | 被 `.gitignore` 排除的早期本地记录 | 仅可历史回查；不得新增、更新或作为当前权威 |
 
 ## Entry Points
 
@@ -33,4 +33,5 @@
 - 只有完成评审并获用户明确批准的计划才能移动到 `active/`。
 - 完成、终止、拒绝或被取代的计划移动到 `completed/`；review 历史保留。
 - 长历史进入 `progress-archive/` 并保留索引；不得让启动文档无限增长。
-- `doc/` 现存资料不迁移、不删除；需要进入正式执行生命周期时，必须基于当前仓库证据在 `exec-plans/proposed/` 新建计划。
+- 所有新的计划、评审、决策、优化记录、进度归档和 Agent 过程文档都必须落在 `docs/` 对应入口，不得写入 `doc/`。
+- `doc/` 保持原位并冻结：不批量迁移或删除历史内容，但不得新增、更新、同步或继续充当协议镜像。需要复用旧内容时，必须先按当前仓库证据复核，再在 `docs/` 创建新的受治理产物。

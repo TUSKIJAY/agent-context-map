@@ -4,7 +4,7 @@
 
 ## Applicability
 
-当用户要求先起草/评审计划，或任务属于多 phase、高风险、跨模块治理工作时，必须使用下述生命周期。用户直接授权的明确、窄范围维护任务可以直接实施，但授权只覆盖该请求本身；不得把本地 `doc/` 旧计划、优化记录或聊天推断当成额外范围。
+当用户要求先起草/评审计划，或任务属于多 phase、高风险、跨模块治理工作时，必须使用下述生命周期。用户直接授权的明确、窄范围维护任务可以直接实施，但授权只覆盖该请求本身；不得把冻结的 `doc/` 历史记录、优化记录或聊天推断当成额外范围。
 
 ## Lifecycle
 
@@ -25,6 +25,7 @@
 - `completed/`：已完成、终止、拒绝、被取代或归档的计划。
 - `reviews/`：按计划 slug 保存独立评审和实施验收。
 - `plan-template.md`：起草模板，不属于任何计划状态。
+- `docs/exec-plans/` 是唯一计划生命周期位置；不得在 `doc/` 或其他目录创建并行计划真源。
 
 ## Execution Discipline
 
@@ -36,7 +37,7 @@
 
 ## Active Plans
 
-当前无已激活计划。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 0A 已完成，下一 Gate 为 Phase 0B 真实宿主 identity spike。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

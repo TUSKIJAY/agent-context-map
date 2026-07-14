@@ -23,52 +23,22 @@
 5. 图谱正文按整份 JSON 本地保存；修改存储层时保持浏览器 fallback 与桌面路径的兼容边界。
 6. 依赖和 Tauri 权限按最小必要原则调整。
 
-## Repository Structure
+## Responsibility Routing
 
-| Path | Responsibility |
-| --- | --- |
-| `src/App.jsx` | 应用级状态、布局、工具栏、撤销重做、Agent 协作接入、文件与导出 |
-| `src/acm/data.js` | ACM 数据、纯函数、校验、Diff、导入导出、patch apply/reject |
-| `src/acm/agentClient.js` | agy / Tauri / MCP / sidecar 调用与结果归一化 |
-| `src/acm/FlowCanvas.jsx` | React Flow 画布、布局、分组、折叠、节点和边 |
-| `src/acm/Panels.jsx` | Inspector、Agent、建议变更和校验 UI |
-| `src/storage/` | SQLite/localStorage 持久化与文件读写 |
-| `src-tauri/` | 桌面命令、能力、配置和 Rust 入口 |
-| `skills/acm-md/` | 可分发的 ACM-MD skill、规范与校验器 |
-| `docs/` | 被跟踪的 harness 治理和历史索引 |
-| `doc/` | 本地忽略的产品过程资料与旧记录 |
+- 仓库规则、Git 边界、计划权限与验证要求：`AGENTS.md`。
+- 文件职责和修改入口：`PROJECT_MAP.md`。
+- 当前状态与最新恢复点：`PROGRESS.md`、`HANDOFF.md`。
+- 文档生命周期与放置：`docs/README.md`。
+- 用户安装、运行和产品能力：`README.md`。
 
-详见 `PROJECT_MAP.md`。
+本文件只维护长期稳定的产品事实与不变量，不复制路径地图、治理流程或会话状态。
 
 ## Verification
 
-从仓库根目录运行：
+原生产品基线：
 
 ```powershell
-npm run harness:check
-npm run harness:budget
 npm run build
 ```
 
-按任务补充：
-
-- 桌面/Rust 改动：`npm run tauri:build -- --no-bundle` 或更窄的 Rust/Tauri 检查。
-- ACM-MD 文件：`python skills/acm-md/scripts/validate_acm_md.py <file>`。
-- UI 行为：在构建通过后运行 `npm run dev`，完成针对性浏览器检查。
-
-结构检查只证明 harness 文件和配置存在；功能结论必须来自原生验证。
-
-## Governance
-
-- Harness profile：`governed`。
-- `AGENTS.md` 是唯一规则入口，`CLAUDE.md` 仅为兼容指针。
-- `PROGRESS.md` 是当前生命周期状态面，`HANDOFF.md` 是最新恢复索引。
-- `docs/exec-plans/` 管理需要正式 plan/review/activation 的工作。
-- `docs/optimization/` 为 record-only intake。
-- `docs/progress-archive/` 保存移出启动路径的长期证据。
-
-## Git And Generated Files
-
-- 当前工作树使用外置 Git 数据目录；检查方式和提交纪律见 `AGENTS.md`。
-- 不提交 `node_modules/`、`dist/`、`.vite/`、`src-tauri/target/`、`src-tauri/gen/`、`output/`、`.env*` 或本地缓存。
-- `doc/` 当前被忽略；不要把其中旧计划误当成当前 active plan。
+完整验证矩阵和文档-only 要求只在 `AGENTS.md` 维护；结构检查通过不能替代产品原生验证。
