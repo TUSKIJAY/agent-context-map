@@ -1,0 +1,20 @@
+{
+  "name": "agent-context-map-local",
+  "interface": {
+    "displayName": "Agent Context Map Local"
+  },
+  "plugins": [
+    {
+      "name": "agent-context-map",
+      "source": {
+        "source": "local",
+        "path": "./dist/agent-context-map-plugin"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

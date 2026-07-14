@@ -1,14 +1,17 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-14",
-  "status": "prepared_waiting_authorization",
+  "status": "windows_failed_stop_no_retry",
   "authorizations": {
-    "realCodexCanaryAndRepoMarketplace": false,
-    "fixedTagGithubReleaseCanaryStable": false
+    "realCodexCanaryAndRepoMarketplace": true,
+    "fixedTagGithubReleaseCanaryStable": true,
+    "approvedAt": "2026-07-14",
+    "approvalSummary": "授权 Phase 8：允许真实 Windows Codex Desktop canary、repo-local marketplace，以及 canary 通过后的固定 Git tag、GitHub Release 和 stable 发布。Windows 若再次失败立即停止，不再重试。",
+    "executionBranch": "codex/acm-pluginization-plan"
   },
   "windowsPolicy": {
     "failureBudget": 1,
-    "failuresAfterDirective": 0,
+    "failuresAfterDirective": 1,
     "onNextFailure": "stop_without_retry",
     "docsOnlyPushesSkipCi": true
   },
@@ -24,15 +27,15 @@
   "readOnlyPreflight": {
     "officialManualCurrent": true,
     "pluginValidation": "passed",
-    "realRepoMarketplaceAbsent": true,
+    "realRepoMarketplaceAbsent": false,
     "repoMarketplacePath": ".agents/plugins/marketplace.json",
     "marketplacePluginPath": "./dist/agent-context-map-plugin",
     "existingPluginTags": [],
     "existingGithubReleases": []
   },
   "gates": {
-    "fixedAsset": "pending",
-    "windowsCodexCanary": "pending",
+    "fixedAsset": "passed",
+    "windowsCodexCanary": "failed_at_create_real_task_a1",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -44,11 +47,34 @@
     "stableRelease": "pending"
   },
   "externalState": {
-    "realGlobalCodexHomeModified": false,
-    "repoMarketplaceCreated": false,
+    "realGlobalCodexHomeModified": true,
+    "repoMarketplaceCreated": true,
     "gitTagCreated": false,
     "githubReleaseCreated": false,
     "stablePublished": false
+  },
+  "attempt": {
+    "codexCliVersion": "0.144.2",
+    "releaseArtifactVerification": "passed",
+    "pluginValidation": "passed",
+    "marketplaceRegistration": "passed",
+    "canaryInstall": {
+      "status": "passed",
+      "version": "0.3.0-rc.1"
+    },
+    "failedGate": "create_real_codex_task_a1",
+    "failure": "Codex app create_thread returned: Something went wrong while running this tool.",
+    "failureThreadCreated": false,
+    "retryPerformed": false,
+    "stableProgressed": false
+  },
+  "cleanup": {
+    "pluginConfigEntryRemoved": true,
+    "marketplaceConfigEntryRemoved": true,
+    "versionedCacheRemoved": false,
+    "cacheResidualReason": "Windows file lock: os error 32",
+    "cleanupRetryPerformed": false,
+    "projectDataTouched": false
   },
   "projectDataModified": false,
   "rawTaskIdsRetained": false,

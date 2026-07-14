@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：Phase 7 已完成；Phase 8 runbook 与待执行证据已准备，等待真实 canary、marketplace、tag/Release/stable 独立授权。Windows 下一次失败后停止重试。
+当前焦点：Phase 7 已完成；Phase 8 已触发 `windows_failed_stop_no_retry`。不要重试 Windows canary、task 创建或 cache 清理，不要推进 tag/GitHub Release/stable。
 
 ## Resume Point
 
@@ -52,9 +52,9 @@
 - upstream：`origin/codex/acm-pluginization-plan`
 - HEAD：Phase 7 closeout 已推送；最新远端 HEAD replay run `29328130052` 五 job 全绿，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
 - push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
-- 当前计划状态：Phase 7 Completed；Phase 8 Pending / explicit user approval gate
-- Phase 8 准备：`docs/runbooks/agent-context-map-plugin-release.md` 与 `plugins/agent-context-map/tests/evidence/phase8-canary.json`；未修改真实 Codex、marketplace、tag、Release 或 stable
-- Phase 8 准备验证：Codex Manual current；official plugin validator passed；evidence JSON parse、marketplace-absent、harness check/budget 与 diff check 通过
+- 当前计划状态：Phase 7 Completed；Phase 8 Active / Blocked / `windows_failed_stop_no_retry`
+- Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
+- Phase 8 清理：plugin 与 marketplace 配置项已移除；版本化 cache 因 Windows `os error 32` 文件锁残留且不得重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
 
 ## Phase 7 Local Candidate Verification
 
@@ -119,15 +119,15 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 
 - Phase 7 已完成；closeout 文档与最终证据已 scoped commit/push，最新远端 HEAD workflow 全绿。
 - push 已获当前任务明确授权；当前 branch 已同步 origin。
-- Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
-- Windows failure budget = 1；下一次 Windows canary 或必要 release Gate 失败后立即停止尝试，不自动修复重跑。
+- Phase 8 已获明确授权并执行一次 Windows canary，但在创建真实 task A1 时失败；Windows failure budget 1/1 已用尽，不自动修复重跑。
+- repo marketplace 和 canary 安装曾成功；安全清理后全局配置项已移除，版本化 cache 仍被文件锁占用。未创建任何 plugin tag/GitHub Release/stable。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 等待用户独立批准 Phase 8 真实 Codex Desktop canary 与 repo-local/private marketplace 范围。
-2. 等待用户独立批准固定 tag/GitHub Release、canary 与 stable 发布动作。
-3. 获批后完成真实多 task/多项目/冲突/升级回滚/卸载恢复验收、runbook 和 plan 生命周期收尾。
+1. 不重试 Windows canary、真实 task 创建或版本化 cache 清理。
+2. 不创建 plugin tag/GitHub Release/stable；Phase 8 与 active plan 保持 Blocked。
+3. 只有用户以后明确改变 stop-no-retry 决定或外部状态变化后，才能重新制定下一 Gate。
 
 ## History
 
