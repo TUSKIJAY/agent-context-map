@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 3 已完成，下一 Gate 为 Phase 4
+> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 4 已完成，下一 Gate 为 Phase 5
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -93,6 +93,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 2 验证通过：专项 23 tests、Rust 3 tests、20 路 stale revision 竞争、crash-point/recovery/index rebuild、SQLite 原库 hash/Python strict/rollback、Vite 308 modules、Tauri release `--no-bundle` 和 `git diff --check`；当前 Gate：进入 Phase 3。
 - 2026-07-14，Phase 3 完成：抽出 platform-free `packages/acm-editor`、document controller 与能力 contracts；Desktop composition root 注入 Tauri/Browser adapters；FlowCanvas export capability、pending proposal/正式 Diff 分离和 canonical camelCase 产品调用方落位。
 - Phase 3 验证通过：editor 4 files / 7 tests、import-boundaries 4 tests、全仓 19 files / 60 tests、Vite 317 modules、Tauri release executable/MSI/NSIS、harness 和 `git diff --check`；桌面 smoke 覆盖项目绑定、新建/打开/编辑/撤销/重做/校验/Diff/保存/重开。当前 Gate：进入 Phase 4。
+- 2026-07-14，Phase 4 完成：正式 local-only Codex plugin、bundled stdio MCP、UI resource 占位、host-owned project binding、canonical path containment、single-process session service 与 clean reproducible distribution 落位；未创建 public marketplace 或 daemon。
+- Phase 4 验证通过：schema 3、runtime 2、binding 4、path security 10、distribution 3、全仓 24 files / 81 tests；clean Release 8 files 可独立启动且两次构建 SHA-256 一致；Vite 317 modules、plugin validator、harness、budget 和 diff check 通过。正式插件经临时 local marketplace 在 3 个独立 Codex task、remove/reinstall reload 和额外 writable dir 场景复验，`.acm` 未修改。DEC-005/006 已确认；当前 Gate：进入 Phase 5。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1582,7 +1584,7 @@ v1 不规划：
 
 ## 15. 推荐 commit 拆分顺序
 
-以下只适用于未来按本 active 计划实施；本次 activation 的 docs-only 生命周期变更应与未来产品实现 commit 分开。本计划只授权各 Phase 明列范围，当前 Phase 0 仍未开始。
+以下 commit 拆分用于本 active 计划实施；已完成 Phase 0A 至 Phase 4 均按 scoped local commit 闭环，后续仍只授权各 Phase 明列范围。
 
 1. docs(governance): 记录 activation 决策并精确化 AGENTS 约束
 2. test(acm): 引入获批测试运行器并固化 ACM-MD v0.1 golden corpus
@@ -1655,4 +1657,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 3 已完成；下一步执行 Phase 4 插件壳、MCP control plane 与安全根绑定，并在产品 MCP 生命周期复验宿主字段。
+本 Plan 已通过 review-002 并由用户明确激活。Phase 4 已完成并在产品 MCP 生命周期复验宿主字段；下一步执行 Phase 5 原生 Widget、生命周期和 editor 复用。

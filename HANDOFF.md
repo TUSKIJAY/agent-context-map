@@ -2,7 +2,7 @@
 
 更新日期：2026-07-14
 
-当前焦点：插件化 active plan 的 Phase 3 已完成；下一步执行 Phase 4 插件壳、MCP control plane 与安全根绑定。
+当前焦点：插件化 active plan 的 Phase 4 已完成；下一步执行 Phase 5 原生 Widget、生命周期和 editor 复用。
 
 ## Resume Point
 
@@ -20,38 +20,51 @@
   - `src/App.jsx` 是 Desktop composition root，`src/platform/tauri` 与 `src/platform/browser` 提供可注入 adapters；
   - FlowCanvas export 由 adapter 注入；pending proposal 与正式 Diff 已分栏；产品 Agent 调用方只产出 canonical camelCase operations；
   - Tauri capability 已收敛到 dialog open/save 与 text write，文件 scope 只由原生对话框动态授予。
+- Phase 4：
+  - `plugins/agent-context-map` 是正式 local-only Codex plugin 源；manifest、`.mcp.json`、bundled stdio MCP、UI resource 占位和构建复制 skill 已落位；未创建 public marketplace；
+  - `host-binding.js` 只接受 host-owned task/workspace metadata 与 MCP roots 的单根交集，模型参数、cwd、最近项目和额外 writable dir 不构成授权；
+  - `path-security.js` 把文件访问限制在 canonical project root 的 `.acm/documents/*.acm.md`，拒绝 traversal、absolute path、symlink/junction escape 和 Windows 保留设备名；
+  - 单进程 `session-service` 已通过 task 隔离、same-task binding、reload 和 clean-package 验证；DEC-006 确认为 single bundled stdio MCP，不引入 daemon/listener/token；
+  - 当前只提供 health 与 read-only strict validate；UI resource 仍是 Phase 4 占位，不包含 editor 或写工具。
 
 ## Current Repository Facts
 
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：未设置
-- HEAD：Phase 3 scoped commit；接手时以 `git log -1 --oneline` 实测
+- HEAD：Phase 4 scoped commit；接手时以 `git log -1 --oneline` 实测
 - push：未获授权
-- 当前计划状态：Phase 3 complete；Phase 4 next
+- 当前计划状态：Phase 4 complete；Phase 5 next
 
-## Phase 3 Verification
+## Phase 4 Verification
 
 已运行并通过：
 
 ```powershell
-npm test -- --run acm-editor
-npm run test:import-boundaries
+npm run build:mcp
+npm run test:mcp-schema
+npm run test:mcp-runtime
+npm run test:project-binding
+npm run test:path-security
+npm run test:distribution
+npm run test:mcp-bundle-repro
 npm test
 npm run build
-npm run tauri -- build
 npm run harness:check
+npm run harness:budget
 git diff --check
 ```
 
-结果：editor 命令 4 files / 7 tests；import-boundaries 1 file / 4 tests；全仓 19 files / 60 tests；Vite 317 modules；Tauri release executable、MSI 与 NSIS bundle 构建成功；harness 与 diff check 通过。桌面 smoke 绑定临时项目后完成新建、编辑、撤销/重做、校验、正式 Diff、保存，并从最近文档重开验证 `Phase 3 smoke 目标` 持久化。
+结果：Release 8 files；schema 3、runtime 2、binding 4、path security 10、distribution 3、全仓 24 files / 81 tests；Vite 317 modules。bundle 两次构建 SHA-256 为 `25b79aec2b04a29b4222688b8b210b78868851b4b8096704f59bccd5971e3396`。clean package 仅用 Release 内容启动；plugin validator、harness、budget 与 diff check 通过。
+
+真实宿主证据：Phase 0B 已完成 Codex Desktop Gate；Phase 4 将正式产品插件通过临时 local marketplace 安装到 `codex-cli 0.144.2`，3 个独立只读 task、remove/reinstall reload 和额外 writable dir 均保持同项目 fingerprint、不同 session；strict schema/服务端测试拒绝伪造 identity，多 root fail closed，项目 `.acm` 未修改。临时 plugin/marketplace 已移除；脱敏证据在 `plugins/agent-context-map/tests/evidence/phase4-host-gate.json`。
 
 关键实现：
 
-- `packages/acm-editor/src/AcmEditorShell.jsx` 与 `document-controller.js`：platform-free UI 与文档会话控制。
-- `packages/acm-editor/src/contracts.js`：可执行 mock platform，证明 editor 可脱离 Tauri 加载。
-- `src/platform/index.js`：唯一平台选择点；Tauri/Browser adapters 在 composition root 注入。
-- `tests/import-boundaries/acm-editor-boundary.test.js`：静态证明 editor closure、canonical operations、composition injection 与最小 capabilities。
+- `plugins/agent-context-map/mcp/src/tools/registry.js`：稳定 envelope、strict schema、truthful annotations 和只读工具。
+- `plugins/agent-context-map/mcp/src/security/`：host binding、root canonicalization 和 path containment。
+- `plugins/agent-context-map/mcp/src/session/session-service.js`：task/project session 隔离与 rebind 拒绝。
+- `plugins/agent-context-map/scripts/build-mcp.mjs`：自包含 server、skill 复制、clean release 和确定性 manifest。
 
 ## Governance Boundary
 
@@ -63,17 +76,17 @@ git diff --check
 
 ## Risks
 
-- Phase 4 必须在产品 MCP 生命周期复验 DEC-005 host identity；字段漂移即 fail closed。
+- Phase 5 必须确认真实 MCP Apps bridge 与 ready proof；若宿主 bridge 能力不足且无安全兼容方案，按计划停止。
 - legacy snake_case operations 已从产品调用方移除，只在显式 fixture/import diagnostics adapter 接受；Phase 6 必须按计划彻底拒绝 legacy 名称。
 - Windows safe replace 已原生执行；portable tests 已建立，macOS/Linux 真实矩阵留在计划 Phase 7，不把它写成已运行证据。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 创建 `plugins/agent-context-map` 正式插件壳、manifest、bundled stdio MCP 与 UI resource。
-2. 复用 Phase 0B host identity contract，把 project binding 完全建立在 host-owned evidence 上，拒绝 tool arguments 覆盖。
-3. 实现 session/openAttempt、safe path、read-only tools 与写操作 confirmation/token/revision Gate。
-4. 运行 plugin manifest、MCP lifecycle/security、构建、Tauri regression、harness 和 diff Gate。
+1. 创建 `plugins/agent-context-map/widget`、WidgetHostAdapter、app-only widget API 与独立 Vite Widget build。
+2. 通过 MCP Apps bridge hydrate `acm-editor`，实现 openAttempt/widgetInstance/rebind/supersede 单调状态机和画布首帧 ready proof。
+3. 验证 reload、新 task、多实例、旧 instance 权限隔离，以及 local-only CSP/asset/bundle policy。
+4. 运行 `build:widget`、widget lifecycle/rebind/bundle-policy、distribution、Tauri regression、harness 和 diff Gate。
 
 ## History
 

@@ -100,6 +100,23 @@ npm run tauri:build -- --no-bundle
 | `skills/acm-md/scripts/validate_acm_md.py` | 结构、关系与悬空边校验器 |
 | `skills/acm-md/agents/openai.yaml` | skill 接入元数据 |
 
+## Codex 插件与 MCP control plane
+
+| Path | Responsibility |
+| --- | --- |
+| `plugins/agent-context-map/.codex-plugin/plugin.json` | Codex plugin manifest；声明 local-only plugin、skill、MCP server 与界面能力 |
+| `plugins/agent-context-map/.mcp.json` | bundled stdio MCP 启动配置；只运行 release 内 `mcp/server.mjs` |
+| `plugins/agent-context-map/mcp/src/protocol.js` | dependency-free stdio JSON-RPC、tools/resources 分派与 MCP roots client request |
+| `plugins/agent-context-map/mcp/src/security/` | host-owned task/workspace binding、root canonicalization 与 `.acm/documents` path containment |
+| `plugins/agent-context-map/mcp/src/session/` | 单进程 task/project session 隔离、稳定 sessionId 与 rebind 拒绝 |
+| `plugins/agent-context-map/mcp/src/tools/registry.js` | health、strict read-only validate、稳定 envelope 与 strict schema |
+| `plugins/agent-context-map/mcp/src/resources/` | MCP Apps UI resource；Phase 4 为 local-only Widget 占位 |
+| `plugins/agent-context-map/scripts/` | 自包含 MCP bundle、skill 复制、clean release manifest 与可复现构建校验 |
+| `plugins/agent-context-map/tests/` | schema/runtime/binding/path-security、clean-package 与脱敏真实宿主证据 |
+| `tests/distribution/plugin-distribution.test.js` | clean Release 内容、开发路径泄漏、独立启动和项目不变性 Gate |
+
+`plugins/agent-context-map/mcp/server.mjs` 与 `plugins/agent-context-map/skills/acm-md/` 是本地构建生成物，不提交；正式发布树由 `npm run build:mcp` 生成到被忽略的 `dist/agent-context-map-plugin/`。
+
 ## 文档与治理
 
 ### `docs/`（被 Git 跟踪）

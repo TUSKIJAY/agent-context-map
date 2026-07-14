@@ -1,6 +1,6 @@
 # DEC-005 — Codex Host Identity And Project Root
 
-- Status: Accepted, Phase 0B evidence gate satisfied
+- Status: Accepted, Phase 0B and Phase 4 evidence gates satisfied
 - Date: 2026-07-14
 - Scope: Codex 插件 MCP 的 task/workspace identity、项目根授权与 Phase 0B Gate
 - Reopen: Codex host metadata、MCP roots、原生目录选择器或插件进程生命周期的公开/实测契约发生变化
@@ -32,4 +32,10 @@
 
 2026-07-14 的 repo-local read-only spike 在 Codex Desktop 宿主（embedded `codex-cli 0.144.2`）验证到 host-owned `threadId`、`x-codex-turn-metadata.session_id/thread_id/workspaces`。模型可见 `projectPath/workspaceRoot/threadId/taskId` 被忽略，不能覆盖 binding；同任务 identity 稳定、不同任务隔离、cachebuster reload 后项目 root fingerprint 稳定。Gate 结论为 `trusted_host_identity`，证据见 `spikes/codex-host-binding/evidence/gate-report.json`。
 
-该结论只批准“恰好一个 host-owned workspace 候选”的 binding。多候选必须由可信原生 UI 选择，否则返回 `trusted_native_picker_required`；缺少 task 或 root 证据继续 `unavailable`。Phase 4 必须在产品 MCP 生命周期重放，字段来源或稳定性漂移时立即重开本 ADR。
+该结论只批准“恰好一个 host-owned workspace 候选”的 binding。多候选必须由可信原生 UI 选择，否则返回 `trusted_native_picker_required`；缺少 task 或 root 证据继续 `unavailable`。
+
+## Phase 4 Product Evidence Result
+
+2026-07-14 的正式产品 bundle 通过临时 local marketplace 安装到同一最低支持基线 `codex-cli 0.144.2`。3 个独立只读 task、plugin remove/reinstall reload 与额外 writable dir 场景均保持同一项目 fingerprint、不同 task session；额外目录未成为授权 root。产品 strict schema 与服务端 tests 拒绝伪造 identity arguments；多 root、同 task 换 root、symlink/junction escape 均 fail closed；项目 `.acm` 未修改。脱敏结果见 `plugins/agent-context-map/tests/evidence/phase4-host-gate.json`。
+
+因此 Phase 4 未观察到字段来源或生命周期漂移，DEC-005 保持 Accepted。后续若 Codex host metadata、roots contract 或 Widget/native picker 语义变化，仍须重新打开本决策，不能沿用缓存证据。

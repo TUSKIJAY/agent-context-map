@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；尚未设置 upstream
-- 当前 HEAD：Phase 3 scoped commit；接手时以 `git log -1 --oneline` 实测；push 未获授权
+- 当前 HEAD：Phase 4 scoped commit；接手时以 `git log -1 --oneline` 实测；push 未获授权
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 3 complete；下一 Gate 为 Phase 4 插件壳、MCP control plane 与安全根绑定
+- 当前 Phase：Phase 4 complete；下一 Gate 为 Phase 5 原生 Widget、生命周期和 editor 复用
 
 ## Navigation
 
@@ -25,8 +25,8 @@
 
 ## In Progress
 
-- Phase 4 待开始：建立正式 plugin manifest、bundled stdio MCP、UI resource 与可信项目根绑定。
-- Phase 4 必须复用 Phase 0B 的 host-owned identity 证据，任何 tool arguments 都不能覆盖 binding；字段漂移必须 fail closed。
+- Phase 5 待开始：把 Phase 3 `acm-editor` 接入 Phase 4 MCP Apps resource，建立 Widget bridge、hydrate、ready proof、rebind 和 supersede 生命周期。
+- Phase 5 必须保持 CSP/资产全本地，Widget 不得自建业务真源、直接访问 localhost 或把 tool success 当成 ready。
 
 ## Blocked
 
@@ -36,6 +36,10 @@
 
 ## Completed
 
+- [x] 2026-07-14 — Phase 4：以标准 `.codex-plugin/plugin.json`、`.mcp.json` 和自包含 `mcp/server.mjs` 建立正式 local-only 插件包；发布包包含构建复制的 `acm-md` skill 和 MCP Apps UI resource 占位。
+- [x] 2026-07-14 — Phase 4 安全边界：只接受 host-owned task/workspace 元数据与 MCP roots 的单根交集；伪造 identity 参数、缺失/多 root、旧 task rebind、traversal、absolute path、symlink/junction 和 Windows 保留设备名全部 fail closed。
+- [x] 2026-07-14 — Phase 4 真实宿主与拓扑 Gate：临时安装产品插件后用 3 个独立 Codex task、remove/reinstall reload 和额外 writable dir 重放；项目 fingerprint 稳定、session 隔离、`.acm` 未修改；DEC-005/006 确认为单 bundled stdio MCP，无 daemon/listener/token。
+- [x] 2026-07-14 — Phase 4 Gate：MCP schema 3、runtime 2、binding 4、path security 10、distribution 3、全仓 24 files / 81 tests 通过；clean package 可独立启动，8 个 Release 文件两次构建 SHA-256 一致；plugin validator、Vite 317 modules、harness 与 diff check 通过。
 - [x] 2026-07-14 — Phase 3：抽出 platform-free `packages/acm-editor`、document controller 和能力 contracts；Desktop composition root 注入 Tauri/Browser store、files、Agent、export 与 host capabilities。
 - [x] 2026-07-14 — Phase 3 边界收敛：editor 依赖闭包不含 Tauri/SQLite/宿主全局发现；FlowCanvas 使用 export adapter；pending proposal 与正式 Diff 分栏；产品 Agent operations 全部改为 camelCase，legacy 仅保留显式 diagnostics adapter。
 - [x] 2026-07-14 — Phase 3 Gate：editor 4 files / 7 tests、import-boundaries 4 tests、全仓 19 files / 60 tests、Vite 317 modules、Tauri release bundle、harness 与 diff check 全通过；桌面 smoke 覆盖项目绑定、新建/打开/编辑/撤销/重做/校验/Diff/保存/重开。
@@ -53,15 +57,16 @@
 
 ## Next
 
-1. 执行 Phase 4：创建正式插件壳、bundled stdio MCP 与 MCP UI resource。
-2. 把 Phase 0B identity evidence 接入产品 server 的 host-owned binding，严格拒绝模型参数覆盖和越界路径。
-3. 建立 session/openAttempt 生命周期、只读工具与写操作人工门控的安全测试。
+1. 执行 Phase 5：构建原生 MCP Apps Widget，并把 `acm-editor` 作为 platform-free UI 注入。
+2. 建立 openAttempt/widgetInstance 单调状态机、首帧 ready proof、reload/rebind/supersede 与旧实例隔离。
+3. 验证 Widget bundle 无 Tauri/SQLite/绝对路径/远程资产、无 localStorage 业务真源，并保持 Tauri 回归。
 4. Phase 验收后 scoped local commit；每次 push 仍需用户明确确认。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 4 plugin/MCP control plane 完成 | product plugin host replay；schema/runtime/binding/path/distribution；reproducible clean bundle |
 | 2026-07-14 | Phase 3 editor/platform adapters 解耦完成 | editor 7、import-boundaries 4、全仓 60；Vite 317；Tauri release bundle；桌面 smoke |
 | 2026-07-14 | Phase 2 项目文件单真源与 SQLite 只读迁移完成 | project-store 23 tests；Rust 3；Vite 308；Tauri release；DEC-004/007 implemented |
 | 2026-07-14 | Phase 1 acm-core 协议等价完成 | `packages/acm-core/`；core 16、全仓 31、parity 8；Tauri release build |

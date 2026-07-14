@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "agent-context-map-phase4-host-gate/v1",
+  "capturedAt": "2026-07-14",
+  "runtime": {
+    "codexCliVersion": "0.144.2",
+    "pluginVersion": "0.2.0",
+    "transport": "bundled stdio",
+    "topology": "single_process_session_service",
+    "installation": "temporary local canary marketplace and plugin cache; removed after validation"
+  },
+  "evidenceChain": {
+    "phase0BDesktopGate": "spikes/codex-host-binding/evidence/gate-report.json",
+    "phase4ProductLifecycle": "three new local read-only ephemeral Codex tasks using the installed product plugin bundle",
+    "rawTaskIdsRetained": false,
+    "rawWorkspacePathsRetained": false
+  },
+  "scenarios": {
+    "health": "pass",
+    "strictValidation": "pass",
+    "sameWorkspaceProjectFingerprintStable": true,
+    "distinctTaskSessions": 3,
+    "pluginRemoveReinstallReload": "pass",
+    "additionalWritableDirectoryUsedAsAuthorizationRoot": false,
+    "forgedIdentityArguments": "rejected_by_strict_product_schema_and_server_tests",
+    "multipleWorkspaceCandidates": "fail_closed_trusted_native_picker_required",
+    "projectAcmModified": false
+  },
+  "topologyDecision": {
+    "selected": "single bundled stdio MCP",
+    "daemonRequired": false,
+    "reason": "multi-task isolation, plugin reload, clean-package startup and host binding all passed without a listener or second process"
+  },
+  "gate": "pass"
+}

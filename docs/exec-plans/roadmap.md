@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 3 editor 与 platform adapters 解耦已完成，下一 Gate 为 Phase 4 插件壳、MCP control plane 与安全根绑定。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 4 插件壳、MCP control plane 与安全根绑定已完成，下一 Gate 为 Phase 5 原生 Widget、生命周期和 editor 复用。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

@@ -29,5 +29,9 @@ pnpm-debug.log*
 coverage/
 *.tsbuildinfo
 
+# Codex plugin generated release assets (source stays tracked)
+plugins/agent-context-map/mcp/server.mjs
+plugins/agent-context-map/skills/acm-md/
+
 .DS_Store
 Thumbs.db

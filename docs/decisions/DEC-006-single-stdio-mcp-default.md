@@ -1,9 +1,9 @@
 # DEC-006 — Single Stdio MCP Before Loopback Daemon
 
-- Status: Accepted, provisional default
+- Status: Accepted, confirmed in Phase 4
 - Date: 2026-07-14
 - Scope: Codex 插件 control plane 的进程拓扑
-- Reopen: Phase 4 证明单 stdio MCP 无法满足 reload、多 Widget 隔离、并发、生命周期或安全要求
+- Reopen: Phase 5/7 证明单 stdio MCP 无法满足 Widget 多实例、并发、reload、生命周期或安全要求
 
 ## Context
 
@@ -26,3 +26,9 @@
 
 - Phase 0B spike 保持无网络、只读、无项目业务依赖。
 - 若 Phase 4 需要重开本决策，必须记录可重复失败证据和 daemon 的额外安全测试。
+
+## Phase 4 Topology Evidence
+
+Phase 4 的正式 product bundle 使用单 bundled stdio MCP 与进程内 session service，通过独立 task 隔离、same-task binding、remove/reinstall reload、clean-package startup 和 host binding Gate。Release bundle 不包含 network listener、固定端口、token 或第二业务进程，且两次构建 SHA-256 一致。当前没有引入 daemon 的证据门槛，故把 provisional default 确认为 Phase 4 已实施的拓扑。
+
+Phase 5 的多 Widget/rebind 与 Phase 7 的并发/恢复矩阵仍是重开点；若失败，必须先记录单进程可重复不足，再按本 ADR 的 loopback/token/TTL/parent-death 条件另行实现和测试。
