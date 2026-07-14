@@ -1,0 +1,11 @@
+{
+  "schema_version": "project-harness-config-v1",
+  "profile": "governed",
+  "project_name": "Agent Context Map",
+  "project_type": "Node.js/JavaScript",
+  "verification_commands": [
+    "npm run harness:check",
+    "npm run harness:budget",
+    "npm run build"
+  ]
+}

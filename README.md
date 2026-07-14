@@ -79,6 +79,16 @@ npm run build
 npm run preview
 ```
 
+项目协作 harness 验证：
+
+```bash
+npm run harness:check
+npm run harness:budget
+npm run harness:validate
+```
+
+`harness:validate` 会依次检查项目控制面结构、启动文档预算并执行生产构建。
+
 ## 目录结构
 
 ```text
@@ -97,6 +107,8 @@ src/
 src-tauri/             # Tauri 桌面壳（绿色版 exe）
 skills/
   acm-md/              # ACM-MD 生成 / 校验 Agent 技能（含协议规范与校验器）
+docs/                   # 被跟踪的计划 / 决策 / 优化 / 历史治理层
+scripts/                # 项目 harness 结构与启动文档预算检查
 ```
 
 ## 什么是 ACM-MD
