@@ -6,7 +6,7 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD：`28425f8` Phase 7 全部发布文本 LF 规范化；Phase 7 closeout 文档在当前工作区，待 scoped commit/push
+- 当前 HEAD：Phase 7 closeout 已推送；最新远端 HEAD replay run `29328130052` 五 job 全绿，具体提交以 `git log -1 --oneline` 实测
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
 - 当前 Phase：Phase 7 Completed；run `29327685652` 五 job 全绿，artifact `8308656602` 本机独立复核通过；Phase 8 Pending，等待真实 canary、marketplace、tag/Release/stable 独立授权
@@ -77,15 +77,15 @@
 
 ## Next
 
-1. 提交并推送 Phase 7 closeout 文档与最终证据。
-2. 等待用户独立批准 Phase 8 真实 Codex Desktop canary 与 repo-local/private marketplace 范围。
-3. 等待用户独立批准固定 tag/GitHub Release、先 canary 后 stable 的正式发布动作。
-4. 获批后执行真实多 task/多项目/冲突/升级回滚/卸载恢复验收，完成 runbook、handoff 与 plan 生命周期收尾。
+1. 等待用户独立批准 Phase 8 真实 Codex Desktop canary 与 repo-local/private marketplace 范围。
+2. 等待用户独立批准固定 tag/GitHub Release、先 canary 后 stable 的正式发布动作。
+3. 获批后执行真实多 task/多项目/冲突/升级回滚/卸载恢复验收，完成 runbook、handoff 与 plan 生命周期收尾。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-14 | Phase 7 closeout 已推送且最新 HEAD 复跑全绿 | commit ba9d1dc；run 29328130052 five jobs green |
 | 2026-07-14 | Phase 7 Completed | run 29327685652 five jobs green；artifact 8308656602；local download verify；canonical tree 2664e1... |
 | 2026-07-14 | Phase 7 第六轮拒绝 Windows fresh-checkout 元数据 CRLF | run 29327155930；macOS/Ubuntu/clean-room green；Windows tree 5fa654...；全部发布文本 LF 化 |
 | 2026-07-14 | Phase 7 第五轮全绿后补获跨平台字节差异 | run 29326418297 five jobs green；artifact 8308154998；CRLF/LF only；canonical tree 2664e1... |

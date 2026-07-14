@@ -50,7 +50,7 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：`28425f8`；Phase 7 closeout 文档与最终证据在当前工作区，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
+- HEAD：Phase 7 closeout 已推送；最新远端 HEAD replay run `29328130052` 五 job 全绿，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
 - push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
 - 当前计划状态：Phase 7 Completed；Phase 8 Pending / explicit user approval gate
 
@@ -93,6 +93,8 @@ git diff --check
 
 第七轮 run `29327685652` 的 Windows、macOS、Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿。artifact id `8308656602`、size `749113`、archive digest `sha256:2cc0e1889f8883ac168407b38541ddf8b875d09197aa295dfbb7fcd99f04a53c`、有效期至 2026-07-28；本机下载后 standalone verifier 再次确认 13 files / 12 checksum entries、tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`、checksum set `144a68a5b97b87c12177e32859f0715976b0d4bfcfea1853579d3f22089c7b13` 与 `SHA256SUMS` hash `5d8f0efd0d64f23182b018b37690786f0aeea9a1b2dc55d05219e24d1885b501` 全部闭合。Phase 7 Completed。
 
+Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `29328130052` 再次完成同一 Windows/macOS/Ubuntu、clean-room 与 downloaded artifact integrity 五 job，全绿。
+
 生命周期证据：临时安装旧 `0.2.0` fixture、升级到 `0.3.0-rc.1`、降级回滚、卸载并重装；每一步从安装目录启动 bundled MCP、验证 checksums，真实用户全局目录未触及，测试项目 `.acm` hash 和隔离用户状态保持不变。脱敏证据在 `plugins/agent-context-map/tests/evidence/phase7-release-candidate.json`。
 
 关键实现：
@@ -113,17 +115,16 @@ git diff --check
 
 ## Risks
 
-- Phase 7 已完成；closeout 文档与最终证据尚待 scoped commit/push。
-- push 已获当前任务明确授权，可用于本 branch 的 Phase 7 closeout。
+- Phase 7 已完成；closeout 文档与最终证据已 scoped commit/push，最新远端 HEAD workflow 全绿。
+- push 已获当前任务明确授权；当前 branch 已同步 origin。
 - Phase 8 的真实 Codex 安装、private/repo-local marketplace、tag、GitHub Release 和 stable 发布都没有被 Phase 7 本地 fixture 授权或执行。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 形成并推送 Phase 7 closeout 的 scoped local commit。
-2. 等待用户独立批准 Phase 8 真实 Codex Desktop canary 与 repo-local/private marketplace 范围。
-3. 等待用户独立批准固定 tag/GitHub Release、canary 与 stable 发布动作。
-4. 获批后完成真实多 task/多项目/冲突/升级回滚/卸载恢复验收、runbook 和 plan 生命周期收尾。
+1. 等待用户独立批准 Phase 8 真实 Codex Desktop canary 与 repo-local/private marketplace 范围。
+2. 等待用户独立批准固定 tag/GitHub Release、canary 与 stable 发布动作。
+3. 获批后完成真实多 task/多项目/冲突/升级回滚/卸载恢复验收、runbook 和 plan 生命周期收尾。
 
 ## History
 
