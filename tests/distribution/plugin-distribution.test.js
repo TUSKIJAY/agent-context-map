@@ -55,7 +55,8 @@ describe("Phase 4 clean plugin distribution", () => {
     const harness = createMcpHarness({ roots: [{ uri: pathToFileURL(workspace).href }], serverPath, cwd: releaseRoot });
     try {
       const initialized = await harness.initialize();
-      expect(initialized.result.serverInfo.name).toBe("agent-context-map");
+      const manifest = JSON.parse(await fs.readFile(path.join(releaseRoot, ".codex-plugin", "plugin.json"), "utf8"));
+      expect(initialized.result.serverInfo).toEqual({ name: "agent-context-map", version: manifest.version });
       const text = await fs.readFile("tests/fixtures/acm-v0.1/valid-basic.acm.md", "utf8");
       const validated = await harness.callTool("validate_acm_graph", { acmMdText: text }, trustedMeta(workspace, "clean-package"));
       expect(validated.result.structuredContent).toMatchObject({ ok: true, data: { valid: true } });
@@ -67,7 +68,7 @@ describe("Phase 4 clean plugin distribution", () => {
     const manifest = JSON.parse(await fs.readFile(path.join(releaseRoot, ".codex-plugin", "plugin.json"), "utf8"));
     const dependencies = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "dependencies.json"), "utf8"));
     const sbom = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "sbom.cdx.json"), "utf8"));
-    expect(manifest.version).toBe("0.3.0-rc.1");
+    expect(manifest.version).toBe("0.3.0-rc.2");
     expect(dependencies).toMatchObject({
       schemaVersion: "agent-context-map-plugin-dependencies/v1",
       pluginVersion: manifest.version,

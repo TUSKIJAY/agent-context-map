@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildWidget, widgetDist } from "../../scripts/build-widget.mjs";
+import { PLUGIN_VERSION } from "../../src/plugin-version.js";
 
 let html;
 
@@ -13,6 +14,7 @@ describe("Phase 5 Widget bundle policy", () => {
   test("emits one self-contained local-only HTML resource", async () => {
     expect(await fs.readdir(widgetDist)).toEqual(["widget.html"]);
     expect(html).toContain("ui/initialize");
+    expect(html).toContain(PLUGIN_VERSION);
     expect(html).toContain("tools/call");
     expect(html).toContain("data-acm-widget-state");
     expect(html).toContain("connect-src 'none'");

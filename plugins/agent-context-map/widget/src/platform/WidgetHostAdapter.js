@@ -1,3 +1,5 @@
+import { PLUGIN_VERSION } from "../../../src/plugin-version.js";
+
 const DEFAULT_TIMEOUT_MS = 8000;
 
 function asError(value, fallback) {
@@ -76,7 +78,7 @@ export class WidgetHostAdapter {
     this.currentWindow.addEventListener("message", this.onMessage);
     try {
       const initialized = await this.request("ui/initialize", {
-        appInfo: { name: "agent-context-map-widget", version: "0.2.0" },
+        appInfo: { name: "agent-context-map-widget", version: PLUGIN_VERSION },
         appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] },
         protocolVersion: "2025-11-21",
       }, Math.min(4000, this.timeoutMs));

@@ -2,7 +2,7 @@
 
 更新日期：2026-07-15
 
-当前焦点：Phase 7 已完成；Phase 8 首次 A1 创建失败已完成联网复盘与流程修复。下一闸门是完全重启 Codex Desktop 后，用公开 New task UI/deep link 验证 A1；不要推进 tag/GitHub Release/stable。
+当前焦点：Phase 8 的获准重启后 retry 已因 `0.3.0-rc.1` runtime 仍上报 `0.2.0` 而停止。修复候选 `0.3.0-rc.2` 已通过完整本地 Gate并形成 scoped local commit；下一闸门是 push 授权，真实宿主 retry 仍需后续独立授权。
 
 ## Resume Point
 
@@ -39,7 +39,7 @@
   - selected/related/execution context 分别执行精确选择、单层有向 allowlist 扩展和 Task-only 冲突门禁；send payload/digest 由 server 重建，并拒绝 stale task/instance/revision 与 prompt injection；
   - Widget 使用标准 `ui/message` 发送，兼容 fallback 只在标准能力不可用时启用；底部 safe action bar 明示 preview、二次确认和发送结果。
 - Phase 7 本地候选：
-  - 插件版本固定为 `0.3.0-rc.1`；`.nvmrc` 和 CI 固定 Node 24.12.0/npm 11.6.2，`package-lock.json` 是唯一安装输入；
+  - `0.3.0-rc.1` 保留为历史候选；运行时版本修复进入 `0.3.0-rc.2`；`.nvmrc` 和 CI 固定 Node 24.12.0/npm 11.6.2，`package-lock.json` 是唯一安装输入；
   - release 包含 `SHA256SUMS`、deterministic manifest、依赖清单、CycloneDX SBOM 和 CHANGELOG，13 个文件可脱离源码树启动；
   - `check-clean-room.mjs` 从不含 `.git`、`node_modules`、dist 与源码生成物的隔离副本执行 `npm ci`、全测、Vite build、固定包和两次可复现构建；
   - Windows 原生 Gate 覆盖 junction escape、独占 locked destination 和解锁后 replace；POSIX runner 覆盖 symlink 与 permission-denied；
@@ -50,14 +50,15 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：Phase 7 closeout 已推送；最新远端 HEAD replay run `29328130052` 五 job 全绿，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
+- HEAD：rc.2 runtime-version 修复已形成 scoped local commit；分支较 upstream ahead 2，接手时以 `git log -2 --oneline` 与 `git status --short --branch` 实测
 - push：当前任务未获新的 push 授权；自动 local commit 后保持本地 ahead，等待用户逐次确认
-- 当前计划状态：Phase 7 Completed；Phase 8 Active / remediation prepared / restart gate pending
+- 当前计划状态：rc.1 Phase 7 historical completion；rc.2 requalification；Phase 8 Active / Windows retry stopped
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
 - Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
 - Phase 8 根因：原 canary 在 CLI 安装后没有重启 Desktop，立即调用内部 `codex_app.create_thread`；官方流程要求重启后在新 task 测试，公开入口为 New task UI 或 `codex://new`。cache 文件锁与此执行顺序一致，但原始通用错误不足以证明插件源码缺陷。
 - Phase 8 修复：runbook/plan/evidence/index 已增加 restart hard gate，禁止内部 `create_thread`；用户 2026-07-15 只恢复一次修复后 A1 Gate，未重新授权 tag/GitHub Release/stable。
-- Phase 8 当前外部状态：固定 release tree 已复核；`agent-context-map-local` marketplace 已注册，`agent-context-map 0.3.0-rc.1` 已 installed/enabled；Desktop 尚未重启，禁止在当前旧进程创建 A1。
+- Phase 8 重启后结果：Desktop 已重启，`agent-context-map-local` 与 `0.3.0-rc.1` installed/enabled，插件 tools/health 可调用；health 返回 `ok=true`、runtime `version=0.2.0`，与 manifest `0.3.0-rc.1` 不一致。该 Windows retry 已失败，禁止自动再试。
+- rc.2 修复：新增 manifest 驱动的共享版本源，构建时注入 MCP/Widget；distribution lifecycle 启动实际 bundle 并核对 `serverInfo.version`，Widget bundle policy 核对 manifest 版本。`0.3.0-rc.2` 已通过本地 38 files / 105 tests、Vite、release candidate、双构建复现、安装生命周期和 clean-room；tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`，checksum set `d007e9b1ccebf83c038af843522f1c53592a32a696edc77eb37f58a1e0beae24`；尚未 push/跑跨平台 workflow/安装到真实 Codex。
 
 ## Phase 7 Local Candidate Verification
 
@@ -122,15 +123,15 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 
 - Phase 7 已完成；closeout 文档与最终证据已 scoped commit/push，最新远端 HEAD workflow 全绿。
 - Phase 7 closeout 的历史 push 已完成；当前修复任务没有新的 push 授权。
-- 当前 Codex Desktop 必须完全重启才能验证修复；在本会话内强制重启会终止当前恢复链，因此重启后的 A1 仍是外部 Gate。
+- Windows remediation retry 已失败并停止；再次真实安装/重启/A1 需要用户新授权，不能由本地测试替代。
 - repo marketplace 和 canary 安装曾成功；项目 `.acm` 未被首次失败修改。未创建任何 plugin tag/GitHub Release/stable。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 完全退出并重启 Codex Desktop，确认 marketplace 和 `agent-context-map 0.3.0-rc.1` installed/enabled。
-2. 按 `docs/runbooks/agent-context-map-plugin-release.md` 的 deep link/UI 路径创建 A1；只读验证 binding、get/validate 与 Widget ready，失败不自动扩大重试。
-3. A1 通过后才评估 A2/B1；tag/GitHub Release/stable 仍需当前任务新的明确授权。
+1. 用户若新授权 push，推送当前 ahead 2 分支并观察 `.github/workflows/plugin-release-candidate.yml` 的三平台、clean-room 与下载资产 Gate。
+2. rc.2 固定后仍需用户另行恢复 Windows retry，才能安装/重启并按公开 deep link/UI 创建 A1。
+3. tag/GitHub Release/stable 继续禁止。
 
 ## History
 

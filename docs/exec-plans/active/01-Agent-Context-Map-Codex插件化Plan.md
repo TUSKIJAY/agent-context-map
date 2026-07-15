@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / Phase 7 Completed / Phase 8 remediation prepared（等待 Desktop 重启后重跑 A1）
+> 状态：Active / Phase 7 rc.1 historical completion / rc.2 local Gate passed, remote pending / Phase 8 Windows retry stopped
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -105,6 +105,7 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 7 第五轮：run `29326418297` 的三平台、clean-room 与 downloaded artifact audit 全绿，下载资产完整可校验；补充逐文件比较发现 Windows checkout 的 4 个 skill 文本因 CRLF/LF 与 Ubuntu canonical tree hash 不同。当前发布 copy 规范化文本为 LF，并要求三平台和下载资产都命中固定 tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；第六轮通过前仍不标记 Phase 7 Completed。
 - Phase 7 第六轮：run `29327155930` 的 macOS、Ubuntu、clean-room 通过；Windows 全测、Vite 和候选构建通过，但 fresh checkout 的 `.mcp.json`、README、CHANGELOG 仍以 CRLF 原样复制，tree `5fa654a5f9e13ee527f09c257aa1872e22059fd17adc1d14fbaffb826451e181` 被固定 hash Gate 拒绝，download audit 按依赖跳过。当前全部直接复制发布文本统一 LF，并新增分发断言；第七轮完整通过前仍不标记 Phase 7 Completed。
 - Phase 7 第七轮 Completed：run `29327685652` 的 Windows、macOS、Ubuntu、clean-room 与 downloaded artifact integrity 五 job 全绿；artifact `8308656602` 由本机再次下载并独立验证 13 files / 12 checksum entries、版本与固定 tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e` 全部闭合。Phase 8 的真实 canary、marketplace、tag/Release/stable 尚未获独立授权。
+- 2026-07-15 Phase 8 重启后验证发现 `0.3.0-rc.1` manifest 对应的 MCP health 仍上报 `0.2.0`。`rc.1` 的 Phase 7 历史证据保留但不再作为可发布候选；版本真相修复进入不可变新候选 `0.3.0-rc.2`，本地 105 tests、Vite、release candidate、安装生命周期、复现与 clean-room 通过，tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`。rc.2 必须重新完成 Phase 7 跨平台/下载资产 Gate 后，且用户重新授权真实宿主 retry，才可回到 Phase 8。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1409,11 +1410,13 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：In Progress / restart gate — 2026-07-14 的固定候选、marketplace 注册与安装通过，但在同一未重启的 Desktop 会话中立即调用内部 `create_thread` 创建 A1，返回通用错误且未产生 task。用户于 2026-07-15 明确要求联网查因并修复；复盘确认官方流程要求 marketplace/插件安装后重启 Desktop 并在新 task 测试，且公开入口应为 New task UI 或 `codex://new` deep link。runbook 已修正，等待重启后的真实 A1 验证。当前请求不授权 tag/GitHub Release/stable。
+执行状态：Stopped / replacement candidate requalification — 2026-07-14 的固定候选、marketplace 注册与安装通过，但在同一未重启的 Desktop 会话中立即调用内部 `create_thread` 创建 A1，返回通用错误且未产生 task。用户于 2026-07-15 要求查因、修复并在重启后再试；重启后插件工具成功加载，但 `0.3.0-rc.1` manifest 对应的 MCP health 上报 `0.2.0`，证明运行时版本真相不一致。真实 Windows retry 已按停止规则终止。修复进入 `0.3.0-rc.2`，须先重跑 Phase 7，且未经用户新授权不得再次安装或进行真实宿主 retry；tag/GitHub Release/stable 均未获本轮授权。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 
 2026-07-15 scope change：用户明确要求查因并修复，恢复一次修复后 A1 创建 Gate。修复后的顺序固定为“安装 → 完全重启 Desktop → installed/enabled 复核 → New task UI/公开 deep link 创建 A1”；禁止继续使用内部 `codex_app.create_thread`。通过 A1 只恢复后续 canary 判断，不自动恢复 tag、GitHub Release 或 stable 发布权限。
+
+2026-07-15 retry result：Desktop 重启已完成，插件 tools/health 可调用；health 的 `version=0.2.0` 与安装 manifest `0.3.0-rc.1` 不一致。源码修复以 manifest 为唯一版本来源，并让实际 release bundle 的 `serverInfo.version` 与 Widget appInfo 接受自动断言。由于候选不可变，版本升为 `0.3.0-rc.2`；在 rc.2 完成 Phase 7 和用户重新授权之前，Phase 8 保持停止。
 
 输入：
 

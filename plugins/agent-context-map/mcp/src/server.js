@@ -9,9 +9,10 @@ import { BoundProjectService } from "./state/project-service.js";
 import { ContextStore } from "./state/context-store.js";
 import { ProposalStore } from "./state/proposal-store.js";
 import { SendService } from "./state/send-service.js";
+import { PLUGIN_VERSION } from "../../src/plugin-version.js";
 
 const SERVER_NAME = "agent-context-map";
-const SERVER_VERSION = "0.2.0";
+const SERVER_VERSION = PLUGIN_VERSION;
 const instanceId = randomUUID();
 const sessionService = new SessionService();
 const widgetLifecycle = new WidgetLifecycleService();

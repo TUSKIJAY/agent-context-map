@@ -25,46 +25,6 @@ async function filesUnder(root) {
   return files;
 }
 
-async function writeReleaseMetadata(root) {
-  const manifestPath = path.join(root, "dist", "manifest.json");
-  const checksumPath = path.join(root, "SHA256SUMS");
-  const files = [];
-  for (const file of await filesUnder(root)) {
-    if (file === manifestPath || file === checksumPath) continue;
-    const bytes = await fs.readFile(file);
-    files.push({
-      path: path.relative(root, file).replaceAll("\\", "/"),
-      bytes: bytes.length,
-      sha256: createHash("sha256").update(bytes).digest("hex"),
-    });
-  }
-  await fs.writeFile(manifestPath, `${JSON.stringify({ schemaVersion: "agent-context-map-plugin-release/v1", files }, null, 2)}\n`, "utf8");
-  const lines = [];
-  for (const file of await filesUnder(root)) {
-    if (file === checksumPath) continue;
-    const relative = path.relative(root, file).replaceAll("\\", "/");
-    lines.push(`${createHash("sha256").update(await fs.readFile(file)).digest("hex")}  ${relative}`);
-  }
-  await fs.writeFile(checksumPath, `${lines.join("\n")}\n`, "utf8");
-}
-
-async function makePreviousRelease(source, target) {
-  await fs.cp(source, target, { recursive: true });
-  const manifestPath = path.join(target, ".codex-plugin", "plugin.json");
-  const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
-  manifest.version = "0.2.0";
-  await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-  const dependenciesPath = path.join(target, "dist", "dependencies.json");
-  const dependencies = JSON.parse(await fs.readFile(dependenciesPath, "utf8"));
-  dependencies.pluginVersion = manifest.version;
-  await fs.writeFile(dependenciesPath, `${JSON.stringify(dependencies, null, 2)}\n`, "utf8");
-  const sbomPath = path.join(target, "dist", "sbom.cdx.json");
-  const sbom = JSON.parse(await fs.readFile(sbomPath, "utf8"));
-  sbom.metadata.component.version = manifest.version;
-  await fs.writeFile(sbomPath, `${JSON.stringify(sbom, null, 2)}\n`, "utf8");
-  await writeReleaseMetadata(target);
-}
-
 async function hashTree(root) {
   const hash = createHash("sha256");
   for (const file of await filesUnder(root)) {
@@ -136,7 +96,8 @@ async function assertInstalledRuns(installed, expectedVersion, scenario) {
     },
   });
   try {
-    await harness.initialize();
+    const initialized = await harness.initialize();
+    expect(initialized.result.serverInfo).toEqual({ name: "agent-context-map", version: expectedVersion });
     const text = await fs.readFile(path.join(scenario.project, ".acm", "documents", "acm_test_001.acm.md"), "utf8");
     const result = await harness.callTool("validate_acm_graph", { acmMdText: text }, trustedMeta(scenario.project, `install-${expectedVersion}`));
     expect(result.result.structuredContent).toMatchObject({ ok: true, data: { valid: true } });
@@ -151,7 +112,7 @@ beforeAll(async () => {
   previousRelease = path.join(suiteRoot, "previous");
   const built = await buildPluginRelease({ releaseRoot: currentRelease });
   currentVersion = built.pluginVersion;
-  await makePreviousRelease(currentRelease, previousRelease);
+  await buildPluginRelease({ releaseRoot: previousRelease, pluginVersion: "0.2.0" });
 }, 30_000);
 
 afterAll(async () => {

@@ -2,15 +2,16 @@
 
 ## 状态与授权
 
-- 状态：Remediation prepared / 等待 Codex Desktop 重启后重跑 A1 创建闸门。
+- 状态：Windows retry stopped / `0.3.0-rc.2` 本地 Gate 通过、远端矩阵待 push；未经用户新授权不得再次安装或重跑真实宿主。
 - 权威计划：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md` Phase 8。
-- 当前候选：`0.3.0-rc.1`；release tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`。
-- 当前固定候选来源：commit `28425f8`、workflow run `29327685652`、artifact `8308656602`。
+- 上一固定候选：`0.3.0-rc.1`；release tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；来源 commit `28425f8`、workflow run `29327685652`、artifact `8308656602`。
+- 修复候选：`0.3.0-rc.2`；本地 release tree SHA-256 `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`；跨平台 workflow 与真实宿主尚未获准执行。
 - 用户于 2026-07-14 已授权真实 Windows Codex Desktop canary、repo-local marketplace，以及 canary 通过后的固定 Git tag、GitHub Release 和 stable 发布；Windows 若再次失败立即停止，不再重试。
 - 本轮固定候选验证、marketplace 注册和 `0.3.0-rc.1` 安装通过；创建真实 Codex task A1 时 Codex app 返回失败，未产生 task。失败预算已消耗，未创建 A2/B1，未推进 canary/stable tag 或 Release。
 - 安全清理已移除 plugin 与 marketplace 配置项；版本化 cache 因 Windows `os error 32` 文件锁残留。按停止规则未重试清理，项目 `.acm` 未修改。
 - 用户于 2026-07-15 明确要求联网查因并修复，恢复一次“修复后 A1 创建”验证；该请求不自动授权 tag、GitHub Release 或 stable 发布。
-- 修复准备已重新校验固定 release tree，并重新注册 marketplace、安装并启用 `agent-context-map 0.3.0-rc.1`；当前停在 Desktop 完全重启硬闸门，尚未创建新的 A1。
+- Desktop 重启后插件工具成功加载，但 manifest/安装版本为 `0.3.0-rc.1` 时 MCP health 上报 `0.2.0`。这证明发布包运行时版本与 manifest 不一致，真实宿主 retry 失败并按停止规则终止。
+- 修复已把 manifest 设为 MCP/Widget 构建时唯一版本来源，并增加 packaged server 版本断言；为保持候选不可变，修复进入新候选 `0.3.0-rc.2`，不改写 `rc.1` 历史资产。
 - public plugin directory 不属于 v1；不得提交公开目录或引入远程业务 MCP。
 
 执行前必须在 Phase 8 证据中分别记录：
@@ -46,6 +47,8 @@
 - 重启后先确认插件为 installed/enabled，再创建 A1；任何 MCP/Widget 失败仍按真实 canary 失败处理。
 
 原始错误只有通用提示，不能证明某个插件源码缺陷；“缺少重启且使用内部入口”是由执行顺序、官方流程和 cache 文件锁共同支持的高置信操作根因。修复后的真实 A1 仍必须在重启后验证，不能用 mock/CLI 代替。
+
+重启后的复核补充了第二个、已由运行时证据证明的问题：Desktop 已加载插件工具，health 也返回 `ok=true`，但 `0.3.0-rc.1` manifest 对应的 MCP server 上报 `0.2.0`。MCP server 与 Widget 的版本原先分别写死，发布校验没有启动 bundle 并与 manifest 对照。修复后，构建脚本把 manifest 版本注入 MCP 和 Widget；分发测试会启动实际 bundle 并断言 `serverInfo.version === manifest.version`，Widget bundle policy 同样断言包含 manifest 版本。该修复只能进入新候选，且不恢复已耗尽的 Windows 重试授权。
 
 ## 固定分发拓扑
 
@@ -120,8 +123,8 @@ gh release list --limit 20
 ```powershell
 node plugins/agent-context-map/scripts/verify-release.mjs `
   dist/agent-context-map-plugin `
-  --expected-version 0.3.0-rc.1 `
-  --expected-tree-sha256 2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e
+  --expected-version 0.3.0-rc.2 `
+  --expected-tree-sha256 828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441
 ```
 
 必须得到 13 files、12 checksum entries。失败即停止，不得安装。
@@ -131,7 +134,7 @@ node plugins/agent-context-map/scripts/verify-release.mjs `
 仅在用户批准后执行：
 
 1. 创建脱敏配置备份和测试项目 hash 清单；不得复制 auth token 到仓库。
-2. 创建获批的 repo marketplace 文件，通过 CLI 或插件目录安装 `agent-context-map 0.3.0-rc.1`，记录实际 cache 版本目录。
+2. 创建获批的 repo marketplace 文件，通过 CLI 或插件目录安装 `agent-context-map 0.3.0-rc.2`，记录实际 cache 版本目录。
 3. 完全退出并重启 Codex Desktop；重启后确认 marketplace 可见且插件为 installed/enabled。此闸门未完成时禁止创建 A1。
 4. 通过 New task UI 或公开 deep link 新建 A1、A2、B1；不得调用内部 `codex_app.create_thread`。A1/A2 绑定项目 A，B1 绑定项目 B；验证 session 隔离、project fingerprint 和 active document。
 5. 重载 A1，再新建 A3；旧 Widget instance 必须 superseded，不能 ready/commit/send。
@@ -185,10 +188,10 @@ layout-only 也不得后台 rebase。用户必须看到基于 currentRevision �
 
 ### Canary
 
-- tag：`plugin-v0.3.0-rc.1`；
+- tag：`plugin-v0.3.0-rc.2`；
 - tag 指向产生已验证固定资产的 commit；
 - GitHub Release 标记 prerelease；
-- 上传 `agent-context-map-plugin-0.3.0-rc.1.zip`、外层 `.sha256`、SBOM/依赖清单；
+- 上传 `agent-context-map-plugin-0.3.0-rc.2.zip`、外层 `.sha256`、SBOM/依赖清单；
 - 下载 Release 资产并重复 standalone verification，不能只验证 Actions 临时 artifact。
 
 ### Stable
@@ -198,7 +201,7 @@ layout-only 也不得后台 rebase。用户必须看到基于 currentRevision �
 - 通过真实升级/回滚/卸载恢复后创建 `plugin-v0.3.0`；
 - GitHub Release 不指向 `main`/`latest` 浮动来源；
 - repo marketplace 只安装已验证的 `0.3.0` 解压目录；
-- 至少保留 `0.3.0-rc.1` 作为前一个可回滚资产。
+- 至少保留已重新完成 Phase 7/8 Gate 的 `0.3.0-rc.2` 作为前一个可回滚资产；`rc.1` 仅作失败证据，不得作为 stable 回滚目标。
 
 ## 完成判定
 

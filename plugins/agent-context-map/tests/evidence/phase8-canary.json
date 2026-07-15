@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "remediation_prepared_restart_required",
+  "status": "windows_failed_stop_no_retry_rc2_local_candidate",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -12,6 +12,9 @@
   "windowsPolicy": {
     "failureBudget": 1,
     "failuresAfterDirective": 1,
+    "remediationRetryAuthorizedAt": "2026-07-15",
+    "remediationRetryFailures": 1,
+    "furtherRetriesAuthorized": false,
     "onNextFailure": "stop_without_retry",
     "docsOnlyPushesSkipCi": true
   },
@@ -35,7 +38,7 @@
   },
   "gates": {
     "fixedAsset": "passed",
-    "windowsCodexCanary": "failed_at_create_real_task_a1",
+    "windowsCodexCanary": "failed_runtime_version_mismatch_after_restart",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -100,8 +103,29 @@
     "marketplaceRegistered": true,
     "pluginInstalledEnabled": true,
     "installedVersion": "0.3.0-rc.1",
-    "desktopRestartCompleted": false,
-    "validation": "pending_post_restart_real_task_a1"
+    "desktopRestartCompleted": true,
+    "validation": "failed_runtime_version_mismatch",
+    "postRestartValidation": {
+      "pluginToolsLoaded": true,
+      "healthOk": true,
+      "manifestVersion": "0.3.0-rc.1",
+      "reportedRuntimeVersion": "0.2.0",
+      "finding": "MCP and Widget runtime versions were hard-coded independently from the plugin manifest.",
+      "fixtureLayoutCorrected": ".acm/documents/*.acm.md"
+    }
+  },
+  "replacementCandidate": {
+    "version": "0.3.0-rc.2",
+    "status": "local_qualification_passed_remote_and_host_pending",
+    "treeSha256": "828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441",
+    "checksumSetDigest": "d007e9b1ccebf83c038af843522f1c53592a32a696edc77eb37f58a1e0beae24",
+    "sha256SumsFileSha256": "aadc600f120434f62223250467b36aa13ccdb233e9fa6a82717e963110d65f1d",
+    "runtimeVersionSource": "plugin_manifest_build_time",
+    "packagedRuntimeVersionAssertion": true,
+    "localQualification": "105_tests_vite_release_candidate_clean_room_passed",
+    "localScopedCommit": "created",
+    "crossPlatformWorkflow": "pending_push_authorization",
+    "realCodexHostRetry": "not_authorized"
   },
   "projectDataModified": false,
   "rawTaskIdsRetained": false,

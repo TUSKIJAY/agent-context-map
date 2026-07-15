@@ -34,7 +34,7 @@ function widgetHtml(css, javascript) {
 </html>`;
 }
 
-export async function buildWidget({ outputRoot = widgetDist } = {}) {
+export async function buildWidget({ outputRoot = widgetDist, pluginVersion } = {}) {
   const resolvedOutput = path.resolve(outputRoot);
   if (resolvedOutput === path.parse(resolvedOutput).root) throw new Error("Refusing to use a filesystem root as Widget output");
   await fs.rm(resolvedOutput, { recursive: true, force: true });
@@ -44,7 +44,10 @@ export async function buildWidget({ outputRoot = widgetDist } = {}) {
     plugins: [react()],
     logLevel: "silent",
     esbuild: { jsxDev: false },
-    define: { "process.env.NODE_ENV": JSON.stringify("production") },
+    define: {
+      "process.env.NODE_ENV": JSON.stringify("production"),
+      ...(pluginVersion ? { "globalThis.__ACM_PLUGIN_VERSION__": JSON.stringify(pluginVersion) } : {}),
+    },
     resolve: { dedupe: ["react", "react-dom"] },
     build: {
       target: "es2022",

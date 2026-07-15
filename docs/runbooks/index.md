@@ -4,4 +4,4 @@
 
 | Runbook | Status | Scope |
 | --- | --- | --- |
-| [Agent Context Map 插件 Phase 8 canary、发布与回滚](agent-context-map-plugin-release.md) | Remediation prepared / restart gate pending | 真实 Codex Desktop、repo marketplace、公开 New task/deep link、固定 Release、canary/stable、回滚与恢复 |
+| [Agent Context Map 插件 Phase 8 canary、发布与回滚](agent-context-map-plugin-release.md) | Windows retry stopped / rc.2 local Gate passed | 真实 Codex Desktop、repo marketplace、公开 New task/deep link、固定 Release、canary/stable、回滚与恢复 |

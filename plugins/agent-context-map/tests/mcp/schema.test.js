@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { afterEach, describe, expect, test } from "vitest";
 import { MCP_TOOLS } from "../../mcp/src/tools/registry.js";
+import { PLUGIN_VERSION } from "../../src/plugin-version.js";
 import { createMcpHarness } from "../helpers/mcp-harness.js";
 
 const children = new Set();
@@ -10,12 +11,16 @@ afterEach(async () => {
 });
 
 describe("Phase 6 MCP schema", () => {
-  test("uses a strict plugin manifest and companion MCP config without a marketplace", async () => {
+  test("uses a strict plugin manifest, companion MCP config, and approved repo marketplace", async () => {
     const manifest = JSON.parse(await fs.readFile("plugins/agent-context-map/.codex-plugin/plugin.json", "utf8"));
     const mcp = JSON.parse(await fs.readFile("plugins/agent-context-map/.mcp.json", "utf8"));
-    expect(manifest).toMatchObject({ id: "agent-context-map", name: "agent-context-map", version: "0.3.0-rc.1", skills: "./skills/", mcpServers: "./.mcp.json" });
+    const marketplace = JSON.parse(await fs.readFile(".agents/plugins/marketplace.json", "utf8"));
+    expect(manifest).toMatchObject({ id: "agent-context-map", name: "agent-context-map", version: PLUGIN_VERSION, skills: "./skills/", mcpServers: "./.mcp.json" });
     expect(mcp.mcpServers.agent_context_map).toMatchObject({ command: "node", args: ["./mcp/server.mjs"], cwd: "." });
-    await expect(fs.access(".agents/plugins/marketplace.json")).rejects.toMatchObject({ code: "ENOENT" });
+    expect(marketplace).toMatchObject({
+      name: "agent-context-map-local",
+      plugins: [{ name: "agent-context-map", source: { source: "local", path: "./dist/agent-context-map-plugin" } }],
+    });
   });
 
   test("publishes strict input/output schemas and truthful read-only annotations", () => {
@@ -38,7 +43,7 @@ describe("Phase 6 MCP schema", () => {
   test("advertises tools and resources over the initialized stdio protocol", async () => {
     const harness = createMcpHarness(); children.add(harness);
     const initialized = await harness.initialize();
-    expect(initialized.result.serverInfo).toEqual({ name: "agent-context-map", version: "0.2.0" });
+    expect(initialized.result.serverInfo).toEqual({ name: "agent-context-map", version: PLUGIN_VERSION });
     expect(initialized.result.capabilities).toHaveProperty("resources");
     const tools = await harness.request("tools/list");
     expect(tools.result.tools).toEqual(MCP_TOOLS);

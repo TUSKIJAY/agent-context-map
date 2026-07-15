@@ -16,13 +16,16 @@ const sourceSkill = path.join(workspaceRoot, "skills", "acm-md");
 const packageLockPath = path.join(workspaceRoot, "package-lock.json");
 const releaseNodeVersion = "24.12.0";
 
-async function bundleServer(targetRoot, widgetHtml) {
+async function bundleServer(targetRoot, widgetHtml, pluginVersion) {
   const mcpDirectory = path.join(targetRoot, "mcp");
   await fs.mkdir(mcpDirectory, { recursive: true });
   await build({
     configFile: false,
     logLevel: "silent",
-    define: { "globalThis.__ACM_WIDGET_HTML__": JSON.stringify(widgetHtml) },
+    define: {
+      "globalThis.__ACM_WIDGET_HTML__": JSON.stringify(widgetHtml),
+      "globalThis.__ACM_PLUGIN_VERSION__": JSON.stringify(pluginVersion),
+    },
     build: {
       target: "node20",
       emptyOutDir: false,
@@ -58,7 +61,7 @@ async function copySkill(targetRoot) {
 
 async function copyPluginMetadata(targetRoot, pluginVersion) {
   await fs.mkdir(path.join(targetRoot, ".codex-plugin"), { recursive: true });
-  const sourceManifest = JSON.parse(await fs.readFile(path.join(pluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
+  const sourceManifest = await readSourcePluginManifest();
   const manifest = { ...sourceManifest, version: pluginVersion ?? sourceManifest.version };
   await fs.writeFile(path.join(targetRoot, ".codex-plugin", "plugin.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   for (const relative of [".mcp.json", "README.md", "CHANGELOG.md"]) {
@@ -66,6 +69,10 @@ async function copyPluginMetadata(targetRoot, pluginVersion) {
     await fs.writeFile(path.join(targetRoot, relative), text.replace(/\r\n?/gu, "\n"), "utf8");
   }
   return manifest;
+}
+
+async function readSourcePluginManifest() {
+  return JSON.parse(await fs.readFile(path.join(pluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
 }
 
 async function filesUnder(root) {
@@ -161,14 +168,17 @@ export async function buildMcp({ releaseRoot = defaultReleaseRoot, writeDevelopm
   }
   const resolvedRelease = path.resolve(releaseRoot);
   if (resolvedRelease === path.parse(resolvedRelease).root) throw new Error("Refusing to use a filesystem root as release output");
-  const widget = await buildWidget(writeDevelopmentBundle ? {} : { outputRoot: path.join(resolvedRelease, ".widget-build") });
+  const sourceManifest = await readSourcePluginManifest();
+  const resolvedPluginVersion = pluginVersion ?? sourceManifest.version;
+  const widgetOptions = writeDevelopmentBundle ? {} : { outputRoot: path.join(resolvedRelease, ".widget-build") };
+  const widget = await buildWidget({ ...widgetOptions, pluginVersion: resolvedPluginVersion });
   if (writeDevelopmentBundle) {
-    await bundleServer(pluginRoot, widget.html);
+    await bundleServer(pluginRoot, widget.html, resolvedPluginVersion);
     await copySkill(pluginRoot);
   }
   await fs.rm(resolvedRelease, { recursive: true, force: true });
-  const manifestMetadata = await copyPluginMetadata(resolvedRelease, pluginVersion);
-  await bundleServer(resolvedRelease, widget.html);
+  const manifestMetadata = await copyPluginMetadata(resolvedRelease, resolvedPluginVersion);
+  await bundleServer(resolvedRelease, widget.html, resolvedPluginVersion);
   await copySkill(resolvedRelease);
   await writeDependencyArtifacts(resolvedRelease, manifestMetadata.version);
   const manifest = await writeReleaseManifest(resolvedRelease);
