@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / rc.3 Phase 7 passed + installed / Desktop restart pending / Phase 8 host verification pending
+> 状态：Active / rc.3 Phase 7 passed + installed + restarted / Phase 8 stopped at Widget ready
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -106,6 +106,7 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 7 第六轮：run `29327155930` 的 macOS、Ubuntu、clean-room 通过；Windows 全测、Vite 和候选构建通过，但 fresh checkout 的 `.mcp.json`、README、CHANGELOG 仍以 CRLF 原样复制，tree `5fa654a5f9e13ee527f09c257aa1872e22059fd17adc1d14fbaffb826451e181` 被固定 hash Gate 拒绝，download audit 按依赖跳过。当前全部直接复制发布文本统一 LF，并新增分发断言；第七轮完整通过前仍不标记 Phase 7 Completed。
 - Phase 7 第七轮 Completed：run `29327685652` 的 Windows、macOS、Ubuntu、clean-room 与 downloaded artifact integrity 五 job 全绿；artifact `8308656602` 由本机再次下载并独立验证 13 files / 12 checksum entries、版本与固定 tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e` 全部闭合。Phase 8 的真实 canary、marketplace、tag/Release/stable 尚未获独立授权。
 - 2026-07-15 Phase 8 重启后验证发现 `0.3.0-rc.1` manifest 对应的 MCP health 仍上报 `0.2.0`。`rc.1` 的 Phase 7 历史证据保留但不再作为可发布候选；版本真相修复进入不可变新候选 `0.3.0-rc.2`，本地 105 tests、Vite、release candidate、安装生命周期、复现与 clean-room 通过，tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`。rc.2 必须重新完成 Phase 7 跨平台/下载资产 Gate 后，且用户重新授权真实宿主 retry，才可回到 Phase 8。
+- 2026-07-15 rc.3 新 task A1：完全重启后的 runtime health 精确为 `0.3.0-rc.3`；open/get/validate 绑定同一 project/session/revision，读取 2 nodes / 1 edge且 strict valid、无 diagnostics。唯一新 openAttempt 的 await-ready 仍返回 `ready=false`，无 widget instance/state/transitions，故 React mounted、project hydrated、canvas first frame 均未获证。只调用五个只读工具，fixture hash 前后一致并已删除；按本次授权停止，不重试、不推进写工具或发布。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1410,7 +1411,7 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Stopped / Widget not ready — `0.3.0-rc.2` 已通过 run `29380789287` 的五项 Gate并安装。用户授权的 strict-valid repo-root A1 task `019f63a0-518b-7cd0-b147-fd349209cb0d` 已通过 health/open/get/validate：host project/session/revision 一致，读取 2 nodes / 1 edge，validation valid 且无 diagnostics；但 await-ready 返回 `ready=false`，无 widget instance/state/transitions。底层 session 只执行 health/open/get/validate/await-ready 五个只读 MCP 调用，fixture hash 前后一致并已删除。按 Windows 停止规则不自动重跑；tag/GitHub Release/stable 不推进。
+执行状态：Stopped / rc.3 Widget not ready — `0.3.0-rc.3` 已通过 run `29385355303` 五项 Gate、安装并完全重启。用户授权的独立新 task A1 `019f63bf-8462-76f1-8042-6c85b8fcd76a` 已通过 health/open/get/validate：runtime 版本精确匹配，host project/session/revision 一致，读取 2 nodes / 1 edge，validation valid 且无 diagnostics；但 await-ready 返回 `ready=false`，无 widget instance/state/transitions，React mounted、project hydrated 与 canvas first frame 均无证据。底层 session 只执行 health/open/get/validate/await-ready 五个只读 MCP 调用，fixture hash 前后一致并已删除。按 Windows 停止规则不自动重跑；write/import/commit/send、push/tag/GitHub Release/stable 均不推进。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 
@@ -1423,6 +1424,8 @@ Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停
 2026-07-15 Widget bridge investigation/fix：用户已另行授权调查和修复。官方当前 MCP Apps bridge 使用 `protocolVersion=2026-01-26`，并把 `ui/notifications/tool-result` 的 canonical tool result 直接置于 `params`；ChatGPT compatibility global 也保留包含 hidden `_meta` 的 canonical `toolResponseMetadata` envelope。rc.2 分别使用 `2025-11-21`、只消费 `params.result`、且不能正确还原 canonical compatibility envelope，导致 Widget 可能在 bootstrap 前失败或无法 hydrate。修复升为 immutable `0.3.0-rc.3`，保留旧 shape fallback；本地 39 files / 113 tests、Vite、固定候选、安装生命周期、reproducibility、clean-room 与 harness 通过，tree `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`。该结果只恢复 rc.3 Phase 7 remote Gate；CI 全绿、安装、完整重启和新 task A1 之前，Phase 8 仍为 Stopped / host verification pending。
 
 2026-07-15 rc.3 remote/install result：用户明确授权 push、等待跨平台 CI 全绿、安装/重启 rc.3 并在独立新 task 执行 A1。commit `520b258` 对应 run `29385355303` 的 Windows/macOS/Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿；artifact `8331247906` 下载后独立 verifier 命中固定 tree/checksum，CLI 已安装 `0.3.0-rc.3` 且 installed/enabled。当前硬闸门是完全退出并重启 Desktop；重启前不得把当前 task 的旧 MCP/iframe 视为 rc.3 证据。
+
+2026-07-15 rc.3 A1 result：Desktop 完全重启后的新 task health 精确为 `0.3.0-rc.3`。openAttempt `c002c246-4569-4f9c-a290-8175bad46078` 的 open/get/validate 全过，但 ready 等待无 Widget instance/state/transitions；fixture SHA-256 前后均为 `6AC138E4E58CE7AA612C9E05D4EE60413588A4CB4A9AABA2B215302D27B6A007` 并已删除。该失败消耗本次 A1 授权；后续调查、retry 或发布必须等待用户另行授权。
 
 输入：
 
@@ -1688,4 +1691,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。Phase 7 已由第七轮跨平台 canonical tree Gate 与本机下载复核完成；当前下一闸门是用户独立批准 Phase 8 的真实 canary、repo-local/private marketplace、固定 tag/GitHub Release 和 stable 发布范围。
+本 Plan 已通过 review-002 并由用户明确激活。rc.3 Phase 7、安装与重启已完成，但真实新 task A1 仍在 Widget ready Gate 失败并停止；当前下一闸门是用户决定是否另行授权 host lifecycle 调查或新的 retry，固定 tag/GitHub Release/stable 均不推进。

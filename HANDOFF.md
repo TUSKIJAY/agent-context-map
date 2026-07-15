@@ -2,7 +2,7 @@
 
 更新日期：2026-07-15
 
-当前焦点：rc.3 Widget bridge 修复 commit `520b258` 已推送，run `29385355303` 五项 Gate 全绿，CI artifact 已下载复核并 installed/enabled。下一闸门是完全重启 Desktop；随后通过公开 deep link 新建独立 strict-valid Windows A1，用户检查并发送预填 prompt 后执行 read/ready Gate。
+当前焦点：rc.3 已完成跨平台 Gate、安装和完全重启；独立新 task A1 的 health/open/get/validate 通过，但原生 Widget 未创建 instance/state/transitions，ready Gate 失败。已按 stop-without-retry 复核并删除 fixture；等待用户决定是否另行授权调查，不推进任何写工具或发布动作。
 
 ## Resume Point
 
@@ -52,7 +52,7 @@
 - upstream：`origin/codex/acm-pluginization-plan`
 - 分支：rc.3 Widget bridge 修复与此前四个 Phase 8 commit 已推送到 `520b258`；安装后状态文档将产生本地 scoped commit，接手时仍以 `git log -6 --oneline` 与 `git status --short --branch` 实测
 - push：用户已授权并完成 `cae841b..520b258`；后续状态-only commit 的 push 仍需单独授权
-- 当前计划状态：rc.3 Phase 7 Completed / installed awaiting Desktop restart；Phase 8 rc.3 host verification pending
+- 当前计划状态：rc.3 Phase 7 Completed / installed / Desktop restarted；Phase 8 A1 stopped at Widget ready，host lifecycle unresolved
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
 - Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
 - Phase 8 根因：原 canary 在 CLI 安装后没有重启 Desktop，立即调用内部 `codex_app.create_thread`；官方流程要求重启后在新 task 测试，公开入口为 New task UI 或 `codex://new`。cache 文件锁与此执行顺序一致，但原始通用错误不足以证明插件源码缺陷。
@@ -67,8 +67,8 @@
 - strict-valid A1：用户授权后，新 fixture 经全局/repo strict validator 与 preflight 通过。task `019f63a0-518b-7cd0-b147-fd349209cb0d` 的 health=`0.3.0-rc.2`；open 绑定 project `project_95893f3dc1b23e238ad1fb51`、plugin session `2048e51f-4779-4c88-8b66-a7df8291a9d1`、revision `sha256:c02d9e...f5d30`；get 返回 2 nodes / 1 edge；validate `valid=true`、无 diagnostics。openAttempt `640e3e1b-0be1-4001-b34d-837c5b7a8b89` 的 await-ready 返回 `ready=false`，无 widgetInstanceId/widgetState/transitions（correlation `ba94f8f7-4ce9-4d79-8988-8768f24e38c8`），故停止。底层 rollout 仅有 health/open/get/validate/await-ready 五个只读 MCP 调用；fixture hash 前后均为 `652874...D35` 并已删除。
 - Widget bridge 根因：官方当前示例以 MCP Apps `2026-01-26` 初始化，tool-result canonical envelope 直接放在 notification `params`，2026-05-27 起 `window.openai.toolResponseMetadata` 也保留包含隐藏 `_meta` 的完整 result。rc.2 仍发 `2025-11-21`、只接收 `params.result`，并把 canonical compatibility envelope 误嵌进 `_meta`；因此 Widget 可在调用 bootstrap 前握手失败，或握手后因拿不到 hidden snapshot/nonce 而无法 hydrate。后端日志不含 iframe console，故无法从旧 task 区分这两个前端早期失败分支。
 - rc.3 修复：`WidgetHostAdapter` 使用 `2026-01-26`、标准 direct `params` result、canonical compatibility envelope，同时保留 legacy nested result/metadata。候选版本 `0.3.0-rc.3`；39 files / 113 tests（1 Windows platform skip）、Vite 317 modules、release candidate、isolated install/update/rollback/uninstall/reinstall、reproducibility、clean-room、harness 均通过；tree `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`，checksum set `504c742efb271c5b40bbed43bde056663eb01dd49b43e14d2cdcc2036c67d99c`。
-- rc.3 remote/install：commit `520b258c964476aef5ad4a463f334dd5c8b71e49` 对应 run `29385355303`，Windows/macOS/Ubuntu、clean-room 与 downloaded artifact integrity 五 job 全绿。artifact `8331247906`，size `749432`，archive digest `sha256:de488c8b0c94a89dbe0b031dc6812df4eb279c9c72f33ba103e6c0aa8a7acb95`；下载后 verifier 再次确认 tree/checksum。CLI 安装返回 cache `C:\Users\LENOVO\.codex\plugins\cache\agent-context-map-local\agent-context-map\0.3.0-rc.3`，list 显示 installed/enabled；尚未重启，当前 task 的 MCP 不构成 rc.3 runtime 证据。
-- 新 A1 fixture：`D:\Code\agent-context-map\.acm\documents\acm_phase8_canary_a.acm.md`，untracked，SHA-256 `6AC138E4E58CE7AA612C9E05D4EE60413588A4CB4A9AABA2B215302D27B6A007`；全局 validator 与 `check:phase8-host-workspace` 均通过（Git top-level / strict ACM-MD / doc_id）。新 task 只读 Gate 后比较 hash 并删除，不得提交。
+- rc.3 remote/install：commit `520b258c964476aef5ad4a463f334dd5c8b71e49` 对应 run `29385355303`，Windows/macOS/Ubuntu、clean-room 与 downloaded artifact integrity 五 job 全绿。artifact `8331247906`，size `749432`，archive digest `sha256:de488c8b0c94a89dbe0b031dc6812df4eb279c9c72f33ba103e6c0aa8a7acb95`；下载后 verifier 再次确认 tree/checksum。CLI 安装返回 cache `C:\Users\LENOVO\.codex\plugins\cache\agent-context-map-local\agent-context-map\0.3.0-rc.3`，list 显示 installed/enabled；Desktop 已完全重启，当前新 task health 精确证明 runtime `0.3.0-rc.3`。
+- rc.3 新 task A1：task `019f63bf-8462-76f1-8042-6c85b8fcd76a`，health instance `b80c4ce1-5296-41f3-95af-7db45da10dbf`；open/get/validate 绑定 project `project_95893f3dc1b23e238ad1fb51`、session `98336411-e8b3-4dec-b15d-61a76123cbc7`、revision `sha256:5bc2cca5f2576ec5026f4acf22e904e37d9b922b5ec0f92fc6216ede36d6016a`，读取 2 nodes / 1 edge，validation valid/no diagnostics。openAttempt `c002c246-4569-4f9c-a290-8175bad46078` 的 await-ready 返回 false，widgetInstanceId/widgetState 均为空且 transitions 为空，因此 React mounted、project hydrated、canvas first frame 均未获证。仅调用 health/open/get/validate/await-ready；未调用 write/import/commit/send；fixture 前后 SHA-256 均为 `6AC138E4E58CE7AA612C9E05D4EE60413588A4CB4A9AABA2B215302D27B6A007` 并已删除。
 
 ## Phase 7 Local Candidate Verification
 
@@ -132,15 +132,14 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 ## Risks
 
 - rc.3 Phase 7 已由 run `29385355303` 五项 Gate 与本机下载复核完成；后续状态文档 push 仍按逐次授权处理。
-- rc.2 strict-valid Windows A1 已失败；rc.3 虽已跨平台全绿并安装，完全重启前仍不能宣称宿主已加载新 Widget。
+- rc.2 strict-valid Windows A1 已失败；rc.3 已跨平台全绿、安装并重启，health/read chain 通过，但 Widget instance/transitions 仍未出现，不能宣称原生 Widget 生命周期闭环。
 - repo marketplace 和 canary 安装曾成功；项目 `.acm` 未被首次失败修改。未创建任何 plugin tag/GitHub Release/stable。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 完全退出并重启 Desktop；重启后用 CLI installed/enabled 与新 task health 精确确认 `0.3.0-rc.3`。
-2. 公开 `codex://new` deep link 只预填新 task；Computer Use 规则禁止 Agent 操作 Codex composer，用户需检查并发送一次。
-3. 新 task 只执行 strict-valid Windows A1 read/ready Gate；tag/GitHub Release/stable 继续禁止。
+1. 等待用户决定是否另行授权调查真实 Codex Desktop 未创建 Widget instance/transitions 的宿主生命周期问题。
+2. 未获新授权前不得重试当前或新 openAttempt，不得调用 write/import/commit/send，也不得 push、tag、GitHub Release 或 stable。
 
 ## History
 

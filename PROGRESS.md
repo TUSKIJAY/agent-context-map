@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前分支：`520b258` 已推送；相对 upstream clean，rc.3 安装后状态文档将在本轮 scoped commit
+- 当前分支：`520b258` 已推送；本地另有未推送的 rc.3 安装状态 commit `41fff9d`，A1 结果由本轮 scoped commit 闭环
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：`0.3.0-rc.3` 已完成本地与 run `29385355303` 五项远端 Gate，CI artifact 已验证并 installed/enabled；等待完全重启 Desktop 后在独立新 task 复核真实 Widget ready
+- 当前 Phase：`0.3.0-rc.3` 已完成 Phase 7、安装和完全重启；独立新 task A1 的 health/open/get/validate 通过，但原生 Widget 未产生 instance/state/transitions，Phase 8 在 Widget ready Gate 失败并停止，不再自动重试
 
 ## Navigation
 
@@ -39,14 +39,15 @@
 - task `019f63a0-518b-7cd0-b147-fd349209cb0d` 中 health/open/get/validate 全部通过：绑定 `project_95893f3dc1b23e238ad1fb51`，revision `sha256:c02d9e...f5d30`，读取 2 nodes / 1 edge，strict validation `valid=true` 且无 diagnostics。最后 `await_agent_context_map_ready` 返回 `ready=false`、无 widget instance/state/transitions，故在 Widget ready Gate 失败并停止；只调用 5 个只读工具，fixture 前后 hash 均为 `652874...D35`，现已删除。
 - 用户已授权调查/fix Widget host binding/lifecycle。官方当前 MCP Apps 示例使用 `protocolVersion=2026-01-26`，且 `ui/notifications/tool-result` 的 canonical result 直接位于 `params`；rc.2 Widget 分别使用旧版本 `2025-11-21` 和非标准 `params.result`，兼容全局也未读取 2026-05-27 起的 canonical `toolResponseMetadata._meta` envelope。这三个协议漂移足以解释 Widget 在 bootstrap 前失败或无法 hydrate，而服务端只看到零 instance/transitions。
 - 修复已进入不可变本地候选 `0.3.0-rc.3`：标准协议与 canonical result 对齐，同时保留 legacy nested notification 与旧 compatibility metadata；39 files / 113 tests（1 platform skip）、Vite、release candidate、安装生命周期、reproducibility、clean-room 与 harness 全部通过。release tree `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`。
-- 用户授权 push、等待跨平台 CI 全绿、安装/重启 rc.3，并在新 task 执行真实 Windows A1。commit `520b258` 已推送；run `29385355303` 的 Windows/macOS/Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿。artifact `8331247906`（archive digest `sha256:de488c...acb95`）下载后再次命中 13 files / 12 checksums 与固定 tree；`codex plugin add` 已升级到 `0.3.0-rc.3` installed/enabled，完全重启尚待执行。
-- 新 A1 临时 fixture `.acm/documents/acm_phase8_canary_a.acm.md` 已通过全局 validator、repo strict preflight、Git top-level 与 doc_id 检查，SHA-256 `6AC138E4...6A007`；保持 untracked，只用于本次 read/ready Gate，结束后必须复核 hash 并删除。
+- 用户授权 push、等待跨平台 CI 全绿、安装/重启 rc.3，并在新 task 执行真实 Windows A1。commit `520b258` 已推送；run `29385355303` 的 Windows/macOS/Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿。artifact `8331247906`（archive digest `sha256:de488c...acb95`）下载后再次命中 13 files / 12 checksums 与固定 tree；`codex plugin add` 已升级到 `0.3.0-rc.3` installed/enabled，Desktop 已完全重启。
+- 新 A1 task `019f63bf-8462-76f1-8042-6c85b8fcd76a` 中 health 精确返回 `0.3.0-rc.3`；open/get/validate 绑定 project `project_95893f3dc1b23e238ad1fb51`、session `98336411-e8b3-4dec-b15d-61a76123cbc7`、revision `sha256:5bc2cca5...6016a`，读取 2 nodes / 1 edge，strict validation `valid=true` 且无 diagnostics。openAttempt `c002c246-4569-4f9c-a290-8175bad46078` 的 ready 等待返回 `ready=false`、无 widget instance/state/transitions，因此 React mounted、project hydrated、canvas first frame 均未获证；只调用五个只读工具，fixture 前后 SHA-256 均为 `6AC138...6A007` 并已删除。
 
 ## Blocked
 
 - rc.2 strict-valid repo-root Windows A1 已在 Widget ready Gate 失败；不得对旧 openAttempt 再次调用 await-ready。
 - disposable fixture 前后 SHA-256 均为 `DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9`，文件已删除；空 task root 因仍被 A1 task 占用而保留，未重试删除。
 - 已确认 rc.2 存在与官方当前 MCP Apps 协议不一致的源码缺陷；它是本次失败的高置信根因，但只有 rc.3 经跨平台 Gate、安装、完全重启和新 task A1 ready 才能证明宿主闭环。
+- rc.3 已完成上述跨平台、安装与重启 Gate，但真实 A1 仍在 Widget ready 前失败；当前证据不能证明 React/项目/画布生命周期闭环。按本次授权不得重试、write/import/commit/send、push、tag、Release 或 stable。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -93,14 +94,14 @@
 
 ## Next
 
-1. 完全退出并重启 Codex Desktop；重启后复核 rc.3 installed/enabled 与 health 版本。
-2. 用公开 deep link 新建独立 strict-valid Windows A1；旧 task/openAttempt 不复用，composer 需用户检查后发送。
-3. tag/GitHub Release/stable 仍未授权。
+1. 等待用户决定是否另行授权调查 rc.3 在真实 Codex Desktop 中未创建 Widget instance/transitions 的宿主生命周期问题。
+2. 在新授权前不得重试当前或新 openAttempt，不得执行 write/import/commit/send、push、tag、GitHub Release 或 stable。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-15 | rc.3 新 task A1 读链通过，但 Widget ready 失败并停止 | health `0.3.0-rc.3`；open/get/validate passed；2 nodes / 1 edge；ready=false；无 instance/state/transitions；hash unchanged + fixture removed |
 | 2026-07-15 | rc.3 推送、跨平台 Gate 全绿并安装，等待完全重启 | commit `520b258`；run `29385355303` five jobs green；artifact `8331247906`；download verify；installed/enabled rc.3 |
 | 2026-07-15 | 定位并修复 MCP Apps Widget bridge 协议漂移，生成本地 rc.3 | official protocol `2026-01-26` + direct `params`；canonical compatibility envelope；39 files / 113 tests；release/clean-room/harness passed；tree `3decfde0...f48bc4` |
 | 2026-07-15 | strict-valid repo-root A1 读取链路通过，Widget 未 ready 后停止 | task 019f63a0...；health/open/get/validate passed；2 nodes/1 edge；ready=false；5 read-only calls；hash unchanged |
