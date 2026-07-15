@@ -4,6 +4,7 @@
 
 | Period or topic | Source coverage | Archive path | Current-state redirect |
 | --- | --- | --- | --- |
+| 2026-07-15 rc.4 Codex Desktop Widget resource discovery repro | Fresh restarted task, descriptor/resource lifecycle, correlations, layered host limitation conclusion | [2026-07-15-codex-desktop-widget-resource-discovery-repro.md](2026-07-15-codex-desktop-widget-resource-discovery-repro.md) | `../../PROGRESS.md` / `../../HANDOFF.md` |
 | 2026-06 to 2026-07 pre-harness history | React Flow、本地持久化、复杂图谱布局、Agent 协作和 agy bridge | [2026-06-to-2026-07-pre-harness-history.md](2026-06-to-2026-07-pre-harness-history.md) | `../../PROGRESS.md` / `../../HANDOFF.md` |
 
 ## Archive Rules

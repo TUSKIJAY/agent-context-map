@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "rc4_local_gate_passed_live_host_gate_not_authorized",
+  "status": "rc4_live_host_gate_failed_resource_discovery_host_bug_candidate",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -14,7 +14,7 @@
     "trackedProductFiles": "authorized_only_for_evidence_backed_repo_fix",
     "requiredEvidenceAndStateDocs": "authorized",
     "pushTagGithubReleaseStable": "forbidden",
-    "installRestartRealA1": "forbidden_without_new_authorization"
+    "installRestartRealA1": "completed_once_no_retry_without_new_authorization"
   },
   "windowsPolicy": {
     "failureBudget": 1,
@@ -29,6 +29,9 @@
     "correctedFixtureRetryAuthorizedAt": "2026-07-15",
     "authorizedRetryScope": "push_rc3_wait_cross_platform_green_install_restart_then_one_new_task_strict_valid_a1",
     "rc3HostRetryFailures": 1,
+    "rc4LiveGateAuthorizedAt": "2026-07-15",
+    "rc4AuthorizedRetryScope": "install_rc4_full_desktop_restart_then_one_fresh_read_only_a1",
+    "rc4HostRetryFailures": 1,
     "gitWorkspaceRetryFailures": 1,
     "correctedFixtureRetryFailures": 1,
     "onNextFailure": "stop_without_retry",
@@ -53,8 +56,8 @@
     "existingGithubReleases": []
   },
   "gates": {
-    "fixedAsset": "passed_rc4_local_only",
-    "windowsCodexCanary": "failed_rc3_widget_not_ready_stop_no_retry",
+    "fixedAsset": "passed_rc4_installed_verified",
+    "windowsCodexCanary": "failed_rc4_resource_discovery_not_reached_stop_no_retry",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -437,14 +440,16 @@
       "desktopInternalDiscoveryAndIframeBehavior": "undocumented_bounded_uncertainty"
     },
     "rootCauseAssessment": {
-      "classification": "repo_contract_defect_confirmed_host_causality_pending",
+      "classification": "repo_contract_defect_fixed_and_host_resource_discovery_bug_candidate_confirmed",
       "confirmedDefect": "rc.2 to rc.3 changed the Widget MCP Apps handshake and tool-result parsing but retained ui://agent-context-map/widget.html, violating the official cache-key versioning requirement for breaking Widget changes.",
-      "whyItFits": "A host may reuse the older resource without a new resources/read, which is consistent with a successful open descriptor and zero bootstrap/ready events.",
-      "boundedUncertainty": "The rc.3 Desktop logs do not reveal whether a cached rc.2 resource was actually mounted, so causal attribution requires a separately authorized rc.4 live host Gate."
+      "historicalRc3Hypothesis": "A host could have reused the older resource without a new resources/read, which was consistent with the rc.3 successful open descriptor and zero bootstrap/ready events; the rc.4 versioned-URI run now rules out that repository cache-key defect as the rc.4 failure cause.",
+      "rc4LiveResult": "After the versioned URI fix, immutable rc.4 install, full Desktop restart, and a fresh task/openAttempt, the host still issued zero resources/list and zero resources/read requests from process initialize through the final health check.",
+      "hostBugCandidate": "Codex Desktop discovered the tool descriptor and completed open but did not obtain the valid registered MCP Apps UI resource.",
+      "boundedUncertainty": "The exact Desktop-internal reason is undocumented. URI/MIME/HTML/CSP acceptance, iframe creation, JavaScript start, and ui/initialize were not reached or are not exposed by retained host logs."
     },
     "rc4LocalCandidate": {
       "version": "0.3.0-rc.4",
-      "status": "local_phase7_gate_passed_not_installed",
+      "status": "local_phase7_gate_passed_installed_live_host_resource_discovery_failed",
       "sourceState": "current_scoped_local_commit",
       "resourceUri": "ui://agent-context-map/widget-0.3.0-rc.4.html",
       "resourceMimeType": "text/html;profile=mcp-app",
@@ -483,10 +488,157 @@
       "treeSha256": "93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e",
       "checksumSetDigest": "b59584a706f5ae7f0641a80da89938ad5b3d92525661a74ff201ef4f3c99d7a8",
       "sha256SumsFileSha256": "d06134519dd0bdebd9c46640834601d663aa29cfaaf6b2842194e3c53cfca48d",
-      "installed": false,
-      "desktopRestarted": false,
-      "realA1Executed": false,
-      "nextGate": "separate_explicit_authorization_for_install_restart_and_fresh_task_a1"
+      "installed": true,
+      "installedEnabled": true,
+      "installedSource": "D:\\Code\\agent-context-map\\dist\\agent-context-map-plugin",
+      "desktopRestarted": true,
+      "realA1Executed": true,
+      "nextGate": "submit_sanitized_repro_to_openai_or_wait_for_host_fix_no_repo_retry"
+    },
+    "rc4LiveHostGate": {
+      "authorizedAt": "2026-07-15",
+      "result": "failed_resource_discovery_not_reached_stop_no_retry",
+      "rootClassification": "codex_desktop_host_limitation_or_bug_candidate",
+      "codexDesktop": {
+        "version": "26.707.9981.0",
+        "processId": 1048,
+        "processStartedAtLocal": "2026-07-15T11:59:30+08:00"
+      },
+      "codexCliVersion": "0.144.2",
+      "plugin": {
+        "id": "agent-context-map@agent-context-map-local",
+        "version": "0.3.0-rc.4",
+        "installed": true,
+        "enabled": true,
+        "resourceUri": "ui://agent-context-map/widget-0.3.0-rc.4.html"
+      },
+      "sources": {
+        "threadId": "019f63ee-3c6f-7841-a905-0c60541fd0e8",
+        "rollout": "C:\\Users\\LENOVO\\.codex\\sessions\\2026\\07\\15\\rollout-2026-07-15T11-59-46-019f63ee-3c6f-7841-a905-0c60541fd0e8.jsonl",
+        "desktopLogDatabase": "C:\\Users\\LENOVO\\.codex\\logs_2.sqlite",
+        "desktopLogIdWindow": "199214000-199226000",
+        "desktopListedToolCount": 14,
+        "desktopResourcesListTextHits": 0,
+        "desktopResourcesReadTextHits": 0,
+        "desktopRelevantWarnErrorHits": 0,
+        "supportRepro": "docs/progress-archive/2026-07-15-codex-desktop-widget-resource-discovery-repro.md"
+      },
+      "fixture": {
+        "documentId": "acm_phase8_canary_a",
+        "strictValid": true,
+        "nodeCount": 2,
+        "edgeCount": 1,
+        "sha256Before": "289653CFCFC2D333904D729942F4AF721E01EF30667F21F2FAAD3D4E36A1DA74",
+        "sha256After": "289653CFCFC2D333904D729942F4AF721E01EF30667F21F2FAAD3D4E36A1DA74",
+        "parentTaskIndependentHashVerified": true,
+        "tracked": false,
+        "removed": true
+      },
+      "hostAttempt": {
+        "instanceId": "3e909e2c-9b4e-405b-8bcd-9011df856e87",
+        "processStartedAt": "2026-07-15T03:59:50.129Z",
+        "projectId": "project_95893f3dc1b23e238ad1fb51",
+        "sessionId": "c2199e98-8828-4234-8980-4890f5fc9c56",
+        "documentRevision": "sha256:633e62be3d9138dd1b6baf5a47e1eca57a4000bffd019883e0ec0a9133ecd674",
+        "openAttemptId": "c21d2772-dfb6-4f65-8393-2f3fcff2aa0d",
+        "initialHealthCorrelationId": "8174001d-07f5-4f80-b327-c26d556a5b3e",
+        "openCorrelationId": "d165f0d0-a864-43ce-8f41-2a673d108e07",
+        "postOpenHealthCorrelationId": "2c744fa6-4e3f-4654-b9dc-0acd54e14eb2",
+        "getCorrelationId": "0568b231-95d5-4192-a624-4361c764502d",
+        "contextId": "64a3a77c-8df8-4fcd-8b8f-79e897c1c396",
+        "validateCorrelationId": "b85342cd-f6f5-4ae4-aa39-6cf513077822",
+        "awaitReadyCorrelationId": "04569777-ce14-47db-8ed7-bab9a009990a",
+        "finalHealthCorrelationId": "93fda82e-273c-4942-8b1f-28a143c775df",
+        "openResult": "ok_tool_succeeded_ready_false",
+        "validation": "valid_no_diagnostics_golden_verified",
+        "widgetReady": false,
+        "widgetInstanceId": null,
+        "widgetState": null,
+        "widgetTransitions": [],
+        "writeImportCommitSendCalled": false,
+        "retryPerformed": false,
+        "mcpCalls": [
+          "agent_context_map_health",
+          "open_agent_context_map",
+          "agent_context_map_health",
+          "get_acm_graph_context",
+          "validate_acm_graph",
+          "await_agent_context_map_ready",
+          "agent_context_map_health"
+        ]
+      },
+      "lifecycleCounters": {
+        "initial": {
+          "mcp_initialize": 1,
+          "tool_descriptors_list": 1,
+          "ui_resources_list": 0,
+          "ui_resource_read": 0,
+          "tool_call": 1,
+          "open_result": 0,
+          "widget_bootstrap_result": 0,
+          "widget_ready_result": 0
+        },
+        "postOpen": {
+          "mcp_initialize": 1,
+          "tool_descriptors_list": 1,
+          "ui_resources_list": 0,
+          "ui_resource_read": 0,
+          "tool_call": 3,
+          "open_result": 1,
+          "widget_bootstrap_result": 0,
+          "widget_ready_result": 0
+        },
+        "final": {
+          "mcp_initialize": 1,
+          "tool_descriptors_list": 1,
+          "ui_resources_list": 0,
+          "ui_resource_read": 0,
+          "tool_call": 7,
+          "open_result": 1,
+          "widget_bootstrap_result": 0,
+          "widget_ready_result": 0
+        }
+      },
+      "layerConclusions": {
+        "toolDescriptor": {
+          "status": "confirmed",
+          "evidence": "Desktop listed 14 agent_context_map tools; server recorded tool_descriptors_list=1; open returned the versioned output template."
+        },
+        "resourceDiscoveryRead": {
+          "status": "falsified",
+          "evidence": "ui_resources_list and ui_resource_read remained zero from initial through final health."
+        },
+        "resourceResponseValidity": {
+          "status": "confirmed_local_control_not_reached_live",
+          "evidence": "The packaged rc.4 descriptor/list/read control passed for the same URI, MIME, HTML, and CSP."
+        },
+        "hostResourceAcceptance": {
+          "status": "not_reached_internal_reason_unknown"
+        },
+        "iframeMount": {
+          "status": "not_reached_for_server_delivered_resource_internal_unknown"
+        },
+        "widgetJavascriptExecution": {
+          "status": "unknown"
+        },
+        "uiInitialize": {
+          "status": "unknown"
+        },
+        "serverBootstrapArrival": {
+          "status": "falsified"
+        },
+        "reactLifecycle": {
+          "status": "unknown",
+          "readyProofStatus": "falsified"
+        }
+      },
+      "closeoutValidation": {
+        "npmRunHarnessCheck": "passed_governed",
+        "npmRunHarnessBudget": "passed_no_archive_required_no_hard_limit",
+        "npmRunBuild": "passed_vite_317_modules",
+        "jsonParse": "passed",
+        "gitDiffCheck": "passed"
+      }
     }
   },
   "projectDataModified": false,

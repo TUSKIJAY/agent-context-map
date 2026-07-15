@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / rc.4 local Phase 7 Gate passed / install + restart + fresh A1 not authorized
+> 状态：Active / Phase 8 Stopped / rc.4 live host resource discovery failed / OpenAI host feedback pending
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -108,7 +108,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - 2026-07-15 Phase 8 重启后验证发现 `0.3.0-rc.1` manifest 对应的 MCP health 仍上报 `0.2.0`。`rc.1` 的 Phase 7 历史证据保留但不再作为可发布候选；版本真相修复进入不可变新候选 `0.3.0-rc.2`，本地 105 tests、Vite、release candidate、安装生命周期、复现与 clean-room 通过，tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`。rc.2 必须重新完成 Phase 7 跨平台/下载资产 Gate 后，且用户重新授权真实宿主 retry，才可回到 Phase 8。
 - 2026-07-15 rc.3 新 task A1：完全重启后的 runtime health 精确为 `0.3.0-rc.3`；open/get/validate 绑定同一 project/session/revision，读取 2 nodes / 1 edge且 strict valid、无 diagnostics。唯一新 openAttempt 的 await-ready 仍返回 `ready=false`，无 widget instance/state/transitions，故 React mounted、project hydrated、canvas first frame 均未获证。只调用五个只读工具，fixture hash 前后一致并已删除；按本次授权停止，不重试、不推进写工具或发布。
 - 2026-07-15 rc.3 host lifecycle 调查：原始 rollout 的 open tool event 已识别 `ui://agent-context-map/widget.html`，但 Desktop 日志没有 `resources/list`、`resources/read`、resource rejection、iframe、CSP、bootstrap 或 ready 证据；installed rc.3 的 descriptor/list/read 经独立 stdio probe 符合 envelope 与精确 MIME。官方当前契约把 resource URI 作为缓存键，并要求 Widget HTML/JS/CSS 的破坏性变更使用新 URI；rc.2→rc.3 修改 bridge 却复用同一 URI，因此确认仓库存在 cache-key invalidation 缺陷，但旧日志无法证明 Desktop 当时是否实际复用了 rc.2 bundle。
-- 2026-07-15 immutable rc.4 本地候选：UI resource 改为 `ui://agent-context-map/widget-0.3.0-rc.4.html`，self-contained CSP 的外部 resource allowlist 归零；MCP 仅在进程内保留最多 64 条无项目路径/正文的 descriptor/resource/open/bootstrap/ready 事件，并由 read-only health 返回。版本化 URI 回归测试在修复前 2 fail / 3 pass，修复后专项 4 files / 10 tests 通过；完整本地 Phase 7 Gate 为 39 files / 113 pass / 1 platform skip、Vite、fixed release、distribution、reproducibility、隔离安装生命周期与 clean-room 全绿，tree `93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e`。rc.4 未安装、未重启、未执行真实 A1。
+- 2026-07-15 immutable rc.4：UI resource 改为 `ui://agent-context-map/widget-0.3.0-rc.4.html`，self-contained CSP 的外部 resource allowlist 归零；MCP 仅在进程内保留最多 64 条无项目路径/正文的 descriptor/resource/open/bootstrap/ready 事件，并由 read-only health 返回。版本化 URI 回归测试在修复前 2 fail / 3 pass，修复后专项 4 files / 10 tests 通过；完整本地 Phase 7 Gate 为 39 files / 113 pass / 1 platform skip、Vite、fixed release、distribution、reproducibility、隔离安装生命周期与 clean-room 全绿，tree `93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e`。随后已安装、完全重启并执行一次 fresh A1。
+- 2026-07-15 rc.4 live host Gate：Desktop `26.707.9981.0` 在全新 task 中枚举 descriptor 并成功完成 open/get/validate，但同一 server lifecycle 的 `ui_resources_list` 与 `ui_resource_read` 从初始至最终均为 0，bootstrap/ready 也为 0。版本化 URI 对应 packaged resource 的 list/read/MIME/HTML/CSP control 已通过，故 Phase 8 在 Codex Desktop resource discovery/read 层停止并形成 host limitation/bug candidate；fixture hash 不变且已删除。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1413,7 +1414,7 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Stopped / rc.4 local candidate ready, live host Gate not authorized — rc.3 原始 A1 的 descriptor URI 被 Desktop tool event 识别，但 resource discovery/read、resource acceptance、iframe mount、Widget JS 和 `ui/initialize` 均因宿主日志缺失而保持 unknown；server bootstrap arrival 已被原始 rollout falsify，React ready proof 也不存在。rc.2→rc.3 在破坏性 Widget bridge 变更后复用同一 resource URI，违反官方 cache-key versioning 契约；仓库缺陷已由 fail-before/pass-after 回归测试关闭到 immutable rc.4，完整本地 Phase 7 Gate 通过。rc.4 尚未安装或重启，真实 A1 retry 必须在另一个全新 task 获用户明确授权。
+执行状态：Stopped / rc.4 live host resource discovery failed — rc.2→rc.3 破坏性 Widget 变更复用 resource URI 的仓库缺陷已由 immutable rc.4 版本化 URI关闭并通过完整本地 Phase 7 Gate。用户随后授权安装、完全重启和一次全新只读 A1；Desktop 确认 descriptor/open/read data plane，但同一 rc.4 MCP process 从初始化至最终 health 均未收到 `resources/list` 或 `resources/read`，因此 resource response、acceptance、iframe、JS/bootstrap 与 React ready 均未进入可归因于 repo 的 live 链路。当前根因归类为 Codex Desktop host limitation/bug candidate；不再构造无证据的仓库修复或 live retry。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 
@@ -1432,6 +1433,8 @@ Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停
 2026-07-15 host lifecycle evidence：A1 rollout 在 `03:10:44.619Z` 的 open completion 带出 `mcp_app_resource_uri=ui://agent-context-map/widget.html`、open correlation `79cb3f70-bdf3-4e85-93a6-cd306763c4e4` 与 openAttempt `c002c246-4569-4f9c-a290-8175bad46078`；`03:10:59.696Z` 的 await correlation `cc212d1d-992e-44cb-bb95-d058f13203ba` 返回无 instance/transitions。installed rc.3 直接 stdio probe 已确认 tool descriptor、`resources/list`、`resources/read`、`text/html;profile=mcp-app` 与 HTML 返回都有效；但 Codex Desktop `26.707.9981.0` 的保留日志没有 resource read/rejection、iframe 或 CSP 记录。因此 descriptor 是 confirmed，Desktop resource discovery/read、host acceptance、iframe、JS 和 `ui/initialize` 是 unknown，server bootstrap arrival 是 falsified；这些 Desktop 内部阶段在公开文档中属于 undocumented/bounded uncertainty。
 
 2026-07-15 rc.4 local fix：官方 Apps SDK 文档把 UI resource URI 定义为 cache key，并要求破坏性 Widget bundle 更新更换 URI且同步 descriptor/list/read。rc.3 bridge 代码相对 rc.2 已变，但仍使用 `ui://agent-context-map/widget.html`，故确认仓库 cache invalidation defect。rc.4 使用版本化 URI、最小 CSP，并增加只读进程内 lifecycle observation。候选固定 tree `93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e`、checksum set `b59584a706f5ae7f0641a80da89938ad5b3d92525661a74ff201ef4f3c99d7a8`；本地 Gate 已过，但 live causality 仍须单独授权的安装→完全重启→全新 task A1 验证。
+
+2026-07-15 rc.4 live host result：用户明确授权安装 rc.4、完全重启 Desktop 和在全新 task 执行一次只读 A1；用户完成重启后，`codex plugin list --json` 确认 rc.4 installed/enabled，Desktop `26.707.9981.0` 与 A1 health 均证明新进程/新 instance。task `019f63ee-3c6f-7841-a905-0c60541fd0e8` 的 open correlation 为 `d165f0d0-a864-43ce-8f41-2a673d108e07`，新 openAttempt 为 `c21d2772-dfb6-4f65-8393-2f3fcff2aa0d`；open/get/validate 成功，唯一 await correlation `04569777-ce14-47db-8ed7-bab9a009990a` 返回 ready=false。最终 lifecycle 为 initialize=1、descriptor list=1、open result=1，但 resource list/read、bootstrap、ready 均为 0。原始 rollout、Desktop `logs_2.sqlite` 与 packaged server control 交叉后，descriptor=confirmed，live resource discovery/read=falsified，resource validity=local confirmed/live not reached，host acceptance/iframe=not reached、内部原因 unknown，JS/`ui/initialize`=unknown，server bootstrap=falsified，React ready proof=falsified。fixture hash 前后一致并已删除；脱敏复现位于 `docs/progress-archive/2026-07-15-codex-desktop-widget-resource-discovery-repro.md`。后续只等待 OpenAI host 反馈或宿主修复；push/tag/GitHub Release/stable 不推进。
 
 输入：
 
@@ -1697,4 +1700,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。rc.3 A1 的宿主生命周期已完成证据分层，仓库 cache-key defect 已修复为通过完整本地 Gate 的 immutable rc.4；当前下一闸门是用户另行授权 rc.4 安装、完全重启和全新 task A1。push、tag、GitHub Release 与 stable 均不推进。
+本 Plan 已通过 review-002 并由用户明确激活。仓库 cache-key defect 已由 immutable rc.4 关闭；rc.4 安装、完全重启与全新 task A1 已完成，并证明 Codex Desktop 没有请求合法 UI resource。Phase 8 因 host resource discovery/read Gate 失败而 Stopped；下一闸门是 OpenAI host 反馈或宿主修复，而不是新的 repo candidate。push、tag、GitHub Release 与 stable 均不推进。

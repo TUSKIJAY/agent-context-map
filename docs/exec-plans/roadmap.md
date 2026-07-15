@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；rc.3 已完成跨平台 Gate、安装、完全重启与新 task A1，但真实 Widget 未产生 instance/transitions。原始 rollout、installed server 与 Desktop 日志的分层调查确认 descriptor URI 已被识别，resource discovery/read、host acceptance、iframe、JS 与 `ui/initialize` 仍 unknown，server bootstrap arrival 已 falsified；同时确认 rc.2→rc.3 破坏性 Widget 变更错误复用同一 resource cache key。修复后的 immutable `0.3.0-rc.4` 已通过完整本地 Phase 7 Gate，尚未安装、重启或执行真实 A1。当前等待用户另行授权 live host Gate；push/tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划。rc.2→rc.3 破坏性 Widget 变更错误复用 resource cache key 的仓库缺陷已由 immutable `0.3.0-rc.4` 关闭；rc.4 完整本地 Phase 7 Gate、真实安装、Desktop 完全重启和全新只读 A1 均已执行。live A1 确认 descriptor/open/read data plane，但同一 MCP process 从初始化到最终 health 都没有收到 `resources/list` 或 `resources/read`，所以 Phase 8 在 host resource discovery/read Gate 失败并 Stopped；根因归类为 Codex Desktop host limitation/bug candidate，脱敏复现已归档。当前等待 OpenAI host 反馈或宿主修复，不创建无证据的 rc.5；push/tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 
