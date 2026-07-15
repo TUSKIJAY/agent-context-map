@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "windows_failed_stop_no_retry_invalid_canary_fixture",
+  "status": "windows_failed_stop_no_retry_widget_not_ready",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -18,8 +18,10 @@
     "rc2HostRetryAuthorizedAt": "2026-07-15",
     "rc2HostRetryFailures": 1,
     "hostBindingInvestigationAuthorizedAt": "2026-07-15",
-    "authorizedRetryScope": "one_repo_git_workspace_a1_after_preflight",
+    "correctedFixtureRetryAuthorizedAt": "2026-07-15",
+    "authorizedRetryScope": "one_strict_valid_repo_git_workspace_a1",
     "gitWorkspaceRetryFailures": 1,
+    "correctedFixtureRetryFailures": 1,
     "onNextFailure": "stop_without_retry",
     "docsOnlyPushesSkipCi": true
   },
@@ -43,7 +45,7 @@
   },
   "gates": {
     "fixedAsset": "passed_rc2",
-    "windowsCodexCanary": "failed_document_not_found_invalid_fixture",
+    "windowsCodexCanary": "failed_widget_not_ready_after_read_only_gates_passed",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -121,7 +123,7 @@
   },
   "replacementCandidate": {
     "version": "0.3.0-rc.2",
-    "status": "git_binding_passed_invalid_fixture_failed_stop_no_retry",
+    "status": "read_only_gates_passed_widget_not_ready_stop_no_retry",
     "treeSha256": "828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441",
     "checksumSetDigest": "d007e9b1ccebf83c038af843522f1c53592a32a696edc77eb37f58a1e0beae24",
     "sha256SumsFileSha256": "aadc600f120434f62223250467b36aa13ccdb233e9fa6a82717e963110d65f1d",
@@ -193,10 +195,45 @@
       },
       "strictAcmMdValidationAdded": true,
       "documentIdEqualityCheckAdded": true,
-      "correctedFixtureSha256": "AB3FC308DDF7AA496A5DDEA2CB90E10D5B351DB180C1F3A3B87A90C7D4C26C8F",
-      "correctedFixtureValidation": "global_validator_and_preflight_passed",
+      "correctedFixtureSha256": "652874D24263FA9278EA6F97174D104FD75F6F88021F603773778F797D5A6D35",
+      "correctedFixtureValidation": "global_and_repo_strict_validators_and_preflight_passed",
       "temporaryFixtureRemoved": true,
-      "liveRetryAfterFix": "not_authorized_not_attempted"
+      "liveRetryAfterFix": "failed_widget_not_ready_stop_no_retry",
+      "correctedFixtureHostAttempt": {
+        "threadId": "019f63a0-518b-7cd0-b147-fd349209cb0d",
+        "taskCwd": "D:\\Code\\agent-context-map",
+        "healthVersion": "0.3.0-rc.2",
+        "healthCorrelationId": "830cced6-7484-4b4c-ba0a-a32195c5a184",
+        "projectId": "project_95893f3dc1b23e238ad1fb51",
+        "sessionId": "2048e51f-4779-4c88-8b66-a7df8291a9d1",
+        "documentId": "acm_phase8_canary_a",
+        "documentRevision": "sha256:c02d9eb5716950c07c595342a656f1de39df836802bc10bb4e19b25d1f3f5d30",
+        "openAttemptId": "640e3e1b-0be1-4001-b34d-837c5b7a8b89",
+        "openCorrelationId": "0f2cc467-566f-49af-95fc-bf56c1745c2d",
+        "getCorrelationId": "a8a60341-67ff-4e66-86c0-1b8b1fd26057",
+        "nodeCount": 2,
+        "edgeCount": 1,
+        "validateCorrelationId": "4faed140-782b-4e2f-823b-d9ae6acdb649",
+        "validation": "valid_no_diagnostics_golden_verified",
+        "widgetReadyCorrelationId": "ba94f8f7-4ce9-4d79-8988-8768f24e38c8",
+        "widgetReady": false,
+        "widgetInstanceId": null,
+        "widgetState": null,
+        "widgetTransitions": [],
+        "writeToolsCalled": false,
+        "mcpCalls": [
+          "agent_context_map_health",
+          "open_agent_context_map",
+          "get_acm_graph_context",
+          "validate_acm_graph",
+          "await_agent_context_map_ready"
+        ],
+        "fileSha256Before": "652874D24263FA9278EA6F97174D104FD75F6F88021F603773778F797D5A6D35",
+        "fileSha256After": "652874D24263FA9278EA6F97174D104FD75F6F88021F603773778F797D5A6D35",
+        "temporaryFixtureRemoved": true,
+        "failureGate": "widget_ready",
+        "retryPerformed": false
+      }
     }
   },
   "projectDataModified": false,

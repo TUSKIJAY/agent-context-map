@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / Phase 7 rc.2 Completed / Phase 8 Git binding passed / invalid fixture failure / stop no retry
+> 状态：Active / Phase 7 rc.2 Completed / Phase 8 read-only gates passed / Widget not ready / stop no retry
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -1410,13 +1410,15 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Stopped / invalid canary fixture — `0.3.0-rc.2` 已通过 run `29380789287` 的五项 Gate并安装。repo-root A1 task `019f6390-dfdd-7240-a17c-461df2f465b2` 的 health 与 host binding 均通过，签发预期 project/session；随后因 fixture 使用非法关系 `constrained_by`，严格扫描未收录文档，open 返回非重试 `document_not_found`，未到达 get/validate/Widget ready。preflight 已补 core strict ACM-MD 与 doc_id 校验并通过，临时 fixture 已删除；按 Windows 停止规则不自动重跑。tag/GitHub Release/stable 不推进。
+执行状态：Stopped / Widget not ready — `0.3.0-rc.2` 已通过 run `29380789287` 的五项 Gate并安装。用户授权的 strict-valid repo-root A1 task `019f63a0-518b-7cd0-b147-fd349209cb0d` 已通过 health/open/get/validate：host project/session/revision 一致，读取 2 nodes / 1 edge，validation valid 且无 diagnostics；但 await-ready 返回 `ready=false`，无 widget instance/state/transitions。底层 session 只执行 health/open/get/validate/await-ready 五个只读 MCP 调用，fixture hash 前后一致并已删除。按 Windows 停止规则不自动重跑；tag/GitHub Release/stable 不推进。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 
 2026-07-15 scope change：用户明确要求查因并修复，恢复一次修复后 A1 创建 Gate。修复后的顺序固定为“安装 → 完全重启 Desktop → installed/enabled 复核 → New task UI/公开 deep link 创建 A1”；禁止继续使用内部 `codex_app.create_thread`。通过 A1 只恢复后续 canary 判断，不自动恢复 tag、GitHub Release 或 stable 发布权限。
 
 2026-07-15 retry result：Desktop 重启已完成，插件 tools/health 可调用；health 的 `version=0.2.0` 与安装 manifest `0.3.0-rc.1` 不一致。源码修复以 manifest 为唯一版本来源，并让实际 release bundle 的 `serverInfo.version` 与 Widget appInfo 接受自动断言。由于候选不可变，版本升为 `0.3.0-rc.2`；在 rc.2 完成 Phase 7 和用户重新授权之前，Phase 8 保持停止。
+
+2026-07-15 strict-valid A1 result：用户另行授权一次使用正确 fixture 的真实 Windows A1。`0.3.0-rc.2` health、repo-root host binding、open、get 与 validate 均通过，但同一 openAttempt 的 Widget 没有 instance/state/transitions，await-ready 返回 false。该失败消耗本次授权；继续调查或修复 Widget host binding/lifecycle 需要用户另行授权。
 
 输入：
 

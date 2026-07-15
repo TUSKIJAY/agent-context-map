@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；`0.3.0-rc.2` 已由 run `29380789287` 完成全部 Release Candidate Gate。repo-root A1 已证明 Git host binding 成功，但 invalid fixture 导致 `document_not_found` 并停止；preflight 已补 strict ACM-MD/doc_id 校验，等待用户决定是否授权新 A1。tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；`0.3.0-rc.2` 已由 run `29380789287` 完成全部 Release Candidate Gate。strict-valid repo-root A1 已通过 health/open/get/validate，但 Widget 未 ready 后停止；等待用户决定是否另行授权调查/fix Widget host binding/lifecycle。tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据、Git-workspace preflight 与严格 fixture preflight 修复均为未推送 scoped local commit，分支较 upstream ahead 3
+- 当前 HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据、Git-workspace/严格 fixture preflight 与 Widget-ready 失败收尾均为未推送 scoped local commit，分支较 upstream ahead 4
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：`0.3.0-rc.2` Phase 7 全部 Gate 通过；Phase 8 Git binding 已通过，但 A1 因 invalid fixture 失败并停止
+- 当前 Phase：`0.3.0-rc.2` Phase 7 全部 Gate 通过；Phase 8 A1 的 health/open/get/validate 已通过，但 Widget 未 ready，按规则停止
 
 ## Navigation
 
@@ -35,11 +35,12 @@
 - 复盘确认该 disposable project 不是 Git workspace；官方手册未承诺 Codex MCP client 提供 `roots/list`，而 DEC-005 的真实宿主证据来自 `x-codex-turn-metadata.workspaces`。当前 Git task 的只读 validate 已成功绑定，说明无需放宽 runtime 安全边界。
 - host-canary preflight 现强制 deep-link path 等于 Git top-level、目标文件存在、strict ACM-MD 有效且内部 doc_id 匹配；完整 39 files / 111 tests（1 platform skip）、Vite build 与 harness 通过。
 - repo-root task `019f6390-dfdd-7240-a17c-461df2f465b2` 的 health rc.2 与 host binding 均通过，签发预期 project/session；open 随后因 fixture 的非法 `constrained_by` 边类型导致严格扫描未收录文档，返回非重试 `document_not_found`。get/validate/Widget ready 与所有写工具均未执行，文件 hash 未变化。
-- host-canary preflight 已进一步加入 core strict ACM-MD validation 和内部 `doc_id` 相等性检查；修正后的 fixture 经全局 validator、preflight 与 6 项测试通过后已删除。当前未获新的 live retry 授权。
+- host-canary preflight 已进一步加入 core strict ACM-MD validation 和内部 `doc_id` 相等性检查。用户随后明确授权一次 strict-valid fixture 的真实 Windows A1；全局与 repo validator、preflight 均通过。
+- task `019f63a0-518b-7cd0-b147-fd349209cb0d` 中 health/open/get/validate 全部通过：绑定 `project_95893f3dc1b23e238ad1fb51`，revision `sha256:c02d9e...f5d30`，读取 2 nodes / 1 edge，strict validation `valid=true` 且无 diagnostics。最后 `await_agent_context_map_ready` 返回 `ready=false`、无 widget instance/state/transitions，故在 Widget ready Gate 失败并停止；只调用 5 个只读工具，fixture 前后 hash 均为 `652874...D35`，现已删除。
 
 ## Blocked
 
-- repo-root Windows A1 已失败并消耗本轮授权；按停止规则不得自动用修正 fixture 重跑。
+- strict-valid repo-root Windows A1 已在 Widget ready Gate 失败并消耗本轮授权；不得自动再次调用 await-ready 或重跑 A1。
 - disposable fixture 前后 SHA-256 均为 `DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9`，文件已删除；空 task root 因仍被 A1 task 占用而保留，未重试删除。
 - 原始宿主只返回通用错误，故不能把根因表述为已证明的插件源码缺陷；修复仍需真实 A1 闭环。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
@@ -88,14 +89,15 @@
 
 ## Next
 
-1. 等待用户决定是否明确授权修正 fixture 后的新一次 Windows A1。
-2. 如获授权，先由严格 preflight 验证新 fixture，再通过公开 New task/deep link 执行并核对完整只读 Gate。
+1. 保留当前失败现场：读取/校验链路已闭环，Widget host bridge 未产生 ready proof；如需继续，必须由用户另行授权调查/修复 Widget binding/lifecycle。
+2. 未获新授权前不再执行真实 Windows A1 或 await-ready。
 3. 不创建 tag/GitHub Release/stable。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-15 | strict-valid repo-root A1 读取链路通过，Widget 未 ready 后停止 | task 019f63a0...；health/open/get/validate passed；2 nodes/1 edge；ready=false；5 read-only calls；hash unchanged |
 | 2026-07-15 | repo-root binding 通过，但 invalid fixture 令 A1 停止；preflight 补 strict validation | task 019f6390...；project/session issued；document_not_found；6 preflight tests；corrected fixture validated then removed |
 | 2026-07-15 | host-binding 根因定位并加入 Git-workspace preflight | 当前 Git task validate binding passed；4 preflight tests passed；repo fixture preflight passed |
 | 2026-07-15 | rc.2 Windows A1 因无 trusted workspace 停止 | task 019f637e...；health rc.2；open no_trusted_workspace；no writes；fixture hash unchanged |

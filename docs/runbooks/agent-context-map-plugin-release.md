@@ -2,7 +2,7 @@
 
 ## 状态与授权
 
-- 状态：`0.3.0-rc.2` 五项 Release Candidate Gate 全绿；repo-root A1 已证明 Git host binding 成功，但 invalid fixture 导致 `document_not_found` 并停止。preflight 已补 strict ACM-MD/doc_id 校验；未获新的 live retry，不推进 stable。
+- 状态：`0.3.0-rc.2` 五项 Release Candidate Gate 全绿；strict-valid repo-root A1 的 health/open/get/validate 已通过，但 Widget 未 ready，按规则停止且不重试，不推进 stable。
 - 权威计划：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md` Phase 8。
 - 上一固定候选：`0.3.0-rc.1`；release tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；来源 commit `28425f8`、workflow run `29327685652`、artifact `8308656602`。
 - 修复候选：`0.3.0-rc.2`；release tree SHA-256 `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`；run `29380789287` 五 job 全绿，artifact `8329665419` 下载复核通过并已安装 enabled。
@@ -16,6 +16,7 @@
 - runtime 不接受 cwd、模型路径参数或最近项目作为授权根；修复只增加 canary workspace preflight，强制公开 deep-link 的 path 等于 `git rev-parse --show-toplevel` 且目标 ACM-MD 已存在。
 - repo-root A1 task `019f6390-dfdd-7240-a17c-461df2f465b2` 已签发 project/session，证明 host workspace 绑定修复有效；但 fixture 使用不受控边类型 `constrained_by`，严格扫描未收录该文档，open 返回 `document_not_found`。该次授权已消耗，未自动重跑。
 - preflight 现在还必须通过 core strict ACM-MD validation，并验证内部 `doc_id` 与请求 ID 相等；只检查 Git root 和文件存在不再构成放行条件。
+- 用户随后明确授权一次修正 fixture 的真实 Windows A1。task `019f63a0-518b-7cd0-b147-fd349209cb0d` 已通过 health/open/get/validate，读取 2 nodes / 1 edge 且 validation 无 diagnostics；`await_agent_context_map_ready` 对 openAttempt `640e3e1b-0be1-4001-b34d-837c5b7a8b89` 返回 `ready=false`、无 widget instance/state/transitions。按停止规则不再调用或重跑；fixture hash 前后一致并已删除。
 - public plugin directory 不属于 v1；不得提交公开目录或引入远程业务 MCP。
 
 执行前必须在 Phase 8 证据中分别记录：

@@ -2,7 +2,7 @@
 
 更新日期：2026-07-15
 
-当前焦点：repo-root A1 已证明 host workspace binding 成功，但因准备的 fixture 使用非法边类型而在 `open` 返回 `document_not_found`，按规则停止。preflight 已补上严格 ACM-MD 与 doc_id 校验并通过；临时 fixture 已删除，等待用户决定是否另行授权新的 live retry。
+当前焦点：strict-valid repo-root A1 已完成 health/open/get/validate，证明 host binding 与只读图谱链路闭环；Widget 未产生 instance/state/transitions，`await ready` 返回 false，按规则停止且不重试。临时 fixture 已删除；继续调查/fix Widget binding/lifecycle 需用户另行授权。
 
 ## Resume Point
 
@@ -50,9 +50,9 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据、Git-workspace preflight 与严格 fixture preflight 修复均为未推送 scoped local commit，分支较 upstream ahead 3；接手时仍以 `git log -4 --oneline` 与 `git status --short --branch` 实测
+- HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据、Git-workspace/严格 fixture preflight 与 Widget-ready 失败收尾均为未推送 scoped local commit，分支较 upstream ahead 4；接手时仍以 `git log -5 --oneline` 与 `git status --short --branch` 实测
 - push：rc.2 runtime fix 已获授权并推送到 `cae841b`；后续状态文档 push 尚未获单独授权
-- 当前计划状态：rc.2 Phase 7 Completed；Phase 8 Active / Git binding passed / invalid fixture failure / stop no retry
+- 当前计划状态：rc.2 Phase 7 Completed；Phase 8 Active / read-only host gates passed / Widget not ready / stop no retry
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
 - Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
 - Phase 8 根因：原 canary 在 CLI 安装后没有重启 Desktop，立即调用内部 `codex_app.create_thread`；官方流程要求重启后在新 task 测试，公开入口为 New task UI 或 `codex://new`。cache 文件锁与此执行顺序一致，但原始通用错误不足以证明插件源码缺陷。
@@ -64,6 +64,7 @@
 - 新 A1 准备：`D:\Code\agent-context-map\.acm\documents\acm_phase8_canary_a.acm.md` 为临时未跟踪 fixture，SHA-256 `8CE53CD6DD3B794003072CE8388D641F710E468704433D7699F671DEC2411401`；preflight 已通过。Computer Use 规则禁止 Agent 自动操作 Codex Desktop composer，必须由用户在公开 deep link 新任务中检查并发送。
 - repo-root A1 结果：task `019f6390-dfdd-7240-a17c-461df2f465b2` 的 health rc.2 通过；open 成功签发 `project_95893f3dc1b23e238ad1fb51` 与 session `942ccc42-4c26-48b2-99aa-826f7c70f752`，证明 host binding 已闭环，但文档严格扫描因 fixture 的非法 `constrained_by` 边类型未收录文档，返回非重试 `document_not_found`（correlation `ffb754bc-8f26-414e-a02f-fa4139baf369`）。未执行 get/validate/Widget ready 或任何写工具，原 hash 保持 `8CE53C...1401`。
 - preflight 二次修复：现在除 Git top-level/文件存在外，还运行 core strict ACM-MD validation 并要求内部 `doc_id` 匹配。修正 fixture 为 `constrains` 后，全局 validator、preflight 与 6 项回归测试通过，修正 hash `AB3FC308DDF7AA496A5DDEA2CB90E10D5B351DB180C1F3A3B87A90C7D4C26C8F`；随后已删除临时 `.acm` fixture，不进行 live retry。
+- strict-valid A1：用户授权后，新 fixture 经全局/repo strict validator 与 preflight 通过。task `019f63a0-518b-7cd0-b147-fd349209cb0d` 的 health=`0.3.0-rc.2`；open 绑定 project `project_95893f3dc1b23e238ad1fb51`、plugin session `2048e51f-4779-4c88-8b66-a7df8291a9d1`、revision `sha256:c02d9e...f5d30`；get 返回 2 nodes / 1 edge；validate `valid=true`、无 diagnostics。openAttempt `640e3e1b-0be1-4001-b34d-837c5b7a8b89` 的 await-ready 返回 `ready=false`，无 widgetInstanceId/widgetState/transitions（correlation `ba94f8f7-4ce9-4d79-8988-8768f24e38c8`），故停止。底层 rollout 仅有 health/open/get/validate/await-ready 五个只读 MCP 调用；fixture hash 前后均为 `652874...D35` 并已删除。
 
 ## Phase 7 Local Candidate Verification
 
@@ -128,14 +129,14 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 
 - Phase 7 已完成；closeout 文档与最终证据已 scoped commit/push，最新远端 HEAD workflow 全绿。
 - rc.2 runtime fix push 与 run `29380789287` 已完成；后续状态文档 push 仍按逐次授权处理。
-- Windows remediation retry 已失败并停止；再次真实安装/重启/A1 需要用户新授权，不能由本地测试替代。
+- strict-valid Windows A1 已在 Widget ready Gate 失败并停止；再次真实 A1 或调查/修改 Widget host binding/lifecycle 需要用户新授权，不能由本地测试替代。
 - repo marketplace 和 canary 安装曾成功；项目 `.acm` 未被首次失败修改。未创建任何 plugin tag/GitHub Release/stable。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 等待用户决定是否明确授权修正 fixture 后的新一次 Windows A1；当前授权已由失败 task `019f6390...` 消耗。
-2. 如获授权，重新创建并严格验证临时 fixture，再通过公开 New task/deep link 执行；任何失败仍立即停止。
+1. 等待用户决定是否另行授权调查/fix Widget host binding/lifecycle；当前 A1 授权已由 task `019f63a0...` 的 `ready=false` 消耗。
+2. 未获新授权前不再重跑 A1 或再次调用同一 openAttempt 的 await-ready。
 3. tag/GitHub Release/stable 继续禁止。
 
 ## History
