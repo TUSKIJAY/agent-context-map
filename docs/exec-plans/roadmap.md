@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；`0.3.0-rc.2` 已由 run `29380789287` 完成全部 Release Candidate Gate。Windows A1 的 `no_trusted_workspace` 已定位为 non-Git canary target；Git-workspace preflight 修复完成并通过，当前等待用户在公开 repo-root 新任务中发送只读 A1。tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；`0.3.0-rc.2` 已由 run `29380789287` 完成全部 Release Candidate Gate。repo-root A1 已证明 Git host binding 成功，但 invalid fixture 导致 `document_not_found` 并停止；preflight 已补 strict ACM-MD/doc_id 校验，等待用户决定是否授权新 A1。tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "host_binding_workspace_preflight_fixed_revalidation_pending",
+  "status": "windows_failed_stop_no_retry_invalid_canary_fixture",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -14,11 +14,12 @@
     "failuresAfterDirective": 1,
     "remediationRetryAuthorizedAt": "2026-07-15",
     "remediationRetryFailures": 1,
-    "furtherRetriesAuthorized": true,
+    "furtherRetriesAuthorized": false,
     "rc2HostRetryAuthorizedAt": "2026-07-15",
     "rc2HostRetryFailures": 1,
     "hostBindingInvestigationAuthorizedAt": "2026-07-15",
     "authorizedRetryScope": "one_repo_git_workspace_a1_after_preflight",
+    "gitWorkspaceRetryFailures": 1,
     "onNextFailure": "stop_without_retry",
     "docsOnlyPushesSkipCi": true
   },
@@ -42,7 +43,7 @@
   },
   "gates": {
     "fixedAsset": "passed_rc2",
-    "windowsCodexCanary": "git_workspace_revalidation_pending",
+    "windowsCodexCanary": "failed_document_not_found_invalid_fixture",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -120,7 +121,7 @@
   },
   "replacementCandidate": {
     "version": "0.3.0-rc.2",
-    "status": "host_binding_preflight_fixed_revalidation_pending",
+    "status": "git_binding_passed_invalid_fixture_failed_stop_no_retry",
     "treeSha256": "828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441",
     "checksumSetDigest": "d007e9b1ccebf83c038af843522f1c53592a32a696edc77eb37f58a1e0beae24",
     "sha256SumsFileSha256": "aadc600f120434f62223250467b36aa13ccdb233e9fa6a82717e963110d65f1d",
@@ -135,7 +136,7 @@
     "artifactSize": 749199,
     "archiveDigest": "sha256:2d3bb063e0bde8f100f03480a8f73484193c92a1ac65694e2ccc37b2f08a32ca",
     "downloadedArtifactVerification": "passed",
-    "realCodexHostRetry": "authorized_git_workspace_revalidation_pending",
+    "realCodexHostRetry": "failed_stop_no_retry_document_not_found",
     "installedEnabled": true,
     "installedPath": "C:\\Users\\LENOVO\\.codex\\plugins\\cache\\agent-context-map-local\\agent-context-map\\0.3.0-rc.2",
     "hostAttempt": {
@@ -165,15 +166,37 @@
         "validationCorrelationId": "55cf3c3e-5425-42f0-b8e7-ba4dc46141df"
       },
       "preflightScript": "plugins/agent-context-map/scripts/check-host-canary-workspace.mjs",
-      "preflightTests": "4_passed",
-      "fullSuite": "39_files_109_passed_1_platform_skipped",
+      "preflightTests": "6_passed",
+      "fullSuite": "39_files_111_passed_1_platform_skipped",
       "viteBuild": "passed",
       "harness": "passed",
       "requiredDeepLinkRoot": "git_top_level",
       "preparedDocumentId": "acm_phase8_canary_a",
       "preparedDocumentSha256": "8CE53CD6DD3B794003072CE8388D641F710E468704433D7699F671DEC2411401",
-      "preparedWorkspacePreflight": "passed",
-      "publicNewTaskSend": "pending_user_action"
+      "preparedWorkspacePreflight": "passed_but_did_not_validate_acm_md",
+      "publicNewTaskSend": "completed",
+      "hostAttempt": {
+        "threadId": "019f6390-dfdd-7240-a17c-461df2f465b2",
+        "taskCwd": "D:\\Code\\agent-context-map",
+        "healthVersion": "0.3.0-rc.2",
+        "healthCorrelationId": "c617ae1b-01ce-44a8-9042-132a84a058ed",
+        "projectId": "project_95893f3dc1b23e238ad1fb51",
+        "sessionId": "942ccc42-4c26-48b2-99aa-826f7c70f752",
+        "openResult": "document_not_found",
+        "openRetryable": false,
+        "openCorrelationId": "ffb754bc-8f26-414e-a02f-fa4139baf369",
+        "documentRevision": null,
+        "getValidateWidgetReady": "not_reached",
+        "writeToolsCalled": false,
+        "fileSha256Before": "8CE53CD6DD3B794003072CE8388D641F710E468704433D7699F671DEC2411401",
+        "fileSha256After": "8CE53CD6DD3B794003072CE8388D641F710E468704433D7699F671DEC2411401"
+      },
+      "strictAcmMdValidationAdded": true,
+      "documentIdEqualityCheckAdded": true,
+      "correctedFixtureSha256": "AB3FC308DDF7AA496A5DDEA2CB90E10D5B351DB180C1F3A3B87A90C7D4C26C8F",
+      "correctedFixtureValidation": "global_validator_and_preflight_passed",
+      "temporaryFixtureRemoved": true,
+      "liveRetryAfterFix": "not_authorized_not_attempted"
     }
   },
   "projectDataModified": false,

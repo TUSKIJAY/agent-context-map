@@ -15,7 +15,18 @@ let base;
 async function writeCanary(root, documentId = "acm_phase8_canary_a") {
   const directory = path.join(root, ".acm", "documents");
   await fs.mkdir(directory, { recursive: true });
-  await fs.writeFile(path.join(directory, `${documentId}.acm.md`), "# canary\n", "utf8");
+  await fs.writeFile(path.join(directory, `${documentId}.acm.md`), `# Canary
+
+\`\`\`acm
+schema_version: "acm-md/0.1"
+doc_id: "${documentId}"
+meta:
+  title: "Canary"
+  source: "user_discussion"
+nodes: []
+edges: []
+\`\`\`
+`, "utf8");
 }
 
 beforeEach(async () => { base = await fs.mkdtemp(path.join(os.tmpdir(), "acm-host-canary-")); });
@@ -49,9 +60,33 @@ describe("Phase 8 host canary workspace preflight", () => {
     })).resolves.toEqual({
       ok: true,
       gitWorkspaceRootVerified: true,
+      strictAcmMdVerified: true,
       documentId: "acm_phase8_canary_a",
       projectRelativeDocument: ".acm/documents/acm_phase8_canary_a.acm.md",
     });
+  });
+
+  test("rejects an ACM-MD fixture that fails strict validation", async () => {
+    await execFileAsync("git", ["init", "--quiet", base], { windowsHide: true });
+    await writeCanary(base);
+    await fs.writeFile(path.join(base, ".acm", "documents", "acm_phase8_canary_a.acm.md"), "# invalid\n", "utf8");
+    await expect(inspectHostCanaryWorkspace({
+      projectRoot: base,
+      documentId: "acm_phase8_canary_a",
+    })).rejects.toMatchObject({ code: "invalid_canary_document" });
+  });
+
+  test("rejects a valid fixture whose internal doc_id does not match the requested id", async () => {
+    await execFileAsync("git", ["init", "--quiet", base], { windowsHide: true });
+    await writeCanary(base, "different_document");
+    await fs.rename(
+      path.join(base, ".acm", "documents", "different_document.acm.md"),
+      path.join(base, ".acm", "documents", "acm_phase8_canary_a.acm.md"),
+    );
+    await expect(inspectHostCanaryWorkspace({
+      projectRoot: base,
+      documentId: "acm_phase8_canary_a",
+    })).rejects.toMatchObject({ code: "document_id_mismatch" });
   });
 
   test("reports a missing fixture separately from workspace binding", async () => {

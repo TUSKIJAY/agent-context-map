@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { validateAcmMd } from "../../../packages/acm-core/src/validate.js";
 
 const execFileAsync = promisify(execFile);
 const documentIdPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
@@ -80,9 +81,24 @@ export async function inspectHostCanaryWorkspace({ projectRoot, documentId }) {
     throw new HostCanaryWorkspaceError("missing_canary_document", "The expected canary ACM-MD document is not a file.");
   }
 
+  const validation = validateAcmMd(await fs.readFile(canonicalDocument, "utf8"), { mode: "strict" });
+  if (validation.errors.length) {
+    throw new HostCanaryWorkspaceError(
+      "invalid_canary_document",
+      `The canary ACM-MD document failed strict validation: ${validation.errors[0].code}.`,
+    );
+  }
+  if (validation.doc?.doc_id !== documentId) {
+    throw new HostCanaryWorkspaceError(
+      "document_id_mismatch",
+      "The canary document id does not match the requested document id.",
+    );
+  }
+
   return {
     ok: true,
     gitWorkspaceRootVerified: true,
+    strictAcmMdVerified: true,
     documentId,
     projectRelativeDocument: relativeDocument.replaceAll("\\", "/"),
   };
