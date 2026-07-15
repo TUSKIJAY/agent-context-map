@@ -2,7 +2,7 @@
 
 更新日期：2026-07-15
 
-当前焦点：`0.3.0-rc.2` Release Candidate Gate 全绿，但正式 Windows A1 task 的 open 返回 `no_trusted_workspace`。按停止规则不再自动修复或重跑；等待用户决定新的调查/修复范围。
+当前焦点：已确认 rc.2 A1 的 `no_trusted_workspace` 来自 deep-link 目标是 non-Git 临时目录，而不是插件 runtime 绑定缺陷。用户已授权 host-binding 调查/修复；Git workspace preflight 已实现并通过，当前仓库只读 A1 fixture 已就绪，等待用户在公开新任务中发送 canary prompt。
 
 ## Resume Point
 
@@ -50,9 +50,9 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据已形成未推送的 scoped local commit，分支较 upstream ahead 1；接手时仍以 `git log -2 --oneline` 与 `git status --short --branch` 实测
+- HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据与 host-workspace preflight 修复均已形成未推送 scoped local commit，分支较 upstream ahead 2；接手时仍以 `git log -3 --oneline` 与 `git status --short --branch` 实测
 - push：rc.2 runtime fix 已获授权并推送到 `cae841b`；后续状态文档 push 尚未获单独授权
-- 当前计划状态：rc.2 Phase 7 Completed；Phase 8 Active / Windows failed stop no retry
+- 当前计划状态：rc.2 Phase 7 Completed；Phase 8 Active / host-binding workspace preflight fixed / Git-workspace A1 pending
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
 - Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
 - Phase 8 根因：原 canary 在 CLI 安装后没有重启 Desktop，立即调用内部 `codex_app.create_thread`；官方流程要求重启后在新 task 测试，公开入口为 New task UI 或 `codex://new`。cache 文件锁与此执行顺序一致，但原始通用错误不足以证明插件源码缺陷。
@@ -60,6 +60,8 @@
 - Phase 8 重启后结果：Desktop 已重启，`agent-context-map-local` 与 `0.3.0-rc.1` installed/enabled，插件 tools/health 可调用；health 返回 `ok=true`、runtime `version=0.2.0`，与 manifest `0.3.0-rc.1` 不一致。该 Windows retry 已失败，禁止自动再试。
 - rc.2 修复与发布 Gate：run `29380789287` 五 job 全绿；artifact `8329665419` 下载后再次命中 tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`，rc.2 installed/enabled。
 - rc.2 正式 A1：task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 session cwd 为 disposable project，health=`0.3.0-rc.2`；open 返回 `no_trusted_workspace`、correlation `7ce04746-0c78-4ca2-ba48-4ba1aac1e4e6`，未签发 project/openAttempt/revision，get/validate/Widget ready 未到达。fixture hash 前后一致且已删除；空 task root 仍被该 task cwd 锁定。
+- host-binding 复盘：失败目录不是 Git workspace；DEC-005 与 Phase 5 原证据本就要求缺少 host-owned workspace metadata 时 fail closed，当前 Git task 的只读 validate 探针已成功绑定 `project_95893f3dc1b23e238ad1fb51`。新增 `check-host-canary-workspace.mjs` 强制 deep-link path 等于 Git top-level 且目标 ACM-MD 存在；完整 39 files / 109 tests（1 platform skip）、Vite build 与 harness 通过。
+- 新 A1 准备：`D:\Code\agent-context-map\.acm\documents\acm_phase8_canary_a.acm.md` 为临时未跟踪 fixture，SHA-256 `8CE53CD6DD3B794003072CE8388D641F710E468704433D7699F671DEC2411401`；preflight 已通过。Computer Use 规则禁止 Agent 自动操作 Codex Desktop composer，必须由用户在公开 deep link 新任务中检查并发送。
 
 ## Phase 7 Local Candidate Verification
 
@@ -130,8 +132,8 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 
 ## Next Gate
 
-1. 等待用户决定是否授权新的 host-binding 调查/修复计划；优先核对 deep-link 临时目录为何只有 cwd、没有 host-owned workspace root。
-2. 未获新授权前不使用 repo root 或其他项目重跑，不放宽 trusted binding。
+1. 用户通过公开 `codex://new` 或 New task，以 `D:\Code\agent-context-map` 为 path，发送 rc.2 A1 只读 prompt；回传新 task/session ID。
+2. 亲自核对新 session 的 health、host binding、open/get/validate/Widget ready 与 fixture 前后 hash；任何失败仍按一次性 Gate 停止。
 3. tag/GitHub Release/stable 继续禁止。
 
 ## History

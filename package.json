@@ -45,6 +45,7 @@
     "test:clean-room": "node plugins/agent-context-map/scripts/check-clean-room.mjs",
     "test:release-artifact": "npm run build:plugin && node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.2 --expected-tree-sha256 828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441",
     "test:release-candidate": "npm run test:release-artifact && npm run test:distribution && npm run test:mcp-bundle-repro && npm run test:install-upgrade-rollback && npm run test:uninstall-reinstall",
+    "check:phase8-host-workspace": "node plugins/agent-context-map/scripts/check-host-canary-workspace.mjs",
     "test:host-binding-spike": "vitest run spikes/codex-host-binding/tests",
     "harness:check": "python scripts/check-project-harness.py --root . --profile auto",
     "harness:budget": "python scripts/check-startup-doc-budget.py --root .",

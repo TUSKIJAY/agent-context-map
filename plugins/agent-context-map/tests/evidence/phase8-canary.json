@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "windows_failed_stop_no_retry_no_trusted_workspace",
+  "status": "host_binding_workspace_preflight_fixed_revalidation_pending",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -14,9 +14,11 @@
     "failuresAfterDirective": 1,
     "remediationRetryAuthorizedAt": "2026-07-15",
     "remediationRetryFailures": 1,
-    "furtherRetriesAuthorized": false,
+    "furtherRetriesAuthorized": true,
     "rc2HostRetryAuthorizedAt": "2026-07-15",
     "rc2HostRetryFailures": 1,
+    "hostBindingInvestigationAuthorizedAt": "2026-07-15",
+    "authorizedRetryScope": "one_repo_git_workspace_a1_after_preflight",
     "onNextFailure": "stop_without_retry",
     "docsOnlyPushesSkipCi": true
   },
@@ -40,7 +42,7 @@
   },
   "gates": {
     "fixedAsset": "passed_rc2",
-    "windowsCodexCanary": "failed_no_trusted_workspace",
+    "windowsCodexCanary": "git_workspace_revalidation_pending",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -118,7 +120,7 @@
   },
   "replacementCandidate": {
     "version": "0.3.0-rc.2",
-    "status": "local_qualification_passed_remote_and_host_pending",
+    "status": "host_binding_preflight_fixed_revalidation_pending",
     "treeSha256": "828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441",
     "checksumSetDigest": "d007e9b1ccebf83c038af843522f1c53592a32a696edc77eb37f58a1e0beae24",
     "sha256SumsFileSha256": "aadc600f120434f62223250467b36aa13ccdb233e9fa6a82717e963110d65f1d",
@@ -133,7 +135,7 @@
     "artifactSize": 749199,
     "archiveDigest": "sha256:2d3bb063e0bde8f100f03480a8f73484193c92a1ac65694e2ccc37b2f08a32ca",
     "downloadedArtifactVerification": "passed",
-    "realCodexHostRetry": "failed_stop_no_retry",
+    "realCodexHostRetry": "authorized_git_workspace_revalidation_pending",
     "installedEnabled": true,
     "installedPath": "C:\\Users\\LENOVO\\.codex\\plugins\\cache\\agent-context-map-local\\agent-context-map\\0.3.0-rc.2",
     "hostAttempt": {
@@ -152,7 +154,26 @@
       "fileSha256After": "DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9",
       "writeToolsCalled": false,
       "temporaryFixtureRemoved": true,
-      "emptyTaskRootRemoval": "blocked_by_active_task_cwd"
+      "emptyTaskRootRemoval": "blocked_by_active_task_cwd",
+      "diagnosis": "deep_link_target_was_non_git_and_not_exposed_as_host_owned_workspace"
+    },
+    "hostBindingRemediation": {
+      "runtimeAuthorizationBoundaryChanged": false,
+      "currentGitTaskReadOnlyProbe": {
+        "result": "passed",
+        "projectId": "project_95893f3dc1b23e238ad1fb51",
+        "validationCorrelationId": "55cf3c3e-5425-42f0-b8e7-ba4dc46141df"
+      },
+      "preflightScript": "plugins/agent-context-map/scripts/check-host-canary-workspace.mjs",
+      "preflightTests": "4_passed",
+      "fullSuite": "39_files_109_passed_1_platform_skipped",
+      "viteBuild": "passed",
+      "harness": "passed",
+      "requiredDeepLinkRoot": "git_top_level",
+      "preparedDocumentId": "acm_phase8_canary_a",
+      "preparedDocumentSha256": "8CE53CD6DD3B794003072CE8388D641F710E468704433D7699F671DEC2411401",
+      "preparedWorkspacePreflight": "passed",
+      "publicNewTaskSend": "pending_user_action"
     }
   },
   "projectDataModified": false,

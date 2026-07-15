@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / Phase 7 rc.2 Completed / Phase 8 Windows failed stop no retry
+> 状态：Active / Phase 7 rc.2 Completed / Phase 8 host workspace preflight fixed / Git-workspace A1 pending
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -1410,7 +1410,7 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Stopped / no trusted workspace — `0.3.0-rc.2` 已通过 run `29380789287` 的五项 Gate并安装。正式 A1 task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 health 精确返回 rc.2，但 open 返回非重试 `no_trusted_workspace`；session cwd 正确，MCP 调用却没有 host-owned workspace root，故未签发 project/openAttempt/revision，也未到达 get/validate/Widget ready。文件 hash 前后一致。按 Windows 停止规则不自动换项目或重跑；tag/GitHub Release/stable 不推进。
+执行状态：In Progress / Git-workspace A1 pending — `0.3.0-rc.2` 已通过 run `29380789287` 的五项 Gate并安装。失败 task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 deep-link target 是 non-Git 临时目录，Codex 没有提供 host-owned workspace metadata，因此 runtime 按 DEC-005 正确 fail closed；当前 Git task 的只读 binding probe 已通过。用户已授权调查/修复，现已增加强制 Git top-level + ACM-MD 存在性 preflight 并通过测试，等待通过公开 New task/deep link 发送一次 repo-root A1。tag/GitHub Release/stable 不推进。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 

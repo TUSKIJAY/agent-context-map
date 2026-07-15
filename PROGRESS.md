@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据已形成未推送的 scoped local commit，分支较 upstream ahead 1
+- 当前 HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据 `5e0ef0f` 与 host-workspace preflight 修复均为未推送 scoped local commit，分支较 upstream ahead 2
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：`0.3.0-rc.2` Phase 7 全部 Gate 通过；Phase 8 Windows host retry 因 `no_trusted_workspace` 失败并停止
+- 当前 Phase：`0.3.0-rc.2` Phase 7 全部 Gate 通过；Phase 8 host-binding workspace preflight 已修复，等待 Git-workspace A1
 
 ## Navigation
 
@@ -32,10 +32,12 @@
 - Desktop 已重启，repo marketplace 与 `0.3.0-rc.1` installed/enabled，插件工具和 health 均加载；health 返回 `ok=true` 但 runtime `version=0.2.0`，与 manifest `0.3.0-rc.1` 不一致，真实 Windows retry 因此失败并停止。
 - 运行时版本已改为从 plugin manifest 构建时注入 MCP/Widget；不可变候选 `0.3.0-rc.2` 已通过本地 Gate及 run `29380789287` 的五项远端 Gate，tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`。
 - 正式 A1 task `019f637e-3721-73e1-b15b-a6b46a109dff` 中 health 精确返回 `0.3.0-rc.2`，但 open 返回非重试 `no_trusted_workspace`；task session 的 cwd 正确指向 disposable project，MCP 调用却未收到 host-owned workspace root。未签发 project/openAttempt/revision，故 get/validate/Widget ready 未执行。
+- 复盘确认该 disposable project 不是 Git workspace；官方手册未承诺 Codex MCP client 提供 `roots/list`，而 DEC-005 的真实宿主证据来自 `x-codex-turn-metadata.workspaces`。当前 Git task 的只读 validate 已成功绑定，说明无需放宽 runtime 安全边界。
+- 已新增 host-canary preflight，强制 deep-link path 等于 Git top-level 且 `.acm/documents/<documentId>.acm.md` 存在；完整 39 files / 109 tests（1 platform skip）、Vite build 与 harness 通过。当前 repo-root 临时 fixture preflight 通过，等待用户在公开新任务中发送 A1 prompt。
 
 ## Blocked
 
-- rc.2 Windows host retry 已因 `no_trusted_workspace` 失败；按停止规则，不得自动换项目、修复或重跑。
+- Agent 不能依据 Computer Use 规则自动操作 Codex Desktop composer；Git-workspace A1 必须由用户检查并发送，之后才能继续核对新 session。
 - disposable fixture 前后 SHA-256 均为 `DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9`，文件已删除；空 task root 因仍被 A1 task 占用而保留，未重试删除。
 - 原始宿主只返回通用错误，故不能把根因表述为已证明的插件源码缺陷；修复仍需真实 A1 闭环。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
@@ -84,14 +86,15 @@
 
 ## Next
 
-1. 等待用户决定是否另立修复范围，调查为何 deep-link task 的正确 cwd 没有形成 host-owned workspace root。
-2. 未获新授权前不换用 repo root 重跑 A1，不修改 trusted binding，不绕过 fail-closed 边界。
+1. 用户通过公开 New task/deep link，以 `D:\Code\agent-context-map` 为 workspace，发送 A1 只读 canary prompt并回传 task/session ID。
+2. 核对 health/open/get/validate/Widget ready 和 fixture hash；失败即停止，不修改 trusted binding。
 3. 不创建 tag/GitHub Release/stable。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-15 | host-binding 根因定位并加入 Git-workspace preflight | 当前 Git task validate binding passed；4 preflight tests passed；repo fixture preflight passed |
 | 2026-07-15 | rc.2 Windows A1 因无 trusted workspace 停止 | task 019f637e...；health rc.2；open no_trusted_workspace；no writes；fixture hash unchanged |
 | 2026-07-15 | rc.2 跨平台 Gate 全绿并安装，等待 Desktop 重启 | run 29380789287 five jobs green；artifact 8329665419；download verify；installed/enabled rc.2 |
 | 2026-07-15 | Phase 8 重启后 retry 停止，rc.2 本地 Gate 通过 | tools/health loaded；rc.1 manifest/runtime 版本不一致；manifest 单真源；105 tests；Vite/RC/clean-room；fixed tree |

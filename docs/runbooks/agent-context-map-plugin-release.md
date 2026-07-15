@@ -2,7 +2,7 @@
 
 ## 状态与授权
 
-- 状态：`0.3.0-rc.2` 五项 Release Candidate Gate 全绿；Windows A1 因 `no_trusted_workspace` 失败并停止，不推进 stable。
+- 状态：`0.3.0-rc.2` 五项 Release Candidate Gate 全绿；`no_trusted_workspace` 已定位为 non-Git canary target，Git-workspace preflight 修复完成，等待一次获准的 repo-root A1，不推进 stable。
 - 权威计划：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md` Phase 8。
 - 上一固定候选：`0.3.0-rc.1`；release tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；来源 commit `28425f8`、workflow run `29327685652`、artifact `8308656602`。
 - 修复候选：`0.3.0-rc.2`；release tree SHA-256 `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`；run `29380789287` 五 job 全绿，artifact `8329665419` 下载复核通过并已安装 enabled。
@@ -12,7 +12,8 @@
 - 用户于 2026-07-15 明确要求联网查因并修复，恢复一次“修复后 A1 创建”验证；该请求不自动授权 tag、GitHub Release 或 stable 发布。
 - Desktop 重启后插件工具成功加载，但 manifest/安装版本为 `0.3.0-rc.1` 时 MCP health 上报 `0.2.0`。这证明发布包运行时版本与 manifest 不一致，真实宿主 retry 失败并按停止规则终止。
 - 修复已把 manifest 设为 MCP/Widget 构建时唯一版本来源，并增加 packaged server 版本断言；为保持候选不可变，修复进入新候选 `0.3.0-rc.2`，不改写 `rc.1` 历史资产。
-- rc.2 正式 A1 task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 health 版本正确，但 open 返回非重试 `no_trusted_workspace`。session cwd 正确指向 disposable project，MCP 调用没有 host-owned workspace root；未到达 get/validate/Widget ready，文件 hash 未变化。按 Windows 停止规则不得自动换用 repo root 重跑。
+- rc.2 正式 A1 task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 health 版本正确，但 open 返回非重试 `no_trusted_workspace`。复盘确认 deep-link 目标是 non-Git 临时目录；Codex 未为该 task 提供 host-owned workspace metadata，而 DEC-005/Phase 5 本来就要求这种情况 fail closed。用户随后明确授权 host-binding 调查/修复及一次 Git-workspace A1 复验。
+- runtime 不接受 cwd、模型路径参数或最近项目作为授权根；修复只增加 canary workspace preflight，强制公开 deep-link 的 path 等于 `git rev-parse --show-toplevel` 且目标 ACM-MD 已存在。
 - public plugin directory 不属于 v1；不得提交公开目录或引入远程业务 MCP。
 
 执行前必须在 Phase 8 证据中分别记录：
@@ -134,16 +135,17 @@ node plugins/agent-context-map/scripts/verify-release.mjs `
 
 仅在用户批准后执行：
 
-1. 创建脱敏配置备份和测试项目 hash 清单；不得复制 auth token 到仓库。
+1. 创建脱敏配置备份和测试项目 hash 清单；不得复制 auth token 到仓库。A1/A2/B1 的 deep-link path 必须是实际 Git top-level，non-Git 目录与 Git 子目录均不得进入真实 Gate。
 2. 创建获批的 repo marketplace 文件，通过 CLI 或插件目录安装 `agent-context-map 0.3.0-rc.2`，记录实际 cache 版本目录。
 3. 完全退出并重启 Codex Desktop；重启后确认 marketplace 可见且插件为 installed/enabled。此闸门未完成时禁止创建 A1。
-4. 通过 New task UI 或公开 deep link 新建 A1、A2、B1；不得调用内部 `codex_app.create_thread`。A1/A2 绑定项目 A，B1 绑定项目 B；验证 session 隔离、project fingerprint 和 active document。
-5. 重载 A1，再新建 A3；旧 Widget instance 必须 superseded，不能 ready/commit/send。
-6. 在 A1 打开原生 Widget：React mounted、project hydrated、canvas first frame 三项齐全才算 ready。
-7. 创建 proposal，分别验证 reject 与 accept；accept 前正式 `.acm` hash 不变，accept 后仅目标文档产生可解释变更。
-8. 执行 selected、related、execution 三种 send preview；没有当前 Widget gesture 时不得发送，二次确认后只发送一次到当前 task。
-9. 复核模型参数、额外 writable dir、旧 task/instance、stale revision 均不能改变授权项目。
-10. 记录 plugin Node 进程网络连接；不得出现远程业务请求、遥测或非预期 listener。
+4. 对每个目标先运行 `npm run check:phase8-host-workspace -- --project-root <git-top-level> --document-id <doc-id>`；只有 JSON 返回 `gitWorkspaceRootVerified=true` 才能继续。
+5. 通过 New task UI 或公开 deep link 新建 A1、A2、B1；不得调用内部 `codex_app.create_thread`。A1/A2 绑定项目 A，B1 绑定项目 B；验证 session 隔离、project fingerprint 和 active document。
+6. 重载 A1，再新建 A3；旧 Widget instance 必须 superseded，不能 ready/commit/send。
+7. 在 A1 打开原生 Widget：React mounted、project hydrated、canvas first frame 三项齐全才算 ready。
+8. 创建 proposal，分别验证 reject 与 accept；accept 前正式 `.acm` hash 不变，accept 后仅目标文档产生可解释变更。
+9. 执行 selected、related、execution 三种 send preview；没有当前 Widget gesture 时不得发送，二次确认后只发送一次到当前 task。
+10. 复核模型参数、额外 writable dir、旧 task/instance、stale revision 均不能改变授权项目。
+11. 记录 plugin Node 进程网络连接；不得出现远程业务请求、遥测或非预期 listener。
 
 任何一步失败都触发 Windows 停止规则，不进入修复重跑。
 
@@ -151,6 +153,8 @@ A1 的公开 deep link 可按下面方式生成；它只打开并预填 composer
 
 ```powershell
 $projectRoot = 'D:\Code\agent-context-map'
+$documentId = 'acm_phase8_canary_a'
+npm run check:phase8-host-workspace -- --project-root $projectRoot --document-id $documentId
 $prompt = '[@Agent Context Map](plugin://agent-context-map@agent-context-map-local) 执行 Phase 8 Windows canary A1；只读验证绑定、get/validate 与 Widget ready，不修改 tracked 文件。'
 $url = 'codex://new?path=' + [uri]::EscapeDataString($projectRoot) + '&prompt=' + [uri]::EscapeDataString($prompt)
 Start-Process $url

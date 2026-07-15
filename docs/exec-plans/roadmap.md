@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；`0.3.0-rc.2` 已由 run `29380789287` 完成全部 Release Candidate Gate。正式 Windows A1 的 health 版本正确，但 open 因 `no_trusted_workspace` 失败；按停止规则不再自动换项目或重跑。当前等待用户决定新的 host-binding 调查/修复范围，tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；`0.3.0-rc.2` 已由 run `29380789287` 完成全部 Release Candidate Gate。Windows A1 的 `no_trusted_workspace` 已定位为 non-Git canary target；Git-workspace preflight 修复完成并通过，当前等待用户在公开 repo-root 新任务中发送只读 A1。tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 
