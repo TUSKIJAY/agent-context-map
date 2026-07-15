@@ -43,7 +43,7 @@
     "test:install-upgrade-rollback": "vitest run tests/distribution/install-lifecycle.test.js -t \"fresh install, upgrade, and rollback\"",
     "test:uninstall-reinstall": "vitest run tests/distribution/install-lifecycle.test.js -t \"uninstall and reinstall\"",
     "test:clean-room": "node plugins/agent-context-map/scripts/check-clean-room.mjs",
-    "test:release-artifact": "npm run build:plugin && node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.2 --expected-tree-sha256 828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441",
+    "test:release-artifact": "npm run build:plugin && node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.3 --expected-tree-sha256 3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4",
     "test:release-candidate": "npm run test:release-artifact && npm run test:distribution && npm run test:mcp-bundle-repro && npm run test:install-upgrade-rollback && npm run test:uninstall-reinstall",
     "check:phase8-host-workspace": "node plugins/agent-context-map/scripts/check-host-canary-workspace.mjs",
     "test:host-binding-spike": "vitest run spikes/codex-host-binding/tests",

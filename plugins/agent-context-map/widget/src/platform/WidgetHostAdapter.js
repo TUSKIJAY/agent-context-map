@@ -1,6 +1,7 @@
 import { PLUGIN_VERSION } from "../../../src/plugin-version.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
+export const MCP_APPS_PROTOCOL_VERSION = "2026-01-26";
 
 function asError(value, fallback) {
   if (value instanceof Error) return value;
@@ -15,10 +16,32 @@ function withTimeout(promise, timeoutMs, label) {
 
 export function widgetDataFromToolResult(result, compatibilityGlobal = null) {
   if (result?._meta?.widgetData) return result._meta.widgetData;
+  if (compatibilityGlobal?.toolResponseMetadata?._meta?.widgetData) return compatibilityGlobal.toolResponseMetadata._meta.widgetData;
   if (compatibilityGlobal?.toolResponseMetadata?.widgetData) return compatibilityGlobal.toolResponseMetadata.widgetData;
   if (compatibilityGlobal?.rawToolResult?._meta?.widgetData) return compatibilityGlobal.rawToolResult._meta.widgetData;
   if (result?.structuredContent) return result.structuredContent;
   return compatibilityGlobal?.toolOutput || null;
+}
+
+function compatibilityToolResult(compatibility) {
+  if (compatibility?.rawToolResult) return compatibility.rawToolResult;
+  const metadata = compatibility?.toolResponseMetadata;
+  const canonicalMetadata = metadata && typeof metadata === "object" && (
+    "_meta" in metadata || "structuredContent" in metadata || "content" in metadata || "isError" in metadata
+  );
+  if (canonicalMetadata) {
+    return {
+      ...metadata,
+      structuredContent: metadata.structuredContent ?? compatibility?.toolOutput ?? null,
+    };
+  }
+  if (compatibility?.toolOutput) {
+    return {
+      structuredContent: compatibility.toolOutput,
+      _meta: metadata || {},
+    };
+  }
+  return null;
 }
 
 export class WidgetHostAdapter {
@@ -45,9 +68,10 @@ export class WidgetHostAdapter {
       else waiter.resolve(message.result);
       return;
     }
-    if (message.method === "ui/notifications/tool-result" && message.params?.result) {
-      this.lastToolResult = message.params.result;
-      for (const resolve of this.toolResultWaiters) resolve(message.params.result);
+    if (message.method === "ui/notifications/tool-result" && message.params && typeof message.params === "object") {
+      const toolResult = message.params.result || message.params;
+      this.lastToolResult = toolResult;
+      for (const resolve of this.toolResultWaiters) resolve(toolResult);
       this.toolResultWaiters.clear();
     }
     if (message.method === "ui/notifications/host-context-changed") {
@@ -80,7 +104,7 @@ export class WidgetHostAdapter {
       const initialized = await this.request("ui/initialize", {
         appInfo: { name: "agent-context-map-widget", version: PLUGIN_VERSION },
         appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] },
-        protocolVersion: "2025-11-21",
+        protocolVersion: MCP_APPS_PROTOCOL_VERSION,
       }, Math.min(4000, this.timeoutMs));
       this.hostContext = initialized?.hostContext || null;
       this.notify("ui/notifications/initialized", {});
@@ -97,11 +121,7 @@ export class WidgetHostAdapter {
   }
 
   initialToolResult() {
-    const compatibility = this.currentWindow.openai;
-    return compatibility?.rawToolResult || (compatibility?.toolOutput ? {
-      structuredContent: compatibility.toolOutput,
-      _meta: compatibility.toolResponseMetadata || {},
-    } : null);
+    return compatibilityToolResult(this.currentWindow.openai);
   }
 
   async waitForToolResult(timeoutMs = this.timeoutMs) {

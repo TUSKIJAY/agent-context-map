@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / Phase 7 rc.2 Completed / Phase 8 read-only gates passed / Widget not ready / stop no retry
+> 状态：Active / rc.3 local Gate passed / remote Phase 7 pending / Phase 8 host verification pending
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -1419,6 +1419,8 @@ Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停
 2026-07-15 retry result：Desktop 重启已完成，插件 tools/health 可调用；health 的 `version=0.2.0` 与安装 manifest `0.3.0-rc.1` 不一致。源码修复以 manifest 为唯一版本来源，并让实际 release bundle 的 `serverInfo.version` 与 Widget appInfo 接受自动断言。由于候选不可变，版本升为 `0.3.0-rc.2`；在 rc.2 完成 Phase 7 和用户重新授权之前，Phase 8 保持停止。
 
 2026-07-15 strict-valid A1 result：用户另行授权一次使用正确 fixture 的真实 Windows A1。`0.3.0-rc.2` health、repo-root host binding、open、get 与 validate 均通过，但同一 openAttempt 的 Widget 没有 instance/state/transitions，await-ready 返回 false。该失败消耗本次授权；继续调查或修复 Widget host binding/lifecycle 需要用户另行授权。
+
+2026-07-15 Widget bridge investigation/fix：用户已另行授权调查和修复。官方当前 MCP Apps bridge 使用 `protocolVersion=2026-01-26`，并把 `ui/notifications/tool-result` 的 canonical tool result 直接置于 `params`；ChatGPT compatibility global 也保留包含 hidden `_meta` 的 canonical `toolResponseMetadata` envelope。rc.2 分别使用 `2025-11-21`、只消费 `params.result`、且不能正确还原 canonical compatibility envelope，导致 Widget 可能在 bootstrap 前失败或无法 hydrate。修复升为 immutable `0.3.0-rc.3`，保留旧 shape fallback；本地 39 files / 113 tests、Vite、固定候选、安装生命周期、reproducibility、clean-room 与 harness 通过，tree `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`。该结果只恢复 rc.3 Phase 7 remote Gate；CI 全绿、安装、完整重启和新 task A1 之前，Phase 8 仍为 Stopped / host verification pending。
 
 输入：
 

@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据、Git-workspace/严格 fixture preflight 与 Widget-ready 失败收尾均为未推送 scoped local commit，分支较 upstream ahead 4
+- 当前本地分支：包含已推送的 rc.2 runtime-version 修复 `cae841b`、四个未推送的 Phase 8 状态/预检 commit，以及本轮 rc.3 Widget bridge 修复；push 尚未获本任务单独授权
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：`0.3.0-rc.2` Phase 7 全部 Gate 通过；Phase 8 A1 的 health/open/get/validate 已通过，但 Widget 未 ready，按规则停止
+- 当前 Phase：`0.3.0-rc.3` 已完成本地完整 Gate；Phase 7 跨平台/下载资产 Gate 待 push 后 CI，Phase 8 仍停在真实 Widget ready 复核前
 
 ## Navigation
 
@@ -37,12 +37,14 @@
 - repo-root task `019f6390-dfdd-7240-a17c-461df2f465b2` 的 health rc.2 与 host binding 均通过，签发预期 project/session；open 随后因 fixture 的非法 `constrained_by` 边类型导致严格扫描未收录文档，返回非重试 `document_not_found`。get/validate/Widget ready 与所有写工具均未执行，文件 hash 未变化。
 - host-canary preflight 已进一步加入 core strict ACM-MD validation 和内部 `doc_id` 相等性检查。用户随后明确授权一次 strict-valid fixture 的真实 Windows A1；全局与 repo validator、preflight 均通过。
 - task `019f63a0-518b-7cd0-b147-fd349209cb0d` 中 health/open/get/validate 全部通过：绑定 `project_95893f3dc1b23e238ad1fb51`，revision `sha256:c02d9e...f5d30`，读取 2 nodes / 1 edge，strict validation `valid=true` 且无 diagnostics。最后 `await_agent_context_map_ready` 返回 `ready=false`、无 widget instance/state/transitions，故在 Widget ready Gate 失败并停止；只调用 5 个只读工具，fixture 前后 hash 均为 `652874...D35`，现已删除。
+- 用户已授权调查/fix Widget host binding/lifecycle。官方当前 MCP Apps 示例使用 `protocolVersion=2026-01-26`，且 `ui/notifications/tool-result` 的 canonical result 直接位于 `params`；rc.2 Widget 分别使用旧版本 `2025-11-21` 和非标准 `params.result`，兼容全局也未读取 2026-05-27 起的 canonical `toolResponseMetadata._meta` envelope。这三个协议漂移足以解释 Widget 在 bootstrap 前失败或无法 hydrate，而服务端只看到零 instance/transitions。
+- 修复已进入不可变本地候选 `0.3.0-rc.3`：标准协议与 canonical result 对齐，同时保留 legacy nested notification 与旧 compatibility metadata；39 files / 113 tests（1 platform skip）、Vite、release candidate、安装生命周期、reproducibility、clean-room 与 harness 全部通过。release tree `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`。
 
 ## Blocked
 
-- strict-valid repo-root Windows A1 已在 Widget ready Gate 失败并消耗本轮授权；不得自动再次调用 await-ready 或重跑 A1。
+- rc.2 strict-valid repo-root Windows A1 已在 Widget ready Gate 失败；不得对旧 openAttempt 再次调用 await-ready。
 - disposable fixture 前后 SHA-256 均为 `DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9`，文件已删除；空 task root 因仍被 A1 task 占用而保留，未重试删除。
-- 原始宿主只返回通用错误，故不能把根因表述为已证明的插件源码缺陷；修复仍需真实 A1 闭环。
+- 已确认 rc.2 存在与官方当前 MCP Apps 协议不一致的源码缺陷；它是本次失败的高置信根因，但只有 rc.3 经跨平台 Gate、安装、完全重启和新 task A1 ready 才能证明宿主闭环。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -89,14 +91,15 @@
 
 ## Next
 
-1. 保留当前失败现场：读取/校验链路已闭环，Widget host bridge 未产生 ready proof；如需继续，必须由用户另行授权调查/修复 Widget binding/lifecycle。
-2. 未获新授权前不再执行真实 Windows A1 或 await-ready。
-3. 不创建 tag/GitHub Release/stable。
+1. 等待本任务单独 push 授权；push 后运行 rc.3 跨平台与下载资产 CI，五项全绿前不安装。
+2. CI 全绿后安装 immutable rc.3、完全重启 Desktop，并用独立新 task 做一次 strict-valid Windows A1；旧 task/openAttempt 不复用。
+3. tag/GitHub Release/stable 仍未授权。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-15 | 定位并修复 MCP Apps Widget bridge 协议漂移，生成本地 rc.3 | official protocol `2026-01-26` + direct `params`；canonical compatibility envelope；39 files / 113 tests；release/clean-room/harness passed；tree `3decfde0...f48bc4` |
 | 2026-07-15 | strict-valid repo-root A1 读取链路通过，Widget 未 ready 后停止 | task 019f63a0...；health/open/get/validate passed；2 nodes/1 edge；ready=false；5 read-only calls；hash unchanged |
 | 2026-07-15 | repo-root binding 通过，但 invalid fixture 令 A1 停止；preflight 补 strict validation | task 019f6390...；project/session issued；document_not_found；6 preflight tests；corrected fixture validated then removed |
 | 2026-07-15 | host-binding 根因定位并加入 Git-workspace preflight | 当前 Git task validate binding passed；4 preflight tests passed；repo fixture preflight passed |

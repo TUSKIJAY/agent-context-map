@@ -68,7 +68,7 @@ describe("Phase 4 clean plugin distribution", () => {
     const manifest = JSON.parse(await fs.readFile(path.join(releaseRoot, ".codex-plugin", "plugin.json"), "utf8"));
     const dependencies = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "dependencies.json"), "utf8"));
     const sbom = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "sbom.cdx.json"), "utf8"));
-    expect(manifest.version).toBe("0.3.0-rc.2");
+    expect(manifest.version).toBe("0.3.0-rc.3");
     expect(dependencies).toMatchObject({
       schemaVersion: "agent-context-map-plugin-dependencies/v1",
       pluginVersion: manifest.version,

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0-rc.3 — 2026-07-15
+
+- Align the MCP Apps Widget handshake with protocol version `2026-01-26`.
+- Consume standard `ui/notifications/tool-result` payloads directly from `params` while retaining the legacy nested shape.
+- Preserve hidden Widget bootstrap data from the canonical compatibility tool-result envelope.
+
 ## 0.3.0-rc.2 — 2026-07-15
 
 - Derive MCP and Widget runtime versions from the plugin manifest at build time.

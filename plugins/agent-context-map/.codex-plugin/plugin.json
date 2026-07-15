@@ -1,7 +1,7 @@
 {
   "id": "agent-context-map",
   "name": "agent-context-map",
-  "version": "0.3.0-rc.2",
+  "version": "0.3.0-rc.3",
   "description": "Inspect and safely edit project-local ACM-MD graphs through a fail-closed Codex MCP Apps workflow.",
   "author": {
     "name": "TUSKIJAY",
