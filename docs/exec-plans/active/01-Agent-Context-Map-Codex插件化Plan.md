@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / 用户于 2026-07-14 明确批准 / Phase 7 Completed / Phase 8 Blocked（Windows stop-no-retry）
+> 状态：Active / Phase 7 Completed / Phase 8 remediation prepared（等待 Desktop 重启后重跑 A1）
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -1409,9 +1409,11 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Blocked — 用户于 2026-07-14 已授权真实 Windows Codex Desktop canary、repo-local marketplace，以及 canary 通过后的固定 tag/GitHub Release 和 stable 发布。固定候选验证、marketplace 注册与 `0.3.0-rc.1` 安装通过；创建真实 Codex task A1 时失败且未产生 task，已触发用户规定的 Windows stop-no-retry。未创建 A2/B1，未推进 tag/GitHub Release/stable。安全清理已移除 plugin/marketplace 配置项，版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；项目数据未修改。
+执行状态：In Progress / restart gate — 2026-07-14 的固定候选、marketplace 注册与安装通过，但在同一未重启的 Desktop 会话中立即调用内部 `create_thread` 创建 A1，返回通用错误且未产生 task。用户于 2026-07-15 明确要求联网查因并修复；复盘确认官方流程要求 marketplace/插件安装后重启 Desktop 并在新 task 测试，且公开入口应为 New task UI 或 `codex://new` deep link。runbook 已修正，等待重启后的真实 A1 验证。当前请求不授权 tag/GitHub Release/stable。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
+
+2026-07-15 scope change：用户明确要求查因并修复，恢复一次修复后 A1 创建 Gate。修复后的顺序固定为“安装 → 完全重启 Desktop → installed/enabled 复核 → New task UI/公开 deep link 创建 A1”；禁止继续使用内部 `codex_app.create_thread`。通过 A1 只恢复后续 canary 判断，不自动恢复 tag、GitHub Release 或 stable 发布权限。
 
 输入：
 
@@ -1428,7 +1430,7 @@ Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停
 
 实施项：
 
-1. 在真实 Codex Desktop 完成新 task、重载、多 task、多项目、升级/回滚；
+1. 在真实 Codex Desktop 完成新 task、重载、多 task、多项目、升级/回滚；marketplace 或插件安装后必须先完全重启 Desktop，新 task 只通过 UI 或公开 deep link 创建；
 2. Tauri 与 Widget 交替编辑同文档，分别验证 content/content、layout/layout、layout/content revision conflict；layout-only 场景只能在用户看到 currentRevision 新预览并再次确认后重放，不得后台自动 rebase；
 3. 发布固定 Git tag/Release/checksum；
 4. 先 canary，再 stable；stable 指向固定版本，不指 main；

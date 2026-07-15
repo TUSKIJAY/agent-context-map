@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；Phase 7 已由 run `29327685652` 的三平台、clean-room、下载资产审计和本机独立复核完成。Phase 8 runbook 与待执行证据已准备，但真实动作尚未开始，等待用户独立批准。Windows 自 2026-07-14 起只有 1 次失败额度，下一次失败后停止重试。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；Phase 7 已由 run `29327685652` 的三平台、clean-room、下载资产审计和本机独立复核完成。Phase 8 首次 Windows canary 在未重启 Desktop 时调用内部 `create_thread` 创建 A1 失败。用户于 2026-07-15 要求查因并修复；runbook 已改为安装后完全重启 Desktop，并只用公开 New task UI/deep link 创建 A1。当前等待重启后的真实 A1 Gate，不授权 stable。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

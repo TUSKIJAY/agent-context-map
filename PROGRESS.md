@@ -2,14 +2,14 @@
 
 ## Current Snapshot
 
-- 更新日期：2026-07-14
+- 更新日期：2026-07-15
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
 - 当前 HEAD：Phase 7 closeout 已推送；最新远端 HEAD replay run `29328130052` 五 job 全绿，具体提交以 `git log -1 --oneline` 实测
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：Phase 7 Completed；Phase 8 Blocked / `windows_failed_stop_no_retry`。固定候选、marketplace 注册与 canary 安装通过，但创建真实 Codex task A1 失败且未产生 task；禁止重试，未推进 stable
+- 当前 Phase：Phase 7 Completed；Phase 8 remediation prepared / restart gate pending。已定位首次 A1 失败的高置信操作根因并修正 runbook；等待 Desktop 完全重启后用公开 New task/deep link 验证 A1，不推进 stable
 
 ## Navigation
 
@@ -28,11 +28,13 @@
 - Phase 7 已完成：`0.3.0-rc.1`、Node 24.12.0/npm 11.6.2、checksums/SBOM、三平台、clean-room、source-free 启动、隔离 HOME 生命周期与下载资产复核全部通过。
 - Phase 8 已获授权并执行一次 Windows canary：固定 `0.3.0-rc.1` 构建/hash 与 plugin validator 通过，repo marketplace 注册和真实 canary 安装通过。
 - 创建真实 Codex task A1 时 Codex app 返回失败，未产生 task；按用户规则未创建 A2/B1、未重试、未创建 tag/GitHub Release、未发布 stable。
+- 2026-07-15 用户明确要求联网查因并修复。官方当前流程要求 repo marketplace/插件安装后重启 Desktop，再在新 task 测试；原 canary 未重启且直接调用内部 `create_thread`。runbook、plan、证据与索引已改为“安装 → 重启 → installed/enabled 复核 → 公开 New task/deep link”。
+- 固定 `0.3.0-rc.1` tree 已再次独立验证；repo marketplace 已重新注册，插件已重新安装并显示 installed/enabled。当前刻意停在 Desktop 重启硬闸门，未在旧进程创建 A1。
 
 ## Blocked
 
-- Windows failure budget 已用尽（1/1）：失败闸门为真实 Codex task A1 创建；Phase 8 保持 active/blocked，除非用户以后另行改变 stop-no-retry 决定。
-- 安全清理已移除 plugin 和 marketplace 配置项；版本化 cache 因 Windows `os error 32` 文件锁残留。按停止规则不再尝试清理，项目 `.acm` 未修改。
+- 当前会话运行在待重启的 Codex Desktop 内，不能在不终止自身的前提下完成重启后的真实 A1 Gate；需重启并从本 handoff 恢复。
+- 原始宿主只返回通用错误，故不能把根因表述为已证明的插件源码缺陷；修复仍需真实 A1 闭环。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
 - Node 24 的 `node:sqlite` 仅用于迁移 fixture 自动化并会发 experimental warning；发布产品使用 Rust `sqlx read_only(true)`，不依赖 Node SQLite runtime。
@@ -79,14 +81,15 @@
 
 ## Next
 
-1. 不再重试 Windows canary、task 创建或 cache 清理；不推进 tag/GitHub Release/stable。
-2. 保留 repo-local marketplace、失败证据与版本化 cache 残留，等待用户以后另行改变停止决定或提供外部状态变化。
-3. Phase 8 未满足真实宿主验收，plan 不得迁入 completed。
+1. 完全退出并重启 Codex Desktop；确认 repo marketplace 与 `agent-context-map 0.3.0-rc.1` installed/enabled。
+2. 只通过 New task UI 或 `codex://new?path=...&prompt=...` 创建 A1，验证 task/project binding、get/validate 和 Widget ready；禁止内部 `create_thread`。
+3. A1 未通过前不创建 A2/B1，不创建 tag/GitHub Release，不发布 stable；Phase 8 不得迁入 completed。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-15 | Phase 8 A1 创建失败完成联网复盘与流程修复 | official Codex manual refreshed；原 session 顺序取证；restart hard gate；public New task/deep link；真实 A1 pending |
 | 2026-07-14 | Phase 8 Windows canary 停止且不重试 | fixed asset/plugin install passed；create task A1 failed/no task；budget 1/1；plugin/marketplace config removed；cache locked os error 32；no stable |
 | 2026-07-14 | Phase 8 无副作用准备完成 | official Codex Manual current；plugin validator/runbook/evidence/harness passed；Windows failure budget 1；external state unchanged |
 | 2026-07-14 | Phase 7 closeout 已推送且最新 HEAD 复跑全绿 | commit ba9d1dc；run 29328130052 five jobs green |

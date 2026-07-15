@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
-  "date": "2026-07-14",
-  "status": "windows_failed_stop_no_retry",
+  "date": "2026-07-15",
+  "status": "remediation_prepared_restart_required",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -75,6 +75,33 @@
     "cacheResidualReason": "Windows file lock: os error 32",
     "cleanupRetryPerformed": false,
     "projectDataTouched": false
+  },
+  "diagnosis": {
+    "diagnosedAt": "2026-07-15",
+    "officialManualRefreshed": true,
+    "originalSequence": "cli_marketplace_add_then_cli_plugin_add_then_internal_create_thread_without_desktop_restart",
+    "finding": "The canary skipped the documented Desktop restart and used an internal dynamic create_thread path instead of the documented New task UI or codex deep link.",
+    "supportingEvidence": [
+      "Official plugin guidance requires restarting Desktop after a repo marketplace change and testing in a new task.",
+      "The original session called create_thread immediately after CLI installation.",
+      "The running Desktop process retained a Windows lock on the installed cache during cleanup."
+    ],
+    "confidence": "high_operational_root_cause",
+    "limitation": "The host returned only a generic error, so no plugin source defect was established."
+  },
+  "remediation": {
+    "requestedAt": "2026-07-15",
+    "restartAfterInstallRequired": true,
+    "taskCreationPath": "documented_new_task_ui_or_codex_deep_link",
+    "internalCreateThreadAllowed": false,
+    "fixedGateRerun": "authorized",
+    "tagGithubReleaseStable": "not_authorized_by_2026_07_15_fix_request",
+    "candidateReverified": true,
+    "marketplaceRegistered": true,
+    "pluginInstalledEnabled": true,
+    "installedVersion": "0.3.0-rc.1",
+    "desktopRestartCompleted": false,
+    "validation": "pending_post_restart_real_task_a1"
   },
   "projectDataModified": false,
   "rawTaskIdsRetained": false,

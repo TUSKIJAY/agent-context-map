@@ -1,8 +1,8 @@
 # HANDOFF
 
-更新日期：2026-07-14
+更新日期：2026-07-15
 
-当前焦点：Phase 7 已完成；Phase 8 已触发 `windows_failed_stop_no_retry`。不要重试 Windows canary、task 创建或 cache 清理，不要推进 tag/GitHub Release/stable。
+当前焦点：Phase 7 已完成；Phase 8 首次 A1 创建失败已完成联网复盘与流程修复。下一闸门是完全重启 Codex Desktop 后，用公开 New task UI/deep link 验证 A1；不要推进 tag/GitHub Release/stable。
 
 ## Resume Point
 
@@ -51,10 +51,13 @@
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
 - HEAD：Phase 7 closeout 已推送；最新远端 HEAD replay run `29328130052` 五 job 全绿，接手时以 `git log -1 --oneline` 与 `git status --short --branch` 实测
-- push：用户已在本任务明确授权 `codex/acm-pluginization-plan`
-- 当前计划状态：Phase 7 Completed；Phase 8 Active / Blocked / `windows_failed_stop_no_retry`
+- push：当前任务未获新的 push 授权；自动 local commit 后保持本地 ahead，等待用户逐次确认
+- 当前计划状态：Phase 7 Completed；Phase 8 Active / remediation prepared / restart gate pending
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
-- Phase 8 清理：plugin 与 marketplace 配置项已移除；版本化 cache 因 Windows `os error 32` 文件锁残留且不得重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
+- Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
+- Phase 8 根因：原 canary 在 CLI 安装后没有重启 Desktop，立即调用内部 `codex_app.create_thread`；官方流程要求重启后在新 task 测试，公开入口为 New task UI 或 `codex://new`。cache 文件锁与此执行顺序一致，但原始通用错误不足以证明插件源码缺陷。
+- Phase 8 修复：runbook/plan/evidence/index 已增加 restart hard gate，禁止内部 `create_thread`；用户 2026-07-15 只恢复一次修复后 A1 Gate，未重新授权 tag/GitHub Release/stable。
+- Phase 8 当前外部状态：固定 release tree 已复核；`agent-context-map-local` marketplace 已注册，`agent-context-map 0.3.0-rc.1` 已 installed/enabled；Desktop 尚未重启，禁止在当前旧进程创建 A1。
 
 ## Phase 7 Local Candidate Verification
 
@@ -118,16 +121,16 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 ## Risks
 
 - Phase 7 已完成；closeout 文档与最终证据已 scoped commit/push，最新远端 HEAD workflow 全绿。
-- push 已获当前任务明确授权；当前 branch 已同步 origin。
-- Phase 8 已获明确授权并执行一次 Windows canary，但在创建真实 task A1 时失败；Windows failure budget 1/1 已用尽，不自动修复重跑。
-- repo marketplace 和 canary 安装曾成功；安全清理后全局配置项已移除，版本化 cache 仍被文件锁占用。未创建任何 plugin tag/GitHub Release/stable。
+- Phase 7 closeout 的历史 push 已完成；当前修复任务没有新的 push 授权。
+- 当前 Codex Desktop 必须完全重启才能验证修复；在本会话内强制重启会终止当前恢复链，因此重启后的 A1 仍是外部 Gate。
+- repo marketplace 和 canary 安装曾成功；项目 `.acm` 未被首次失败修改。未创建任何 plugin tag/GitHub Release/stable。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 不重试 Windows canary、真实 task 创建或版本化 cache 清理。
-2. 不创建 plugin tag/GitHub Release/stable；Phase 8 与 active plan 保持 Blocked。
-3. 只有用户以后明确改变 stop-no-retry 决定或外部状态变化后，才能重新制定下一 Gate。
+1. 完全退出并重启 Codex Desktop，确认 marketplace 和 `agent-context-map 0.3.0-rc.1` installed/enabled。
+2. 按 `docs/runbooks/agent-context-map-plugin-release.md` 的 deep link/UI 路径创建 A1；只读验证 binding、get/validate 与 Widget ready，失败不自动扩大重试。
+3. A1 通过后才评估 A2/B1；tag/GitHub Release/stable 仍需当前任务新的明确授权。
 
 ## History
 

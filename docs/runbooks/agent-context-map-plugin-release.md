@@ -2,13 +2,15 @@
 
 ## 状态与授权
 
-- 状态：Stopped / `windows_failed_stop_no_retry`。
+- 状态：Remediation prepared / 等待 Codex Desktop 重启后重跑 A1 创建闸门。
 - 权威计划：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md` Phase 8。
 - 当前候选：`0.3.0-rc.1`；release tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`。
 - 当前固定候选来源：commit `28425f8`、workflow run `29327685652`、artifact `8308656602`。
 - 用户于 2026-07-14 已授权真实 Windows Codex Desktop canary、repo-local marketplace，以及 canary 通过后的固定 Git tag、GitHub Release 和 stable 发布；Windows 若再次失败立即停止，不再重试。
 - 本轮固定候选验证、marketplace 注册和 `0.3.0-rc.1` 安装通过；创建真实 Codex task A1 时 Codex app 返回失败，未产生 task。失败预算已消耗，未创建 A2/B1，未推进 canary/stable tag 或 Release。
 - 安全清理已移除 plugin 与 marketplace 配置项；版本化 cache 因 Windows `os error 32` 文件锁残留。按停止规则未重试清理，项目 `.acm` 未修改。
+- 用户于 2026-07-15 明确要求联网查因并修复，恢复一次“修复后 A1 创建”验证；该请求不自动授权 tag、GitHub Release 或 stable 发布。
+- 修复准备已重新校验固定 release tree，并重新注册 marketplace、安装并启用 `agent-context-map 0.3.0-rc.1`；当前停在 Desktop 完全重启硬闸门，尚未创建新的 A1。
 - public plugin directory 不属于 v1；不得提交公开目录或引入远程业务 MCP。
 
 执行前必须在 Phase 8 证据中分别记录：
@@ -27,6 +29,23 @@
   - 将 Phase 8 证据状态设为 `windows_failed_stop_no_retry`；
   - 在 `PROGRESS.md`、`HANDOFF.md` 和 active plan 记录阻塞，等待用户另行决定。
 - docs-only 提交使用 `[skip ci]`，避免无意义触发 Windows matrix。
+
+## 2026-07-15 失败复盘与修复
+
+上次失败不是 release 资产、manifest、marketplace 注册或插件安装失败。实际顺序是：
+
+1. 在已运行的 Codex Desktop task 中通过 CLI 注册 marketplace 并安装插件；
+2. 未重启 Desktop，立即调用非公开的动态 `codex_app.create_thread` 工具；
+3. `create_thread` 返回通用错误且未创建 task；清理 cache 时同一 Desktop 进程仍持有文件锁。
+
+官方当前 [Build plugins](https://learn.chatgpt.com/docs/build-plugins.md) 流程要求 repo marketplace 变更后重启 ChatGPT/Codex Desktop，再在新 task 中测试；官方 [desktop app commands](https://learn.chatgpt.com/docs/reference/commands.md) 给出的公开新任务入口是 UI 的 New task 或 `codex://new?path=...&prompt=...` deep link。因此修复为：
+
+- 把 Desktop 完全重启设为安装后的硬闸门；重启前禁止创建 A1；
+- A1/A2/B1 只通过 New task UI 或公开 deep link 创建，不再依赖内部 `codex_app.create_thread`；
+- deep link 只预填 workspace 与 prompt，不自动发送；用户发送后才开始真实宿主 Gate；
+- 重启后先确认插件为 installed/enabled，再创建 A1；任何 MCP/Widget 失败仍按真实 canary 失败处理。
+
+原始错误只有通用提示，不能证明某个插件源码缺陷；“缺少重启且使用内部入口”是由执行顺序、官方流程和 cache 文件锁共同支持的高置信操作根因。修复后的真实 A1 仍必须在重启后验证，不能用 mock/CLI 代替。
 
 ## 固定分发拓扑
 
@@ -112,9 +131,9 @@ node plugins/agent-context-map/scripts/verify-release.mjs `
 仅在用户批准后执行：
 
 1. 创建脱敏配置备份和测试项目 hash 清单；不得复制 auth token 到仓库。
-2. 创建获批的 repo marketplace 文件，重启 Codex Desktop。
-3. 从 repo marketplace 安装 `agent-context-map 0.3.0-rc.1`，记录实际 cache 版本目录。
-4. 新建 task A1、A2、B1：A1/A2 绑定项目 A，B1 绑定项目 B；验证 session 隔离、project fingerprint 和 active document。
+2. 创建获批的 repo marketplace 文件，通过 CLI 或插件目录安装 `agent-context-map 0.3.0-rc.1`，记录实际 cache 版本目录。
+3. 完全退出并重启 Codex Desktop；重启后确认 marketplace 可见且插件为 installed/enabled。此闸门未完成时禁止创建 A1。
+4. 通过 New task UI 或公开 deep link 新建 A1、A2、B1；不得调用内部 `codex_app.create_thread`。A1/A2 绑定项目 A，B1 绑定项目 B；验证 session 隔离、project fingerprint 和 active document。
 5. 重载 A1，再新建 A3；旧 Widget instance 必须 superseded，不能 ready/commit/send。
 6. 在 A1 打开原生 Widget：React mounted、project hydrated、canvas first frame 三项齐全才算 ready。
 7. 创建 proposal，分别验证 reject 与 accept；accept 前正式 `.acm` hash 不变，accept 后仅目标文档产生可解释变更。
@@ -123,6 +142,15 @@ node plugins/agent-context-map/scripts/verify-release.mjs `
 10. 记录 plugin Node 进程网络连接；不得出现远程业务请求、遥测或非预期 listener。
 
 任何一步失败都触发 Windows 停止规则，不进入修复重跑。
+
+A1 的公开 deep link 可按下面方式生成；它只打开并预填 composer，仍需用户检查后发送：
+
+```powershell
+$projectRoot = 'D:\Code\agent-context-map'
+$prompt = '[@Agent Context Map](plugin://agent-context-map@agent-context-map-local) 执行 Phase 8 Windows canary A1；只读验证绑定、get/validate 与 Widget ready，不修改 tracked 文件。'
+$url = 'codex://new?path=' + [uri]::EscapeDataString($projectRoot) + '&prompt=' + [uri]::EscapeDataString($prompt)
+Start-Process $url
+```
 
 ## Gate 3：Tauri 与 Widget 冲突矩阵
 
