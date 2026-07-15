@@ -4,4 +4,4 @@ Only reviewed, user-approved plans belong here. Presence in this directory autho
 
 | Plan | Current phase | Evidence | Next gate |
 | --- | --- | --- | --- |
-| [Agent Context Map Codex 插件化改造](01-Agent-Context-Map-Codex插件化Plan.md) | Active / rc.3 Phase 7 passed + installed / Desktop restart pending / Phase 8 host verification pending | [review-002：approve](../reviews/01-Agent-Context-Map-Codex插件化Plan/review-002.md)；run `29385355303` 五 job 全绿；artifact `8331247906`；[Phase 8 runbook](../../runbooks/agent-context-map-plugin-release.md) | 完全重启 Desktop，随后在公开 deep-link 新 task 验证 Widget ready |
+| [Agent Context Map Codex 插件化改造](01-Agent-Context-Map-Codex插件化Plan.md) | Active / rc.4 local Phase 7 Gate passed / live host Gate not authorized | [review-002：approve](../reviews/01-Agent-Context-Map-Codex插件化Plan/review-002.md)；[Phase 8 evidence](../../../plugins/agent-context-map/tests/evidence/phase8-canary.json)；rc.4 tree `93ae0d2e...62038e` | 等待用户另行授权 rc.4 安装、完全重启和全新 task A1；不得复用旧 openAttempt |

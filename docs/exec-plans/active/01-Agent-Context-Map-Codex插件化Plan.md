@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / rc.3 Phase 7 passed + installed + restarted / Phase 8 stopped at Widget ready
+> 状态：Active / rc.4 local Phase 7 Gate passed / install + restart + fresh A1 not authorized
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -107,6 +107,8 @@ review-002 对 v2 的裁决为 `approve`（置信度 medium），确认 review-0
 - Phase 7 第七轮 Completed：run `29327685652` 的 Windows、macOS、Ubuntu、clean-room 与 downloaded artifact integrity 五 job 全绿；artifact `8308656602` 由本机再次下载并独立验证 13 files / 12 checksum entries、版本与固定 tree `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e` 全部闭合。Phase 8 的真实 canary、marketplace、tag/Release/stable 尚未获独立授权。
 - 2026-07-15 Phase 8 重启后验证发现 `0.3.0-rc.1` manifest 对应的 MCP health 仍上报 `0.2.0`。`rc.1` 的 Phase 7 历史证据保留但不再作为可发布候选；版本真相修复进入不可变新候选 `0.3.0-rc.2`，本地 105 tests、Vite、release candidate、安装生命周期、复现与 clean-room 通过，tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`。rc.2 必须重新完成 Phase 7 跨平台/下载资产 Gate 后，且用户重新授权真实宿主 retry，才可回到 Phase 8。
 - 2026-07-15 rc.3 新 task A1：完全重启后的 runtime health 精确为 `0.3.0-rc.3`；open/get/validate 绑定同一 project/session/revision，读取 2 nodes / 1 edge且 strict valid、无 diagnostics。唯一新 openAttempt 的 await-ready 仍返回 `ready=false`，无 widget instance/state/transitions，故 React mounted、project hydrated、canvas first frame 均未获证。只调用五个只读工具，fixture hash 前后一致并已删除；按本次授权停止，不重试、不推进写工具或发布。
+- 2026-07-15 rc.3 host lifecycle 调查：原始 rollout 的 open tool event 已识别 `ui://agent-context-map/widget.html`，但 Desktop 日志没有 `resources/list`、`resources/read`、resource rejection、iframe、CSP、bootstrap 或 ready 证据；installed rc.3 的 descriptor/list/read 经独立 stdio probe 符合 envelope 与精确 MIME。官方当前契约把 resource URI 作为缓存键，并要求 Widget HTML/JS/CSS 的破坏性变更使用新 URI；rc.2→rc.3 修改 bridge 却复用同一 URI，因此确认仓库存在 cache-key invalidation 缺陷，但旧日志无法证明 Desktop 当时是否实际复用了 rc.2 bundle。
+- 2026-07-15 immutable rc.4 本地候选：UI resource 改为 `ui://agent-context-map/widget-0.3.0-rc.4.html`，self-contained CSP 的外部 resource allowlist 归零；MCP 仅在进程内保留最多 64 条无项目路径/正文的 descriptor/resource/open/bootstrap/ready 事件，并由 read-only health 返回。版本化 URI 回归测试在修复前 2 fail / 3 pass，修复后专项 4 files / 10 tests 通过；完整本地 Phase 7 Gate 为 39 files / 113 pass / 1 platform skip、Vite、fixed release、distribution、reproducibility、隔离安装生命周期与 clean-room 全绿，tree `93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e`。rc.4 未安装、未重启、未执行真实 A1。
 
 ## 1. 调查基线与当前架构事实
 
@@ -1411,7 +1413,7 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Stopped / rc.3 Widget not ready — `0.3.0-rc.3` 已通过 run `29385355303` 五项 Gate、安装并完全重启。用户授权的独立新 task A1 `019f63bf-8462-76f1-8042-6c85b8fcd76a` 已通过 health/open/get/validate：runtime 版本精确匹配，host project/session/revision 一致，读取 2 nodes / 1 edge，validation valid 且无 diagnostics；但 await-ready 返回 `ready=false`，无 widget instance/state/transitions，React mounted、project hydrated 与 canvas first frame 均无证据。底层 session 只执行 health/open/get/validate/await-ready 五个只读 MCP 调用，fixture hash 前后一致并已删除。按 Windows 停止规则不自动重跑；write/import/commit/send、push/tag/GitHub Release/stable 均不推进。
+执行状态：Stopped / rc.4 local candidate ready, live host Gate not authorized — rc.3 原始 A1 的 descriptor URI 被 Desktop tool event 识别，但 resource discovery/read、resource acceptance、iframe mount、Widget JS 和 `ui/initialize` 均因宿主日志缺失而保持 unknown；server bootstrap arrival 已被原始 rollout falsify，React ready proof 也不存在。rc.2→rc.3 在破坏性 Widget bridge 变更后复用同一 resource URI，违反官方 cache-key versioning 契约；仓库缺陷已由 fail-before/pass-after 回归测试关闭到 immutable rc.4，完整本地 Phase 7 Gate 通过。rc.4 尚未安装或重启，真实 A1 retry 必须在另一个全新 task 获用户明确授权。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 
@@ -1426,6 +1428,10 @@ Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停
 2026-07-15 rc.3 remote/install result：用户明确授权 push、等待跨平台 CI 全绿、安装/重启 rc.3 并在独立新 task 执行 A1。commit `520b258` 对应 run `29385355303` 的 Windows/macOS/Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿；artifact `8331247906` 下载后独立 verifier 命中固定 tree/checksum，CLI 已安装 `0.3.0-rc.3` 且 installed/enabled。当前硬闸门是完全退出并重启 Desktop；重启前不得把当前 task 的旧 MCP/iframe 视为 rc.3 证据。
 
 2026-07-15 rc.3 A1 result：Desktop 完全重启后的新 task health 精确为 `0.3.0-rc.3`。openAttempt `c002c246-4569-4f9c-a290-8175bad46078` 的 open/get/validate 全过，但 ready 等待无 Widget instance/state/transitions；fixture SHA-256 前后均为 `6AC138E4E58CE7AA612C9E05D4EE60413588A4CB4A9AABA2B215302D27B6A007` 并已删除。该失败消耗本次 A1 授权；后续调查、retry 或发布必须等待用户另行授权。
+
+2026-07-15 host lifecycle evidence：A1 rollout 在 `03:10:44.619Z` 的 open completion 带出 `mcp_app_resource_uri=ui://agent-context-map/widget.html`、open correlation `79cb3f70-bdf3-4e85-93a6-cd306763c4e4` 与 openAttempt `c002c246-4569-4f9c-a290-8175bad46078`；`03:10:59.696Z` 的 await correlation `cc212d1d-992e-44cb-bb95-d058f13203ba` 返回无 instance/transitions。installed rc.3 直接 stdio probe 已确认 tool descriptor、`resources/list`、`resources/read`、`text/html;profile=mcp-app` 与 HTML 返回都有效；但 Codex Desktop `26.707.9981.0` 的保留日志没有 resource read/rejection、iframe 或 CSP 记录。因此 descriptor 是 confirmed，Desktop resource discovery/read、host acceptance、iframe、JS 和 `ui/initialize` 是 unknown，server bootstrap arrival 是 falsified；这些 Desktop 内部阶段在公开文档中属于 undocumented/bounded uncertainty。
+
+2026-07-15 rc.4 local fix：官方 Apps SDK 文档把 UI resource URI 定义为 cache key，并要求破坏性 Widget bundle 更新更换 URI且同步 descriptor/list/read。rc.3 bridge 代码相对 rc.2 已变，但仍使用 `ui://agent-context-map/widget.html`，故确认仓库 cache invalidation defect。rc.4 使用版本化 URI、最小 CSP，并增加只读进程内 lifecycle observation。候选固定 tree `93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e`、checksum set `b59584a706f5ae7f0641a80da89938ad5b3d92525661a74ff201ef4f3c99d7a8`；本地 Gate 已过，但 live causality 仍须单独授权的安装→完全重启→全新 task A1 验证。
 
 输入：
 
@@ -1691,4 +1697,4 @@ v2 复核确认官方 Codex Manual 公开说明了 repo-local marketplace、bund
 
 ---
 
-本 Plan 已通过 review-002 并由用户明确激活。rc.3 Phase 7、安装与重启已完成，但真实新 task A1 仍在 Widget ready Gate 失败并停止；当前下一闸门是用户决定是否另行授权 host lifecycle 调查或新的 retry，固定 tag/GitHub Release/stable 均不推进。
+本 Plan 已通过 review-002 并由用户明确激活。rc.3 A1 的宿主生命周期已完成证据分层，仓库 cache-key defect 已修复为通过完整本地 Gate 的 immutable rc.4；当前下一闸门是用户另行授权 rc.4 安装、完全重启和全新 task A1。push、tag、GitHub Release 与 stable 均不推进。

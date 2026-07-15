@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0-rc.4 — 2026-07-15
+
+- Version the MCP Apps UI resource URI with the immutable plugin version so host caches cannot reuse an older Widget bundle after a runtime change.
+- Advertise an empty external resource domain allowlist for the self-contained Widget.
+- Expose bounded, process-memory-only host lifecycle observations through the read-only health response without recording project paths or document content.
+
 ## 0.3.0-rc.3 — 2026-07-15
 
 - Align the MCP Apps Widget handshake with protocol version `2026-01-26`.

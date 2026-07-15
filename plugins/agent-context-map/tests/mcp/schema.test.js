@@ -24,6 +24,7 @@ describe("Phase 6 MCP schema", () => {
   });
 
   test("publishes strict input/output schemas and truthful read-only annotations", () => {
+    const expectedResourceUri = `ui://agent-context-map/widget-${PLUGIN_VERSION}.html`;
     expect(MCP_TOOLS.map((tool) => tool.name)).toEqual([
       "agent_context_map_health", "open_agent_context_map", "await_agent_context_map_ready", "get_acm_graph_context",
       "validate_acm_graph", "write_acm_graph", "import_acm_md", "export_acm_md",
@@ -36,7 +37,8 @@ describe("Phase 6 MCP schema", () => {
       expect(tool.annotations.openWorldHint, tool.name).toBe(false);
     }
     expect(MCP_TOOLS[4].inputSchema.required).toEqual([]);
-    expect(MCP_TOOLS[1]._meta.ui).toEqual({ resourceUri: "ui://agent-context-map/widget.html", visibility: ["model", "app"] });
+    expect(MCP_TOOLS[1]._meta.ui).toEqual({ resourceUri: expectedResourceUri, visibility: ["model", "app"] });
+    expect(MCP_TOOLS[1]._meta["openai/outputTemplate"]).toBe(expectedResourceUri);
     for (const tool of MCP_TOOLS.slice(8)) expect(tool._meta.ui.visibility).toEqual(["app"]);
   });
 

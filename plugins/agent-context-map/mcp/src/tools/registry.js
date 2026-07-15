@@ -87,7 +87,7 @@ function asWidgetRecord(record) {
   };
 }
 
-export function createToolRegistry({ sessionService, widgetLifecycle, projectService, proposalStore, contextStore, sendService, instanceId, version }) {
+export function createToolRegistry({ sessionService, widgetLifecycle, projectService, proposalStore, contextStore, sendService, hostObservability = null, instanceId, version }) {
   async function handleWidgetApi(binding, args) {
     const activeWidget = widgetLifecycle.requireReadyInstance(binding, args);
     const base = [...appBaseKeys(), "action"];
@@ -144,7 +144,10 @@ export function createToolRegistry({ sessionService, widgetLifecycle, projectSer
         const args = params?.arguments || {};
         if (params?.name === "agent_context_map_health") {
           assertExactKeys(args, []);
-          return asToolResult(responseEnvelope({ correlationId, data: { server: "agent-context-map", version, instanceId, transport: "stdio", topology: "single_process" } }));
+          return asToolResult(responseEnvelope({ correlationId, data: {
+            server: "agent-context-map", version, instanceId, transport: "stdio", topology: "single_process",
+            hostLifecycle: hostObservability?.snapshot() || null,
+          } }));
         }
         if (params?.name === "validate_acm_graph") {
           assertExactKeys(args, ["documentId", "expectedRevision", "acmMdText"]);
@@ -165,6 +168,7 @@ export function createToolRegistry({ sessionService, widgetLifecycle, projectSer
           project.mode = args.mode || "view";
           const lifecycle = widgetLifecycle.open(binding, project);
           const appOpen = widgetLifecycle.appOpenMetadata(binding, lifecycle.openAttemptId);
+          hostObservability?.record("open_result", { outcome: "issued", toolName: params.name, correlationId, openAttemptId: lifecycle.openAttemptId });
           const first = project.documents[0] || null;
           return asToolResult(responseEnvelope({ binding, correlationId, documentId: first?.doc_id || null, documentRevision: first?.document_revision || null, data: { ...lifecycle, documentCount: project.documents.length, invalidDocumentCount: project.diagnostics.invalid.length, persistence: project.persistence } }), { "openai/outputTemplate": WIDGET_RESOURCE_URI, widgetData: { ...project, ...lifecycle, ...appOpen } });
         }
@@ -232,12 +236,20 @@ export function createToolRegistry({ sessionService, widgetLifecycle, projectSer
         if (params?.name === "agent_context_map_widget_bootstrap") {
           assertExactKeys(args, ["openAttemptId", "clientMountId", "bootstrapNonce"], ["openAttemptId", "clientMountId", "bootstrapNonce"]);
           const lifecycle = widgetLifecycle.bootstrap(binding, args);
+          hostObservability?.record("widget_bootstrap_result", {
+            outcome: "accepted", toolName: params.name, correlationId,
+            openAttemptId: args.openAttemptId, widgetInstanceId: lifecycle.widgetInstanceId,
+          });
           const app = widgetLifecycle.appMetadata(binding, { openAttemptId: args.openAttemptId, widgetInstanceId: lifecycle.widgetInstanceId });
           return asToolResult(responseEnvelope({ binding, correlationId, data: lifecycle }), { widgetData: { ...lifecycle, ...app } });
         }
         if (params?.name === "agent_context_map_widget_ready") {
           assertExactKeys(args, [...appBaseKeys(), "proof"], [...appBaseKeys(), "proof"]);
           const lifecycle = widgetLifecycle.ready(binding, args);
+          hostObservability?.record("widget_ready_result", {
+            outcome: "accepted", toolName: params.name, correlationId,
+            openAttemptId: args.openAttemptId, widgetInstanceId: args.widgetInstanceId,
+          });
           return asToolResult(responseEnvelope({ binding, correlationId, documentId: lifecycle.documentId, documentRevision: lifecycle.documentRevision, data: lifecycle }));
         }
         if (params?.name === "agent_context_map_widget_api") {

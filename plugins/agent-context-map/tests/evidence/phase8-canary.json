@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "rc3_a1_widget_not_ready_stop_no_retry",
+  "status": "rc4_local_gate_passed_live_host_gate_not_authorized",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -11,9 +11,10 @@
   },
   "currentRunRestrictions": {
     "writeImportCommitSend": "forbidden",
-    "trackedProductFiles": "forbidden",
+    "trackedProductFiles": "authorized_only_for_evidence_backed_repo_fix",
     "requiredEvidenceAndStateDocs": "authorized",
-    "pushTagGithubReleaseStable": "forbidden"
+    "pushTagGithubReleaseStable": "forbidden",
+    "installRestartRealA1": "forbidden_without_new_authorization"
   },
   "windowsPolicy": {
     "failureBudget": 1,
@@ -24,6 +25,7 @@
     "rc2HostRetryAuthorizedAt": "2026-07-15",
     "rc2HostRetryFailures": 1,
     "hostBindingInvestigationAuthorizedAt": "2026-07-15",
+    "widgetHostLifecycleInvestigationAuthorizedAt": "2026-07-15",
     "correctedFixtureRetryAuthorizedAt": "2026-07-15",
     "authorizedRetryScope": "push_rc3_wait_cross_platform_green_install_restart_then_one_new_task_strict_valid_a1",
     "rc3HostRetryFailures": 1,
@@ -51,7 +53,7 @@
     "existingGithubReleases": []
   },
   "gates": {
-    "fixedAsset": "passed_rc3",
+    "fixedAsset": "passed_rc4_local_only",
     "windowsCodexCanary": "failed_rc3_widget_not_ready_stop_no_retry",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
@@ -308,6 +310,183 @@
       "temporaryFixtureRemoved": true,
       "failureGate": "widget_ready",
       "retryPerformed": false
+    }
+  },
+  "hostLifecycleInvestigation": {
+    "investigatedAt": "2026-07-15",
+    "scope": "rc3_original_a1_evidence_only_no_retry",
+    "codexDesktop": {
+      "package": "OpenAI.Codex",
+      "version": "26.707.9981.0",
+      "packageFamilyName": "OpenAI.Codex_2p2nqsd0c76g0"
+    },
+    "sources": {
+      "rollout": "C:\\Users\\LENOVO\\.codex\\sessions\\2026\\07\\15\\rollout-2026-07-15T11-08-45-019f63bf-8462-76f1-8042-6c85b8fcd76a.jsonl",
+      "desktopLogRoot": "C:\\Users\\LENOVO\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\LocalCache\\Local\\Codex\\Logs\\2026\\07\\15",
+      "installedRc3Server": "C:\\Users\\LENOVO\\.codex\\plugins\\cache\\agent-context-map-local\\agent-context-map\\0.3.0-rc.3\\mcp\\server.mjs",
+      "desktopRelevantLogHits": 0,
+      "desktopLogSearchIncluded": [
+        "openAttemptId",
+        "openCorrelationId",
+        "awaitReadyCorrelationId",
+        "uiResourceUri",
+        "resources/list",
+        "resources/read",
+        "resourceMime",
+        "iframe",
+        "CSP",
+        "widget bootstrap",
+        "widget ready"
+      ]
+    },
+    "timeline": [
+      {
+        "atUtc": "2026-07-15T03:10:37.109Z",
+        "event": "health_completed",
+        "correlationId": "132129e9-8752-4878-81c0-659540567038",
+        "result": "ok_rc3"
+      },
+      {
+        "atUtc": "2026-07-15T03:10:44.619Z",
+        "event": "open_completed",
+        "correlationId": "79cb3f70-bdf3-4e85-93a6-cd306763c4e4",
+        "openAttemptId": "c002c246-4569-4f9c-a290-8175bad46078",
+        "mcpAppResourceUri": "ui://agent-context-map/widget.html",
+        "result": "ok_open_attempt_issued"
+      },
+      {
+        "atUtc": "2026-07-15T03:10:50.602Z",
+        "event": "get_context_completed",
+        "correlationId": "136a2c4d-e8e9-49bc-9c52-ccb62728bb9d",
+        "result": "ok_2_nodes_1_edge"
+      },
+      {
+        "atUtc": "2026-07-15T03:10:53.908Z",
+        "event": "validate_completed",
+        "correlationId": "e1e0ed0d-71f9-4f83-b220-df11e8ec409a",
+        "result": "valid_no_diagnostics"
+      },
+      {
+        "atUtc": "2026-07-15T03:10:59.696Z",
+        "event": "await_ready_completed",
+        "correlationId": "cc212d1d-992e-44cb-bb95-d058f13203ba",
+        "openAttemptId": "c002c246-4569-4f9c-a290-8175bad46078",
+        "result": "ready_false_no_instance_no_transitions"
+      }
+    ],
+    "layerConclusions": {
+      "toolDescriptor": {
+        "status": "confirmed",
+        "evidence": "Installed rc.3 tools/list advertised _meta.ui.resourceUri and openai/outputTemplate as ui://agent-context-map/widget.html; the A1 open tool event also carried the same mcp_app_resource_uri."
+      },
+      "resourceDiscoveryRead": {
+        "status": "unknown",
+        "descriptorUriRecognizedByDesktopToolEvent": true,
+        "desktopResourcesListObserved": false,
+        "desktopResourcesReadObserved": false,
+        "directInstalledServerProbe": "passed_list_and_read",
+        "directReadMimeType": "text/html;profile=mcp-app",
+        "directReadBytes": 2095385,
+        "directReadSha256": "e55be5b74a39b8328abb554bf8a8a21e7b87d27466c5f2853cc6cf033d3a0aab",
+        "boundary": "A direct harness probe confirms server behavior, not that Desktop requested or accepted the resource."
+      },
+      "hostResourceAcceptance": {
+        "status": "unknown",
+        "mimeRejected": "unknown",
+        "uriRejected": "unknown",
+        "htmlRejected": "unknown",
+        "cspRejected": "unknown",
+        "metadataRejected": "unknown"
+      },
+      "iframeMount": {
+        "status": "unknown",
+        "evidence": "No iframe creation or rejection event was present in the A1 rollout or searched Desktop logs."
+      },
+      "widgetJavascriptExecution": {
+        "status": "unknown",
+        "evidence": "No Widget console or first-script marker is exposed in the retained logs."
+      },
+      "uiInitialize": {
+        "status": "unknown",
+        "evidence": "The retained server and Desktop logs do not expose iframe ui/initialize traffic."
+      },
+      "serverBootstrapArrival": {
+        "status": "falsified",
+        "evidence": "The A1 rollout contains no agent_context_map_widget_bootstrap call for the openAttempt."
+      },
+      "reactLifecycle": {
+        "status": "unknown",
+        "readyProofStatus": "falsified",
+        "evidence": "No ready call or transitions proved React mount, project hydration, or canvas first frame; absence of proof does not establish whether React code began executing."
+      }
+    },
+    "officialContract": {
+      "codexManualHelper": "current",
+      "officialSourcesOnly": true,
+      "resourceMimeType": "text/html;profile=mcp-app",
+      "standardToolDescriptorField": "_meta.ui.resourceUri",
+      "compatibilityToolDescriptorField": "_meta.openai/outputTemplate",
+      "resourceResponseEnvelope": "contents[{uri,mimeType,text,_meta.ui.csp}]",
+      "resourceUriCacheKeyRule": "Use a new resource URI when Widget HTML, JavaScript, or CSS changes in a breaking way and update every reference.",
+      "references": [
+        "https://developers.openai.com/apps-sdk/build/mcp-server#step-1--register-a-component-template",
+        "https://developers.openai.com/apps-sdk/reference#_meta-fields-on-tool-descriptor",
+        "https://developers.openai.com/apps-sdk/reference#component-resource-_meta-fields",
+        "https://developers.openai.com/apps-sdk/build/mcp-server#troubleshooting"
+      ],
+      "desktopInternalDiscoveryAndIframeBehavior": "undocumented_bounded_uncertainty"
+    },
+    "rootCauseAssessment": {
+      "classification": "repo_contract_defect_confirmed_host_causality_pending",
+      "confirmedDefect": "rc.2 to rc.3 changed the Widget MCP Apps handshake and tool-result parsing but retained ui://agent-context-map/widget.html, violating the official cache-key versioning requirement for breaking Widget changes.",
+      "whyItFits": "A host may reuse the older resource without a new resources/read, which is consistent with a successful open descriptor and zero bootstrap/ready events.",
+      "boundedUncertainty": "The rc.3 Desktop logs do not reveal whether a cached rc.2 resource was actually mounted, so causal attribution requires a separately authorized rc.4 live host Gate."
+    },
+    "rc4LocalCandidate": {
+      "version": "0.3.0-rc.4",
+      "status": "local_phase7_gate_passed_not_installed",
+      "sourceState": "current_scoped_local_commit",
+      "resourceUri": "ui://agent-context-map/widget-0.3.0-rc.4.html",
+      "resourceMimeType": "text/html;profile=mcp-app",
+      "resourceCsp": {
+        "connectDomains": [],
+        "resourceDomains": []
+      },
+      "readBytes": 2095385,
+      "readSha256": "d2a0fb44704dc608a9e5be888ab81bd00be0d101a58835f7be6d78ef29de21db",
+      "hostObservability": {
+        "storage": "process_memory_only",
+        "maxEvents": 64,
+        "sensitiveContentRecorded": false,
+        "observedStages": [
+          "mcp_initialize",
+          "tool_descriptors_list",
+          "ui_resources_list",
+          "ui_resource_read",
+          "tool_call",
+          "open_result",
+          "widget_bootstrap_result",
+          "widget_ready_result"
+        ],
+        "exposedBy": "read_only_health_response"
+      },
+      "regressionTestBeforeFix": "2_failed_3_passed_expected_old_unversioned_uri",
+      "targetedTestsAfterFix": "4_files_10_passed",
+      "fullSuite": "39_files_113_passed_1_platform_skipped",
+      "viteBuild": "passed_317_modules",
+      "releaseCandidate": "passed",
+      "distribution": "4_files_12_passed",
+      "reproducibility": "passed",
+      "installUpgradeRollback": "passed",
+      "uninstallReinstall": "passed",
+      "cleanRoom": "passed_39_files_113_passed_1_platform_skipped",
+      "treeSha256": "93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e",
+      "checksumSetDigest": "b59584a706f5ae7f0641a80da89938ad5b3d92525661a74ff201ef4f3c99d7a8",
+      "sha256SumsFileSha256": "d06134519dd0bdebd9c46640834601d663aa29cfaaf6b2842194e3c53cfca48d",
+      "installed": false,
+      "desktopRestarted": false,
+      "realA1Executed": false,
+      "nextGate": "separate_explicit_authorization_for_install_restart_and_fresh_task_a1"
     }
   },
   "projectDataModified": false,

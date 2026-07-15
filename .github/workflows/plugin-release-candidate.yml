@@ -51,7 +51,7 @@ jobs:
       - name: Build fixed plugin candidate
         run: npm run build:plugin
       - name: Verify fixed plugin candidate
-        run: node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.3 --expected-tree-sha256 3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4
+        run: node plugins/agent-context-map/scripts/verify-release.mjs dist/agent-context-map-plugin --expected-version 0.3.0-rc.4 --expected-tree-sha256 93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e
       - name: Distribution and reproducibility gates
         run: |
           npm run test:distribution
@@ -64,7 +64,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v7
         with:
-          name: agent-context-map-plugin-0.3.0-rc.3
+          name: agent-context-map-plugin-0.3.0-rc.4
           path: dist/agent-context-map-plugin
           if-no-files-found: error
           retention-days: 14
@@ -81,10 +81,10 @@ jobs:
           node-version: 24.12.0
       - uses: actions/download-artifact@v8
         with:
-          name: agent-context-map-plugin-0.3.0-rc.3
+          name: agent-context-map-plugin-0.3.0-rc.4
           path: artifact/agent-context-map-plugin
       - name: Verify downloaded installable artifact
-        run: node plugins/agent-context-map/scripts/verify-release.mjs artifact/agent-context-map-plugin --expected-version 0.3.0-rc.3 --expected-tree-sha256 3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4
+        run: node plugins/agent-context-map/scripts/verify-release.mjs artifact/agent-context-map-plugin --expected-version 0.3.0-rc.4 --expected-tree-sha256 93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e
 
   clean-room:
     name: Clean-room package replay

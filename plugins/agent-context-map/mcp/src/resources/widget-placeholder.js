@@ -1,4 +1,6 @@
-export const WIDGET_RESOURCE_URI = "ui://agent-context-map/widget.html";
+import { PLUGIN_VERSION } from "../../../src/plugin-version.js";
+
+export const WIDGET_RESOURCE_URI = `ui://agent-context-map/widget-${PLUGIN_VERSION}.html`;
 
 export const WIDGET_PLACEHOLDER_HTML = `<!doctype html>
 <html lang="en">
@@ -15,7 +17,7 @@ export function listUiResources() {
       name: "Agent Context Map Widget",
       description: "Local-only MCP Apps editor for the current trusted Agent Context Map project.",
       mimeType: "text/html;profile=mcp-app",
-      _meta: { ui: { resourceUri: WIDGET_RESOURCE_URI, csp: { connectDomains: [], resourceDomains: ["data:", "blob:"] } } },
+      _meta: { ui: { resourceUri: WIDGET_RESOURCE_URI, csp: { connectDomains: [], resourceDomains: [] } } },
     }],
   };
 }
@@ -27,7 +29,7 @@ export function readUiResource(uri) {
       uri: WIDGET_RESOURCE_URI,
       mimeType: "text/html;profile=mcp-app",
       text: WIDGET_HTML,
-      _meta: { ui: { resourceUri: WIDGET_RESOURCE_URI, csp: { connectDomains: [], resourceDomains: ["data:", "blob:"] } } },
+      _meta: { ui: { resourceUri: WIDGET_RESOURCE_URI, csp: { connectDomains: [], resourceDomains: [] } } },
     }],
   };
 }

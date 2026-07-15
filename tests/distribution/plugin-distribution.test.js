@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { PLUGIN_VERSION } from "../../plugins/agent-context-map/src/plugin-version.js";
 import { createMcpHarness, trustedMeta } from "../../plugins/agent-context-map/tests/helpers/mcp-harness.js";
 import { buildPluginRelease, workspaceRoot } from "../helpers/plugin-release.js";
 
@@ -68,7 +69,7 @@ describe("Phase 4 clean plugin distribution", () => {
     const manifest = JSON.parse(await fs.readFile(path.join(releaseRoot, ".codex-plugin", "plugin.json"), "utf8"));
     const dependencies = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "dependencies.json"), "utf8"));
     const sbom = JSON.parse(await fs.readFile(path.join(releaseRoot, "dist", "sbom.cdx.json"), "utf8"));
-    expect(manifest.version).toBe("0.3.0-rc.3");
+    expect(manifest.version).toBe(PLUGIN_VERSION);
     expect(dependencies).toMatchObject({
       schemaVersion: "agent-context-map-plugin-dependencies/v1",
       pluginVersion: manifest.version,

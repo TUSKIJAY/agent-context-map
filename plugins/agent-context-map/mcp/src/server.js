@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { startStdioServer } from "./protocol.js";
+import { HostLifecycleObservability } from "./observability/host-lifecycle.js";
 import { SessionService } from "./session/session-service.js";
 import { createToolRegistry } from "./tools/registry.js";
 import { WidgetLifecycleService } from "./widget/lifecycle-service.js";
@@ -14,12 +15,13 @@ import { PLUGIN_VERSION } from "../../src/plugin-version.js";
 const SERVER_NAME = "agent-context-map";
 const SERVER_VERSION = PLUGIN_VERSION;
 const instanceId = randomUUID();
+const hostObservability = new HostLifecycleObservability();
 const sessionService = new SessionService();
 const widgetLifecycle = new WidgetLifecycleService();
 const projectService = new BoundProjectService();
 const proposalStore = new ProposalStore();
 const contextStore = new ContextStore();
 const sendService = new SendService();
-const toolRegistry = createToolRegistry({ sessionService, widgetLifecycle, projectService, proposalStore, contextStore, sendService, instanceId, version: SERVER_VERSION });
+const toolRegistry = createToolRegistry({ sessionService, widgetLifecycle, projectService, proposalStore, contextStore, sendService, hostObservability, instanceId, version: SERVER_VERSION });
 
-startStdioServer({ serverName: SERVER_NAME, serverVersion: SERVER_VERSION, toolRegistry });
+startStdioServer({ serverName: SERVER_NAME, serverVersion: SERVER_VERSION, toolRegistry, hostObservability });

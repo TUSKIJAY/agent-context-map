@@ -55,5 +55,21 @@ describe("Phase 5 Widget lifecycle", () => {
     }, meta);
     expect(ready.result.structuredContent.data).toMatchObject({ ready: true, widgetState: "ready", documentId: "acm_baseline_001" });
     expect(ready.result.structuredContent.data.transitions).toEqual(["initialized", "react_mounted", "project_hydrated", "canvas_first_frame", "ready"]);
+
+    const health = await harness.callTool("agent_context_map_health");
+    const hostEvents = health.result.structuredContent.data.hostLifecycle.events;
+    expect(hostEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        stage: "open_result", outcome: "issued", correlationId: opened.result.structuredContent.correlationId, openAttemptId,
+      }),
+      expect.objectContaining({
+        stage: "widget_bootstrap_result", outcome: "accepted", correlationId: bootstrapped.result.structuredContent.correlationId,
+        openAttemptId, widgetInstanceId,
+      }),
+      expect.objectContaining({
+        stage: "widget_ready_result", outcome: "accepted", correlationId: ready.result.structuredContent.correlationId,
+        openAttemptId, widgetInstanceId,
+      }),
+    ]));
   });
 });

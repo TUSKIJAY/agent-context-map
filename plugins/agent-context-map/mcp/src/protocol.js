@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline";
 import { readUiResource, listUiResources } from "./resources/widget-placeholder.js";
 
-export function startStdioServer({ serverName, serverVersion, toolRegistry }) {
+export function startStdioServer({ serverName, serverVersion, toolRegistry, hostObservability = null }) {
   const pendingClientRequests = new Map();
   let requestSequence = 0;
 
@@ -26,6 +26,7 @@ export function startStdioServer({ serverName, serverVersion, toolRegistry }) {
 
   async function handleRequest(message) {
     if (message.method === "initialize") {
+      hostObservability?.record("mcp_initialize", { outcome: "served" });
       respond(message.id, {
         protocolVersion: message.params?.protocolVersion || "2025-06-18",
         capabilities: { tools: { listChanged: false }, resources: { subscribe: false, listChanged: false } },
@@ -35,11 +36,24 @@ export function startStdioServer({ serverName, serverVersion, toolRegistry }) {
       return;
     }
     if (message.method === "ping") { respond(message.id, {}); return; }
-    if (message.method === "tools/list") { respond(message.id, toolRegistry.list()); return; }
-    if (message.method === "tools/call") { respond(message.id, await toolRegistry.call(message.params || {}, { requestClient })); return; }
-    if (message.method === "resources/list") { respond(message.id, listUiResources()); return; }
+    if (message.method === "tools/list") {
+      hostObservability?.record("tool_descriptors_list", { outcome: "served" });
+      respond(message.id, toolRegistry.list());
+      return;
+    }
+    if (message.method === "tools/call") {
+      hostObservability?.record("tool_call", { outcome: "received", toolName: message.params?.name });
+      respond(message.id, await toolRegistry.call(message.params || {}, { requestClient }));
+      return;
+    }
+    if (message.method === "resources/list") {
+      hostObservability?.record("ui_resources_list", { outcome: "served" });
+      respond(message.id, listUiResources());
+      return;
+    }
     if (message.method === "resources/read") {
       const resource = readUiResource(message.params?.uri);
+      hostObservability?.record("ui_resource_read", { outcome: resource ? "served" : "unknown_resource" });
       if (!resource) respondError(message.id, -32602, "Unknown resource URI");
       else respond(message.id, resource);
       return;

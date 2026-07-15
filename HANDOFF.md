@@ -2,7 +2,7 @@
 
 更新日期：2026-07-15
 
-当前焦点：rc.3 已完成跨平台 Gate、安装和完全重启；独立新 task A1 的 health/open/get/validate 通过，但原生 Widget 未创建 instance/state/transitions，ready Gate 失败。已按 stop-without-retry 复核并删除 fixture；等待用户决定是否另行授权调查，不推进任何写工具或发布动作。
+当前焦点：rc.3 A1 host lifecycle 已完成原始 rollout/Desktop/installed server 分层取证。仓库确认存在 rc.2→rc.3 破坏性 Widget 变更后复用 UI resource cache key 的缺陷，已修复为通过完整本地 Gate 的 immutable rc.4；rc.4 未安装、未重启、未运行真实 A1，等待用户另行授权 live Gate。
 
 ## Resume Point
 
@@ -39,7 +39,7 @@
   - selected/related/execution context 分别执行精确选择、单层有向 allowlist 扩展和 Task-only 冲突门禁；send payload/digest 由 server 重建，并拒绝 stale task/instance/revision 与 prompt injection；
   - Widget 使用标准 `ui/message` 发送，兼容 fallback 只在标准能力不可用时启用；底部 safe action bar 明示 preview、二次确认和发送结果。
 - Phase 7 本地候选：
-  - `0.3.0-rc.1` 保留为历史候选；运行时版本修复进入 `0.3.0-rc.2`；`.nvmrc` 和 CI 固定 Node 24.12.0/npm 11.6.2，`package-lock.json` 是唯一安装输入；
+  - `0.3.0-rc.1` 至 rc.3 保留为历史候选；当前 immutable `0.3.0-rc.4` 以版本化 UI resource URI关闭 cache-key defect；`.nvmrc` 和 CI 固定 Node 24.12.0/npm 11.6.2，`package-lock.json` 是唯一安装输入；
   - release 包含 `SHA256SUMS`、deterministic manifest、依赖清单、CycloneDX SBOM 和 CHANGELOG，13 个文件可脱离源码树启动；
   - `check-clean-room.mjs` 从不含 `.git`、`node_modules`、dist 与源码生成物的隔离副本执行 `npm ci`、全测、Vite build、固定包和两次可复现构建；
   - Windows 原生 Gate 覆盖 junction escape、独占 locked destination 和解锁后 replace；POSIX runner 覆盖 symlink 与 permission-denied；
@@ -50,9 +50,9 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- 分支：rc.3 Widget bridge 修复与此前四个 Phase 8 commit 已推送到 `520b258`；安装后状态文档将产生本地 scoped commit，接手时仍以 `git log -6 --oneline` 与 `git status --short --branch` 实测
+- 分支：rc.3 Widget bridge 修复已推送到 `520b258`；既有本地 commits `41fff9d`、`00c9471` 未改写，rc.4 host lifecycle 修复由当前 scoped HEAD 闭环；接手时仍以 `git log -6 --oneline` 与 `git status --short --branch` 实测
 - push：用户已授权并完成 `cae841b..520b258`；后续状态-only commit 的 push 仍需单独授权
-- 当前计划状态：rc.3 Phase 7 Completed / installed / Desktop restarted；Phase 8 A1 stopped at Widget ready，host lifecycle unresolved
+- 当前计划状态：rc.3 A1 host lifecycle evidence complete；rc.4 local Phase 7 Gate passed；install/restart/fresh A1 not authorized
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
 - Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
 - Phase 8 根因：原 canary 在 CLI 安装后没有重启 Desktop，立即调用内部 `codex_app.create_thread`；官方流程要求重启后在新 task 测试，公开入口为 New task UI 或 `codex://new`。cache 文件锁与此执行顺序一致，但原始通用错误不足以证明插件源码缺陷。
@@ -69,8 +69,14 @@
 - rc.3 修复：`WidgetHostAdapter` 使用 `2026-01-26`、标准 direct `params` result、canonical compatibility envelope，同时保留 legacy nested result/metadata。候选版本 `0.3.0-rc.3`；39 files / 113 tests（1 Windows platform skip）、Vite 317 modules、release candidate、isolated install/update/rollback/uninstall/reinstall、reproducibility、clean-room、harness 均通过；tree `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`，checksum set `504c742efb271c5b40bbed43bde056663eb01dd49b43e14d2cdcc2036c67d99c`。
 - rc.3 remote/install：commit `520b258c964476aef5ad4a463f334dd5c8b71e49` 对应 run `29385355303`，Windows/macOS/Ubuntu、clean-room 与 downloaded artifact integrity 五 job 全绿。artifact `8331247906`，size `749432`，archive digest `sha256:de488c8b0c94a89dbe0b031dc6812df4eb279c9c72f33ba103e6c0aa8a7acb95`；下载后 verifier 再次确认 tree/checksum。CLI 安装返回 cache `C:\Users\LENOVO\.codex\plugins\cache\agent-context-map-local\agent-context-map\0.3.0-rc.3`，list 显示 installed/enabled；Desktop 已完全重启，当前新 task health 精确证明 runtime `0.3.0-rc.3`。
 - rc.3 新 task A1：task `019f63bf-8462-76f1-8042-6c85b8fcd76a`，health instance `b80c4ce1-5296-41f3-95af-7db45da10dbf`；open/get/validate 绑定 project `project_95893f3dc1b23e238ad1fb51`、session `98336411-e8b3-4dec-b15d-61a76123cbc7`、revision `sha256:5bc2cca5f2576ec5026f4acf22e904e37d9b922b5ec0f92fc6216ede36d6016a`，读取 2 nodes / 1 edge，validation valid/no diagnostics。openAttempt `c002c246-4569-4f9c-a290-8175bad46078` 的 await-ready 返回 false，widgetInstanceId/widgetState 均为空且 transitions 为空，因此 React mounted、project hydrated、canvas first frame 均未获证。仅调用 health/open/get/validate/await-ready；未调用 write/import/commit/send；fixture 前后 SHA-256 均为 `6AC138E4E58CE7AA612C9E05D4EE60413588A4CB4A9AABA2B215302D27B6A007` 并已删除。
+- rc.3 host lifecycle 时间线：rollout `03:10:37.109Z` health、`03:10:44.619Z` open、`03:10:50.602Z` get、`03:10:53.908Z` validate、`03:10:59.696Z` await-ready。open event 明确带 `mcp_app_resource_uri=ui://agent-context-map/widget.html`、open correlation `79cb3f70-bdf3-4e85-93a6-cd306763c4e4` 和上述 openAttempt；await correlation `cc212d1d-992e-44cb-bb95-d058f13203ba`。installed rc.3 descriptor/list/read 的 URI、MIME、HTML 经独立 probe 通过；Desktop `26.707.9981.0` 日志无 resource list/read、rejection、iframe、CSP、bootstrap 或 ready 命中。
+- 分层结论：descriptor URI recognition = confirmed；Desktop resource discovery/read = unknown；host MIME/URI/HTML/CSP/metadata acceptance = unknown；iframe = unknown；Widget JS = unknown；`ui/initialize` = unknown；server bootstrap arrival = falsified；React actual execution = unknown、ready proof = falsified。官方未公开 Desktop 内部 discovery/iframe 日志语义，标记为 undocumented/bounded uncertainty。
+- rc.4 root cause/fix：官方 Apps SDK 把 UI resource URI 作为 cache key，并要求破坏性 HTML/JS/CSS 变更更换 URI；rc.2→rc.3 修改 handshake/tool-result bridge 却复用旧 URI，故 repo cache invalidation defect confirmed。rc.4 URI 为 `ui://agent-context-map/widget-0.3.0-rc.4.html`，CSP 外部 resource allowlist 为空；read-only health 提供最多 64 条 process-memory-only lifecycle events，不含项目路径/正文、不落盘。旧 host 是否实际复用缓存 bundle 仍须 live Gate 确认。
+- rc.4 本地 Gate：版本化 URI 回归先 2 fail / 3 pass，修复后专项 4 files / 10 tests；全仓 39 files / 113 pass / 1 platform skip，Vite 317 modules，release candidate、4 files / 12 distribution、reproducibility、fresh/update/rollback/uninstall/reinstall 与 clean-room 全绿。tree `93ae0d2e7f789e908fa99d9822eac5cfc3bb24ebab2fe1b7f49731ece762038e`，checksum set `b59584a706f5ae7f0641a80da89938ad5b3d92525661a74ff201ef4f3c99d7a8`，`SHA256SUMS` hash `d06134519dd0bdebd9c46640834601d663aa29cfaaf6b2842194e3c53cfca48d`。
 
 ## Phase 7 Local Candidate Verification
+
+当前 rc.4 已在本机完成 Phase 7 local Gate：39 files / 113 tests（1 platform skip）、Vite build、固定 release artifact、distribution、bundle reproducibility、隔离 fresh/update/rollback/uninstall/reinstall 与 clean-room 全部通过。没有安装到真实 Codex home，也没有重启 Desktop。
 
 已运行并通过：
 
@@ -138,8 +144,9 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 
 ## Next Gate
 
-1. 等待用户决定是否另行授权调查真实 Codex Desktop 未创建 Widget instance/transitions 的宿主生命周期问题。
-2. 未获新授权前不得重试当前或新 openAttempt，不得调用 write/import/commit/send，也不得 push、tag、GitHub Release 或 stable。
+1. 等待用户另行明确授权 rc.4 安装、完全退出并重启 Desktop，以及在另一个全新 task 执行只读 A1；不得复用旧 openAttempt。
+2. 新 A1 在 open 后应再次调用 read-only health，读取 `hostLifecycle` 以判断 Desktop 是否到达 descriptor list、resource list/read、bootstrap 与 ready；若 resource read 到达而 bootstrap 不到达，再聚焦 iframe/JS；若 resource read 不到达，则形成 host limitation/bug candidate。
+3. 未获新授权前不得安装/重启/运行 A1，不得调用 write/import/commit/send，也不得 push、tag、GitHub Release 或 stable。
 
 ## History
 
