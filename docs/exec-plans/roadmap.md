@@ -37,7 +37,7 @@
 
 ## Active Plans
 
-当前有 1 个 active 计划；`0.3.0-rc.2` 的 strict-valid repo-root A1 已通过 health/open/get/validate，但 Widget 未 ready。经用户授权已定位并修复 MCP Apps bridge 协议漂移，本地 immutable `0.3.0-rc.3` 完成全测、固定候选、安装生命周期、clean-room 与 harness；等待 push 授权和跨平台/下载资产 CI。CI 全绿后才安装、完全重启并在新 task 验证 Widget ready；tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
+当前有 1 个 active 计划；`0.3.0-rc.2` 的 strict-valid repo-root A1 已通过 health/open/get/validate，但 Widget 未 ready。MCP Apps bridge 修复后的 immutable `0.3.0-rc.3` 已由 run `29385355303` 完成 Windows/macOS/Linux、clean-room、downloaded artifact 五项 Gate，artifact 下载复核并 installed/enabled。当前等待完全重启 Desktop，再通过公开 deep link 新建 task 验证 Widget ready；tag/GitHub Release/stable 不推进。以 `active/index.md` 为当前索引。
 
 ## Proposed Plans
 

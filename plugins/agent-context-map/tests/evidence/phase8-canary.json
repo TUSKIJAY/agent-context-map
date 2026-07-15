@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "windows_failed_stop_no_retry_widget_not_ready",
+  "status": "rc3_installed_desktop_restart_pending",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -14,12 +14,12 @@
     "failuresAfterDirective": 1,
     "remediationRetryAuthorizedAt": "2026-07-15",
     "remediationRetryFailures": 1,
-    "furtherRetriesAuthorized": false,
+    "furtherRetriesAuthorized": true,
     "rc2HostRetryAuthorizedAt": "2026-07-15",
     "rc2HostRetryFailures": 1,
     "hostBindingInvestigationAuthorizedAt": "2026-07-15",
     "correctedFixtureRetryAuthorizedAt": "2026-07-15",
-    "authorizedRetryScope": "one_strict_valid_repo_git_workspace_a1",
+    "authorizedRetryScope": "push_rc3_wait_cross_platform_green_install_restart_then_one_new_task_strict_valid_a1",
     "gitWorkspaceRetryFailures": 1,
     "correctedFixtureRetryFailures": 1,
     "onNextFailure": "stop_without_retry",
@@ -44,8 +44,8 @@
     "existingGithubReleases": []
   },
   "gates": {
-    "fixedAsset": "passed_rc2",
-    "windowsCodexCanary": "failed_widget_not_ready_after_read_only_gates_passed",
+    "fixedAsset": "passed_rc3",
+    "windowsCodexCanary": "pending_rc3_desktop_restart_and_new_task",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -234,6 +234,31 @@
         "failureGate": "widget_ready",
         "retryPerformed": false
       }
+    }
+  },
+  "widgetBridgeReplacementCandidate": {
+    "version": "0.3.0-rc.3",
+    "status": "installed_enabled_desktop_restart_pending",
+    "sourceCommit": "520b258c964476aef5ad4a463f334dd5c8b71e49",
+    "workflowRun": 29385355303,
+    "artifactId": 8331247906,
+    "artifactSize": 749432,
+    "archiveDigest": "sha256:de488c8b0c94a89dbe0b031dc6812df4eb279c9c72f33ba103e6c0aa8a7acb95",
+    "treeSha256": "3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4",
+    "checksumSetDigest": "504c742efb271c5b40bbed43bde056663eb01dd49b43e14d2cdcc2036c67d99c",
+    "sha256SumsFileSha256": "0304241649abfffacbb868ea9da11b02ead6810e7445e7bd0658079e57f99bd2",
+    "crossPlatformWorkflow": "passed_five_jobs",
+    "downloadedArtifactVerification": "passed",
+    "installedEnabled": true,
+    "installedPath": "C:\\Users\\LENOVO\\.codex\\plugins\\cache\\agent-context-map-local\\agent-context-map\\0.3.0-rc.3",
+    "desktopRestartCompleted": false,
+    "newTaskA1": "pending",
+    "fixture": {
+      "documentId": "acm_phase8_canary_a",
+      "sha256Before": "6AC138E4E58CE7AA612C9E05D4EE60413588A4CB4A9AABA2B215302D27B6A007",
+      "gitWorkspaceRootVerified": true,
+      "strictAcmMdVerified": true,
+      "tracked": false
     }
   },
   "projectDataModified": false,

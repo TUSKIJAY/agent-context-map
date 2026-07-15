@@ -2,10 +2,11 @@
 
 ## 状态与授权
 
-- 状态：`0.3.0-rc.2` 五项 Release Candidate Gate 全绿；strict-valid repo-root A1 的 health/open/get/validate 已通过，但 Widget 未 ready，按规则停止且不重试，不推进 stable。
+- 状态：`0.3.0-rc.3` 已由 run `29385355303` 完成五项 Release Candidate Gate，artifact 下载复核并 installed/enabled；等待完全重启 Desktop 后在独立新 task 重跑 strict-valid A1，不推进 stable。
 - 权威计划：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md` Phase 8。
 - 上一固定候选：`0.3.0-rc.1`；release tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；来源 commit `28425f8`、workflow run `29327685652`、artifact `8308656602`。
 - 修复候选：`0.3.0-rc.2`；release tree SHA-256 `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`；run `29380789287` 五 job 全绿，artifact `8329665419` 下载复核通过并已安装 enabled。
+- Widget bridge 修复候选：`0.3.0-rc.3`；release tree SHA-256 `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`；run `29385355303` 五 job 全绿，artifact `8331247906` 下载复核通过并已安装 enabled；完全重启与新 task A1 尚未完成。
 - 用户于 2026-07-14 已授权真实 Windows Codex Desktop canary、repo-local marketplace，以及 canary 通过后的固定 Git tag、GitHub Release 和 stable 发布；Windows 若再次失败立即停止，不再重试。
 - 本轮固定候选验证、marketplace 注册和 `0.3.0-rc.1` 安装通过；创建真实 Codex task A1 时 Codex app 返回失败，未产生 task。失败预算已消耗，未创建 A2/B1，未推进 canary/stable tag 或 Release。
 - 安全清理已移除 plugin 与 marketplace 配置项；版本化 cache 因 Windows `os error 32` 文件锁残留。按停止规则未重试清理，项目 `.acm` 未修改。
@@ -128,8 +129,8 @@ gh release list --limit 20
 ```powershell
 node plugins/agent-context-map/scripts/verify-release.mjs `
   dist/agent-context-map-plugin `
-  --expected-version 0.3.0-rc.2 `
-  --expected-tree-sha256 828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441
+  --expected-version 0.3.0-rc.3 `
+  --expected-tree-sha256 3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4
 ```
 
 必须得到 13 files、12 checksum entries。失败即停止，不得安装。
@@ -139,7 +140,7 @@ node plugins/agent-context-map/scripts/verify-release.mjs `
 仅在用户批准后执行：
 
 1. 创建脱敏配置备份和测试项目 hash 清单；不得复制 auth token 到仓库。A1/A2/B1 的 deep-link path 必须是实际 Git top-level，non-Git 目录与 Git 子目录均不得进入真实 Gate。
-2. 创建获批的 repo marketplace 文件，通过 CLI 或插件目录安装 `agent-context-map 0.3.0-rc.2`，记录实际 cache 版本目录。
+2. 创建获批的 repo marketplace 文件，通过 CLI 或插件目录安装 `agent-context-map 0.3.0-rc.3`，记录实际 cache 版本目录。
 3. 完全退出并重启 Codex Desktop；重启后确认 marketplace 可见且插件为 installed/enabled。此闸门未完成时禁止创建 A1。
 4. 对每个目标先运行 `npm run check:phase8-host-workspace -- --project-root <git-top-level> --document-id <doc-id>`；只有 JSON 同时返回 `gitWorkspaceRootVerified=true` 与 `strictAcmMdVerified=true` 才能继续。
 5. 通过 New task UI 或公开 deep link 新建 A1、A2、B1；不得调用内部 `codex_app.create_thread`。A1/A2 绑定项目 A，B1 绑定项目 B；验证 session 隔离、project fingerprint 和 active document。

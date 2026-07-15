@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前本地分支：包含已推送的 rc.2 runtime-version 修复 `cae841b`、四个未推送的 Phase 8 状态/预检 commit，以及本轮 rc.3 Widget bridge 修复；push 尚未获本任务单独授权
+- 当前分支：`520b258` 已推送；相对 upstream clean，rc.3 安装后状态文档将在本轮 scoped commit
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：`0.3.0-rc.3` 已完成本地完整 Gate；Phase 7 跨平台/下载资产 Gate 待 push 后 CI，Phase 8 仍停在真实 Widget ready 复核前
+- 当前 Phase：`0.3.0-rc.3` 已完成本地与 run `29385355303` 五项远端 Gate，CI artifact 已验证并 installed/enabled；等待完全重启 Desktop 后在独立新 task 复核真实 Widget ready
 
 ## Navigation
 
@@ -39,6 +39,8 @@
 - task `019f63a0-518b-7cd0-b147-fd349209cb0d` 中 health/open/get/validate 全部通过：绑定 `project_95893f3dc1b23e238ad1fb51`，revision `sha256:c02d9e...f5d30`，读取 2 nodes / 1 edge，strict validation `valid=true` 且无 diagnostics。最后 `await_agent_context_map_ready` 返回 `ready=false`、无 widget instance/state/transitions，故在 Widget ready Gate 失败并停止；只调用 5 个只读工具，fixture 前后 hash 均为 `652874...D35`，现已删除。
 - 用户已授权调查/fix Widget host binding/lifecycle。官方当前 MCP Apps 示例使用 `protocolVersion=2026-01-26`，且 `ui/notifications/tool-result` 的 canonical result 直接位于 `params`；rc.2 Widget 分别使用旧版本 `2025-11-21` 和非标准 `params.result`，兼容全局也未读取 2026-05-27 起的 canonical `toolResponseMetadata._meta` envelope。这三个协议漂移足以解释 Widget 在 bootstrap 前失败或无法 hydrate，而服务端只看到零 instance/transitions。
 - 修复已进入不可变本地候选 `0.3.0-rc.3`：标准协议与 canonical result 对齐，同时保留 legacy nested notification 与旧 compatibility metadata；39 files / 113 tests（1 platform skip）、Vite、release candidate、安装生命周期、reproducibility、clean-room 与 harness 全部通过。release tree `3decfde0429232307e76ddcdbe3df5fa62ced1c1c66bcf33fe7f5a52b9f48bc4`。
+- 用户授权 push、等待跨平台 CI 全绿、安装/重启 rc.3，并在新 task 执行真实 Windows A1。commit `520b258` 已推送；run `29385355303` 的 Windows/macOS/Ubuntu、clean-room、downloaded artifact integrity 五 job 全绿。artifact `8331247906`（archive digest `sha256:de488c...acb95`）下载后再次命中 13 files / 12 checksums 与固定 tree；`codex plugin add` 已升级到 `0.3.0-rc.3` installed/enabled，完全重启尚待执行。
+- 新 A1 临时 fixture `.acm/documents/acm_phase8_canary_a.acm.md` 已通过全局 validator、repo strict preflight、Git top-level 与 doc_id 检查，SHA-256 `6AC138E4...6A007`；保持 untracked，只用于本次 read/ready Gate，结束后必须复核 hash 并删除。
 
 ## Blocked
 
@@ -91,14 +93,15 @@
 
 ## Next
 
-1. 等待本任务单独 push 授权；push 后运行 rc.3 跨平台与下载资产 CI，五项全绿前不安装。
-2. CI 全绿后安装 immutable rc.3、完全重启 Desktop，并用独立新 task 做一次 strict-valid Windows A1；旧 task/openAttempt 不复用。
+1. 完全退出并重启 Codex Desktop；重启后复核 rc.3 installed/enabled 与 health 版本。
+2. 用公开 deep link 新建独立 strict-valid Windows A1；旧 task/openAttempt 不复用，composer 需用户检查后发送。
 3. tag/GitHub Release/stable 仍未授权。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-15 | rc.3 推送、跨平台 Gate 全绿并安装，等待完全重启 | commit `520b258`；run `29385355303` five jobs green；artifact `8331247906`；download verify；installed/enabled rc.3 |
 | 2026-07-15 | 定位并修复 MCP Apps Widget bridge 协议漂移，生成本地 rc.3 | official protocol `2026-01-26` + direct `params`；canonical compatibility envelope；39 files / 113 tests；release/clean-room/harness passed；tree `3decfde0...f48bc4` |
 | 2026-07-15 | strict-valid repo-root A1 读取链路通过，Widget 未 ready 后停止 | task 019f63a0...；health/open/get/validate passed；2 nodes/1 edge；ready=false；5 read-only calls；hash unchanged |
 | 2026-07-15 | repo-root binding 通过，但 invalid fixture 令 A1 停止；preflight 补 strict validation | task 019f6390...；project/session issued；document_not_found；6 preflight tests；corrected fixture validated then removed |
