@@ -1,7 +1,7 @@
 {
   "schemaVersion": "agent-context-map-phase8-gate/v1",
   "date": "2026-07-15",
-  "status": "windows_failed_stop_no_retry_rc2_local_candidate",
+  "status": "windows_failed_stop_no_retry_no_trusted_workspace",
   "authorizations": {
     "realCodexCanaryAndRepoMarketplace": true,
     "fixedTagGithubReleaseCanaryStable": true,
@@ -15,6 +15,8 @@
     "remediationRetryAuthorizedAt": "2026-07-15",
     "remediationRetryFailures": 1,
     "furtherRetriesAuthorized": false,
+    "rc2HostRetryAuthorizedAt": "2026-07-15",
+    "rc2HostRetryFailures": 1,
     "onNextFailure": "stop_without_retry",
     "docsOnlyPushesSkipCi": true
   },
@@ -37,8 +39,8 @@
     "existingGithubReleases": []
   },
   "gates": {
-    "fixedAsset": "passed",
-    "windowsCodexCanary": "failed_runtime_version_mismatch_after_restart",
+    "fixedAsset": "passed_rc2",
+    "windowsCodexCanary": "failed_no_trusted_workspace",
     "multiTaskMultiProjectReload": "pending",
     "widgetProposalCommitSend": "pending",
     "contentContentConflict": "pending",
@@ -124,10 +126,36 @@
     "packagedRuntimeVersionAssertion": true,
     "localQualification": "105_tests_vite_release_candidate_clean_room_passed",
     "localScopedCommit": "created",
-    "crossPlatformWorkflow": "pending_push_authorization",
-    "realCodexHostRetry": "not_authorized"
+    "crossPlatformWorkflow": "passed",
+    "workflowRun": 29380789287,
+    "sourceCommit": "cae841bd81156d03ecfeada39f0f89f5a3db1ab6",
+    "artifactId": 8329665419,
+    "artifactSize": 749199,
+    "archiveDigest": "sha256:2d3bb063e0bde8f100f03480a8f73484193c92a1ac65694e2ccc37b2f08a32ca",
+    "downloadedArtifactVerification": "passed",
+    "realCodexHostRetry": "failed_stop_no_retry",
+    "installedEnabled": true,
+    "installedPath": "C:\\Users\\LENOVO\\.codex\\plugins\\cache\\agent-context-map-local\\agent-context-map\\0.3.0-rc.2",
+    "hostAttempt": {
+      "threadId": "019f637e-3721-73e1-b15b-a6b46a109dff",
+      "taskCwd": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\agent-context-map-phase8-canary-a",
+      "healthVersion": "0.3.0-rc.2",
+      "healthPassed": true,
+      "openResult": "no_trusted_workspace",
+      "openRetryable": false,
+      "openCorrelationId": "7ce04746-0c78-4ca2-ba48-4ba1aac1e4e6",
+      "openAttemptId": null,
+      "projectId": null,
+      "documentRevision": null,
+      "getValidateWidgetReady": "not_reached",
+      "fileSha256Before": "DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9",
+      "fileSha256After": "DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9",
+      "writeToolsCalled": false,
+      "temporaryFixtureRemoved": true,
+      "emptyTaskRootRemoval": "blocked_by_active_task_cwd"
+    }
   },
   "projectDataModified": false,
-  "rawTaskIdsRetained": false,
-  "rawWorkspacePathsRetained": false
+  "rawTaskIdsRetained": true,
+  "rawWorkspacePathsRetained": true
 }

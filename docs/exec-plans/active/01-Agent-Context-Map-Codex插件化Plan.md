@@ -1,6 +1,6 @@
 # Agent Context Map Codex 插件化改造 Plan
 
-> 状态：Active / Phase 7 rc.1 historical completion / rc.2 local Gate passed, remote pending / Phase 8 Windows retry stopped
+> 状态：Active / Phase 7 rc.2 Completed / Phase 8 Windows failed stop no retry
 > 版本：v2（已按 review-001 修订，并同步 review-002 的非语义澄清）
 > Review 状态：review-001 = revise；review-002 = approve；已 activation
 > Activation 边界：本次只完成生命周期迁移和决策落位，不启动 Phase 0A/0B，不实施源码
@@ -1410,7 +1410,7 @@ Phase 0B — 独立可信宿主 spike：
 
 ### Phase 8：真实 Codex Desktop 试点、稳定发布与交接
 
-执行状态：Stopped / replacement candidate requalification — 2026-07-14 的固定候选、marketplace 注册与安装通过，但在同一未重启的 Desktop 会话中立即调用内部 `create_thread` 创建 A1，返回通用错误且未产生 task。用户于 2026-07-15 要求查因、修复并在重启后再试；重启后插件工具成功加载，但 `0.3.0-rc.1` manifest 对应的 MCP health 上报 `0.2.0`，证明运行时版本真相不一致。真实 Windows retry 已按停止规则终止。修复进入 `0.3.0-rc.2`，须先重跑 Phase 7，且未经用户新授权不得再次安装或进行真实宿主 retry；tag/GitHub Release/stable 均未获本轮授权。
+执行状态：Stopped / no trusted workspace — `0.3.0-rc.2` 已通过 run `29380789287` 的五项 Gate并安装。正式 A1 task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 health 精确返回 rc.2，但 open 返回非重试 `no_trusted_workspace`；session cwd 正确，MCP 调用却没有 host-owned workspace root，故未签发 project/openAttempt/revision，也未到达 get/validate/Widget ready。文件 hash 前后一致。按 Windows 停止规则不自动换项目或重跑；tag/GitHub Release/stable 不推进。
 
 Windows 停止规则：用户于 2026-07-14 指定 Windows 再失败一次即停止尝试。自该指令起 `windowsFailureBudget=1`；下一次 Windows canary 或必要 release Gate 失败后，不再自动修复或重跑，只采集现有证据、安全清理并等待用户决定。docs-only push 使用 `[skip ci]`。
 

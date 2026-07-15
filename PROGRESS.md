@@ -6,10 +6,10 @@
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
-- 当前 HEAD：rc.2 runtime-version 修复已形成 scoped local commit；分支较 upstream ahead 2，尚未 push
+- 当前 HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据已形成未推送的 scoped local commit，分支较 upstream ahead 1
 - Harness profile：`governed`
 - Active exec plan：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md`
-- 当前 Phase：`0.3.0-rc.1` Phase 7 结果保留为历史证据；`0.3.0-rc.2` 本地资格验证通过、远端矩阵待 push；Phase 8 Windows retry 已停止
+- 当前 Phase：`0.3.0-rc.2` Phase 7 全部 Gate 通过；Phase 8 Windows host retry 因 `no_trusted_workspace` 失败并停止
 
 ## Navigation
 
@@ -30,12 +30,13 @@
 - 创建真实 Codex task A1 时 Codex app 返回失败，未产生 task；按用户规则未创建 A2/B1、未重试、未创建 tag/GitHub Release、未发布 stable。
 - 2026-07-15 用户明确要求联网查因并修复。官方当前流程要求 repo marketplace/插件安装后重启 Desktop，再在新 task 测试；原 canary 未重启且直接调用内部 `create_thread`。runbook、plan、证据与索引已改为“安装 → 重启 → installed/enabled 复核 → 公开 New task/deep link”。
 - Desktop 已重启，repo marketplace 与 `0.3.0-rc.1` installed/enabled，插件工具和 health 均加载；health 返回 `ok=true` 但 runtime `version=0.2.0`，与 manifest `0.3.0-rc.1` 不一致，真实 Windows retry 因此失败并停止。
-- 运行时版本已改为从 plugin manifest 构建时注入 MCP/Widget；分发测试启动实际 bundle 核对 manifest/serverInfo，Widget bundle policy 也核对版本。不可变替代候选 `0.3.0-rc.2` 已通过本地 38 files / 105 tests、Vite、release candidate、安装生命周期、双构建复现与 clean-room；tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`。跨平台 workflow 待 push 授权，真实宿主 retry 未授权。
+- 运行时版本已改为从 plugin manifest 构建时注入 MCP/Widget；不可变候选 `0.3.0-rc.2` 已通过本地 Gate及 run `29380789287` 的五项远端 Gate，tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`。
+- 正式 A1 task `019f637e-3721-73e1-b15b-a6b46a109dff` 中 health 精确返回 `0.3.0-rc.2`，但 open 返回非重试 `no_trusted_workspace`；task session 的 cwd 正确指向 disposable project，MCP 调用却未收到 host-owned workspace root。未签发 project/openAttempt/revision，故 get/validate/Widget ready 未执行。
 
 ## Blocked
 
-- Windows remediation retry 已在重启后因 runtime version mismatch 失败；按停止规则，不得自动再次安装或重跑真实宿主。
-- `0.3.0-rc.2` 的跨平台/下载资产 Gate 需要先 push 当前本地提交；当前任务没有新的 push 授权。
+- rc.2 Windows host retry 已因 `no_trusted_workspace` 失败；按停止规则，不得自动换项目、修复或重跑。
+- disposable fixture 前后 SHA-256 均为 `DD665E9682B198445B6AF5F7EA16BA962B3E9159BD3CB9079ECEFC07129746B9`，文件已删除；空 task root 因仍被 A1 task 占用而保留，未重试删除。
 - 原始宿主只返回通用错误，故不能把根因表述为已证明的插件源码缺陷；修复仍需真实 A1 闭环。
 - Phase 2 已在本机 Windows 完成 Node/Rust same-volume replace、故障注入和 Tauri release build；macOS/Linux 原生矩阵现由 Phase 7 workflow 承担，不把尚未运行的平台伪装为当前证据。
 - `npm audit` 仍报告现有 Vite 5 / esbuild 的 1 high + 1 moderate dev-server advisory，修复要求 Vite major upgrade；本 Phase 未执行 `audit fix --force`。
@@ -83,14 +84,16 @@
 
 ## Next
 
-1. 用户若授权 push，推送当前 ahead 2 的分支并运行三平台、clean-room 与 downloaded artifact integrity workflow，固定 rc.2 候选。
-2. 只有 rc.2 Phase 7 通过且用户另行恢复 Windows retry 后，才重新安装、重启并通过公开 New task/deep link 验证 A1。
+1. 等待用户决定是否另立修复范围，调查为何 deep-link task 的正确 cwd 没有形成 host-owned workspace root。
+2. 未获新授权前不换用 repo root 重跑 A1，不修改 trusted binding，不绕过 fail-closed 边界。
 3. 不创建 tag/GitHub Release/stable。
 
 ## Recent Log
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-15 | rc.2 Windows A1 因无 trusted workspace 停止 | task 019f637e...；health rc.2；open no_trusted_workspace；no writes；fixture hash unchanged |
+| 2026-07-15 | rc.2 跨平台 Gate 全绿并安装，等待 Desktop 重启 | run 29380789287 five jobs green；artifact 8329665419；download verify；installed/enabled rc.2 |
 | 2026-07-15 | Phase 8 重启后 retry 停止，rc.2 本地 Gate 通过 | tools/health loaded；rc.1 manifest/runtime 版本不一致；manifest 单真源；105 tests；Vite/RC/clean-room；fixed tree |
 | 2026-07-15 | Phase 8 A1 创建失败完成联网复盘与流程修复 | official Codex manual refreshed；原 session 顺序取证；restart hard gate；public New task/deep link；真实 A1 pending |
 | 2026-07-14 | Phase 8 Windows canary 停止且不重试 | fixed asset/plugin install passed；create task A1 failed/no task；budget 1/1；plugin/marketplace config removed；cache locked os error 32；no stable |

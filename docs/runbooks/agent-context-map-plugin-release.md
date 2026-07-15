@@ -2,16 +2,17 @@
 
 ## 状态与授权
 
-- 状态：Windows retry stopped / `0.3.0-rc.2` 本地 Gate 通过、远端矩阵待 push；未经用户新授权不得再次安装或重跑真实宿主。
+- 状态：`0.3.0-rc.2` 五项 Release Candidate Gate 全绿；Windows A1 因 `no_trusted_workspace` 失败并停止，不推进 stable。
 - 权威计划：`docs/exec-plans/active/01-Agent-Context-Map-Codex插件化Plan.md` Phase 8。
 - 上一固定候选：`0.3.0-rc.1`；release tree SHA-256 `2664e1b6e03b80e25ca4f485106ff46ee6b880e94b43bf51677373c3887c8e9e`；来源 commit `28425f8`、workflow run `29327685652`、artifact `8308656602`。
-- 修复候选：`0.3.0-rc.2`；本地 release tree SHA-256 `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`；跨平台 workflow 与真实宿主尚未获准执行。
+- 修复候选：`0.3.0-rc.2`；release tree SHA-256 `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`；run `29380789287` 五 job 全绿，artifact `8329665419` 下载复核通过并已安装 enabled。
 - 用户于 2026-07-14 已授权真实 Windows Codex Desktop canary、repo-local marketplace，以及 canary 通过后的固定 Git tag、GitHub Release 和 stable 发布；Windows 若再次失败立即停止，不再重试。
 - 本轮固定候选验证、marketplace 注册和 `0.3.0-rc.1` 安装通过；创建真实 Codex task A1 时 Codex app 返回失败，未产生 task。失败预算已消耗，未创建 A2/B1，未推进 canary/stable tag 或 Release。
 - 安全清理已移除 plugin 与 marketplace 配置项；版本化 cache 因 Windows `os error 32` 文件锁残留。按停止规则未重试清理，项目 `.acm` 未修改。
 - 用户于 2026-07-15 明确要求联网查因并修复，恢复一次“修复后 A1 创建”验证；该请求不自动授权 tag、GitHub Release 或 stable 发布。
 - Desktop 重启后插件工具成功加载，但 manifest/安装版本为 `0.3.0-rc.1` 时 MCP health 上报 `0.2.0`。这证明发布包运行时版本与 manifest 不一致，真实宿主 retry 失败并按停止规则终止。
 - 修复已把 manifest 设为 MCP/Widget 构建时唯一版本来源，并增加 packaged server 版本断言；为保持候选不可变，修复进入新候选 `0.3.0-rc.2`，不改写 `rc.1` 历史资产。
+- rc.2 正式 A1 task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 health 版本正确，但 open 返回非重试 `no_trusted_workspace`。session cwd 正确指向 disposable project，MCP 调用没有 host-owned workspace root；未到达 get/validate/Widget ready，文件 hash 未变化。按 Windows 停止规则不得自动换用 repo root 重跑。
 - public plugin directory 不属于 v1；不得提交公开目录或引入远程业务 MCP。
 
 执行前必须在 Phase 8 证据中分别记录：

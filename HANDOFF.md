@@ -2,7 +2,7 @@
 
 更新日期：2026-07-15
 
-当前焦点：Phase 8 的获准重启后 retry 已因 `0.3.0-rc.1` runtime 仍上报 `0.2.0` 而停止。修复候选 `0.3.0-rc.2` 已通过完整本地 Gate并形成 scoped local commit；下一闸门是 push 授权，真实宿主 retry 仍需后续独立授权。
+当前焦点：`0.3.0-rc.2` Release Candidate Gate 全绿，但正式 Windows A1 task 的 open 返回 `no_trusted_workspace`。按停止规则不再自动修复或重跑；等待用户决定新的调查/修复范围。
 
 ## Resume Point
 
@@ -50,15 +50,16 @@
 - top-level：`D:/Code/agent-context-map`
 - git-dir：`.git`
 - upstream：`origin/codex/acm-pluginization-plan`
-- HEAD：rc.2 runtime-version 修复已形成 scoped local commit；分支较 upstream ahead 2，接手时以 `git log -2 --oneline` 与 `git status --short --branch` 实测
-- push：当前任务未获新的 push 授权；自动 local commit 后保持本地 ahead，等待用户逐次确认
-- 当前计划状态：rc.1 Phase 7 historical completion；rc.2 requalification；Phase 8 Active / Windows retry stopped
+- HEAD：rc.2 runtime-version 修复 `cae841b` 已推送；Phase 8 失败证据已形成未推送的 scoped local commit，分支较 upstream ahead 1；接手时仍以 `git log -2 --oneline` 与 `git status --short --branch` 实测
+- push：rc.2 runtime fix 已获授权并推送到 `cae841b`；后续状态文档 push 尚未获单独授权
+- 当前计划状态：rc.2 Phase 7 Completed；Phase 8 Active / Windows failed stop no retry
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
 - Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建
 - Phase 8 根因：原 canary 在 CLI 安装后没有重启 Desktop，立即调用内部 `codex_app.create_thread`；官方流程要求重启后在新 task 测试，公开入口为 New task UI 或 `codex://new`。cache 文件锁与此执行顺序一致，但原始通用错误不足以证明插件源码缺陷。
 - Phase 8 修复：runbook/plan/evidence/index 已增加 restart hard gate，禁止内部 `create_thread`；用户 2026-07-15 只恢复一次修复后 A1 Gate，未重新授权 tag/GitHub Release/stable。
 - Phase 8 重启后结果：Desktop 已重启，`agent-context-map-local` 与 `0.3.0-rc.1` installed/enabled，插件 tools/health 可调用；health 返回 `ok=true`、runtime `version=0.2.0`，与 manifest `0.3.0-rc.1` 不一致。该 Windows retry 已失败，禁止自动再试。
-- rc.2 修复：新增 manifest 驱动的共享版本源，构建时注入 MCP/Widget；distribution lifecycle 启动实际 bundle 并核对 `serverInfo.version`，Widget bundle policy 核对 manifest 版本。`0.3.0-rc.2` 已通过本地 38 files / 105 tests、Vite、release candidate、双构建复现、安装生命周期和 clean-room；tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`，checksum set `d007e9b1ccebf83c038af843522f1c53592a32a696edc77eb37f58a1e0beae24`；尚未 push/跑跨平台 workflow/安装到真实 Codex。
+- rc.2 修复与发布 Gate：run `29380789287` 五 job 全绿；artifact `8329665419` 下载后再次命中 tree `828de7e21b11786263de9bda30b4b6d21236f5a09c541b3dd8312d5805912441`，rc.2 installed/enabled。
+- rc.2 正式 A1：task `019f637e-3721-73e1-b15b-a6b46a109dff` 的 session cwd 为 disposable project，health=`0.3.0-rc.2`；open 返回 `no_trusted_workspace`、correlation `7ce04746-0c78-4ca2-ba48-4ba1aac1e4e6`，未签发 project/openAttempt/revision，get/validate/Widget ready 未到达。fixture hash 前后一致且已删除；空 task root 仍被该 task cwd 锁定。
 
 ## Phase 7 Local Candidate Verification
 
@@ -122,15 +123,15 @@ Phase 7 closeout commit `ba9d1dc` 已推送；其最新 HEAD replay run `2932813
 ## Risks
 
 - Phase 7 已完成；closeout 文档与最终证据已 scoped commit/push，最新远端 HEAD workflow 全绿。
-- Phase 7 closeout 的历史 push 已完成；当前修复任务没有新的 push 授权。
+- rc.2 runtime fix push 与 run `29380789287` 已完成；后续状态文档 push 仍按逐次授权处理。
 - Windows remediation retry 已失败并停止；再次真实安装/重启/A1 需要用户新授权，不能由本地测试替代。
 - repo marketplace 和 canary 安装曾成功；项目 `.acm` 未被首次失败修改。未创建任何 plugin tag/GitHub Release/stable。
 - Vite 5 / esbuild audit advisory 仍待单独获批 major upgrade；不得 `audit fix --force`。
 
 ## Next Gate
 
-1. 用户若新授权 push，推送当前 ahead 2 分支并观察 `.github/workflows/plugin-release-candidate.yml` 的三平台、clean-room 与下载资产 Gate。
-2. rc.2 固定后仍需用户另行恢复 Windows retry，才能安装/重启并按公开 deep link/UI 创建 A1。
+1. 等待用户决定是否授权新的 host-binding 调查/修复计划；优先核对 deep-link 临时目录为何只有 cwd、没有 host-owned workspace root。
+2. 未获新授权前不使用 repo root 或其他项目重跑，不放宽 trusted binding。
 3. tag/GitHub Release/stable 继续禁止。
 
 ## History
