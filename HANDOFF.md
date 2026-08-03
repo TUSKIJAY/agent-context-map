@@ -1,8 +1,10 @@
 # HANDOFF
 
-更新日期：2026-07-15
+更新日期：2026-08-03
 
 当前焦点：immutable rc.4 已安装、完全重启并在全新 Codex Desktop task 完成一次只读 A1。descriptor/open/read data plane 成功，但宿主从未请求合法注册的 UI resource；Phase 8 因 resource discovery/read Gate 失败而停止，根因归类为 Codex Desktop host limitation/bug candidate，等待 OpenAI 宿主侧反馈或修复。
+
+本次只更新根 README 的产品复盘：明确个人自用摩擦、外部采用证据缺失和下一待验证假设。未修改运行时代码、active plan、Phase 8 状态或任何 live retry 权限。
 
 ## Resume Point
 
@@ -52,6 +54,7 @@
 - upstream：`origin/codex/acm-pluginization-plan`
 - 分支：rc.3 Widget bridge 修复已推送到 `520b258`；既有本地 commits `41fff9d`、`00c9471` 未改写，rc.4 源码修复为本地 commit `00a2c74`，本次 live evidence 由后续 scoped docs/evidence commit 闭环；接手时仍以 `git log -6 --oneline` 与 `git status --short --branch` 实测
 - push：用户已授权并完成 `cae841b..520b258`；后续状态-only commit 的 push 仍需单独授权
+- README-only 复盘验证：`npm run harness:check`、`npm run harness:budget` 与 `git diff --check` 于 2026-08-03 通过；未运行产品构建，因为本次未修改产品源码。
 - 当前计划状态：Phase 8 Stopped / rc.4 live host Gate failed at resource discovery/read / sanitized support repro ready
 - Phase 8 实测：固定 `0.3.0-rc.1` release/hash、official plugin validator、repo marketplace 注册、真实 canary install 均通过；创建真实 Codex task A1 失败且未产生 task，失败预算 1/1 已用尽
 - Phase 8 首次清理：plugin 与 marketplace 配置项曾移除；版本化 cache 因 Windows `os error 32` 文件锁残留且未重试；repo-local `.agents/plugins/marketplace.json` 保留，tag/Release/stable 均未创建

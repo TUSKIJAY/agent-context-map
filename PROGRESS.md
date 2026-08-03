@@ -2,7 +2,7 @@
 
 ## Current Snapshot
 
-- 更新日期：2026-07-15
+- 更新日期：2026-08-03
 - 唯一权威工作目录：`D:\Code\agent-context-map`
 - Git dir：项目内普通 `.git/`
 - 当前分支：`codex/acm-pluginization-plan`；upstream `origin/codex/acm-pluginization-plan`
@@ -62,6 +62,7 @@
 
 ## Completed
 
+- [x] 2026-08-03 — 根 `README.md` 增加真实产品复盘：明确当前是工程与产品假设原型，个人自用存在维护成本和交互摩擦，无外部采用或量化提效证据；记录“由真实 Agent 任务状态自动生成图谱”的待验证假设。Phase 8 与插件权限边界不变。
 - [x] 2026-07-14 — Phase 7 本地 RC：固定插件 `0.3.0-rc.1` 和 Node 24.12.0/npm 11.6.2；生成 13-file source-free release、SHA-256 checksums、deterministic manifest、依赖清单与 CycloneDX SBOM，release tree SHA-256 `accbb6f7f89c687bd4d052025f7697284c0823e942893df62d7adfbd1bc1b775`。
 - [x] 2026-07-14 — Phase 7 本地 Gate：Windows 38 files / 105 tests（POSIX-only 1 skipped）；原生 junction/独占锁、隔离 HOME fresh/update/downgrade/uninstall/reinstall、`.acm` hash guard 和 plugin validator 通过。
 - [x] 2026-07-14 — Phase 7 clean-room：不复制 `.git`、`node_modules`、源码生成物或 dist，从隔离副本完成 `npm ci`、全测、Vite build、固定包与两次 bundle；三平台 workflow 已建立但远端 runner 未执行，故 Phase 7 本身未完成。
@@ -110,6 +111,7 @@
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-08-03 | README 增加真实产品复盘与下一假设，未改变 active plan 或插件运行时 | README diff；harness check / budget / diff passed |
 | 2026-07-15 | rc.4 新 task A1 证明 Desktop 未请求 UI resource，形成 host bug candidate 复现 | installed/enabled + full restart；task `019f63ee...`；descriptor/open confirmed；resource list/read `0/0`；7 read-only calls；hash unchanged + fixture removed；support repro；harness/budget/build/diff passed |
 | 2026-07-15 | rc.3 host lifecycle 分层取证并完成 immutable rc.4 本地修复/Gate | descriptor confirmed；Desktop resource/iframe/JS unknown；bootstrap falsified；versioned URI；4 files/10 targeted；39 files/113 full；release tree `93ae0d2e...62038e` |
 | 2026-07-15 | rc.3 新 task A1 读链通过，但 Widget ready 失败并停止 | health `0.3.0-rc.3`；open/get/validate passed；2 nodes / 1 edge；ready=false；无 instance/state/transitions；hash unchanged + fixture removed |
