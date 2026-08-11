@@ -24,11 +24,13 @@
 
 | Path | Responsibility |
 | --- | --- |
-| `src/main.jsx` | React 应用挂载入口 |
-| `src/artifact/main.jsx` | Phase 0 Artifact browser-only 入口与构建时 fixture 注入；Phase 1 起由 Viewer shell 接管 |
-| `src/App.jsx` | 首页/编辑器切换、全局状态、工具栏、撤销重做、自动保存、打开和导出 |
+| `src/main.jsx` | React 应用挂载入口；挂载默认 Viewer launcher |
+| `src/Launcher.jsx` | 默认 Viewer 与旧编辑器之间的显式 lazy/dynamic 边界；只有“进入编辑器”动作才加载 `App.jsx` |
+| `src/artifact/main.jsx` | 严格只读 Artifact 入口；只挂载 Viewer，不暴露编辑器动作 |
+| `src/App.jsx` | 作为次入口保留的旧编辑器壳：全局状态、工具栏、撤销重做、自动保存、打开和导出 |
 | `src/acm/Home.jsx` | 开始页、最近图谱、新建、示例和导入入口 |
-| `src/acm/FlowCanvas.jsx` | React Flow 画布、节点、边、拖拽、布局、分组和折叠交互 |
+| `src/acm/FlowCanvas.jsx` | React Flow 画布、节点、边、布局、分组和折叠交互；`readOnly` 契约禁拖拽、连线和删除 |
+| `src/acm/viewer/ViewerApp.jsx` | 默认只读 Viewer shell：构建时 fixture、类型图例/筛选、只读 Inspector 与画布导航 |
 | `src/acm/Panels.jsx` | Inspector、Agent Diff、校验结果及左右侧栏 |
 | `src/acm/TweaksPanel.jsx` | 节点样式、网格和主色等显示偏好 |
 | `src/acm/data.js` | ACM 数据契约、受控词表、关系推断、校验、Diff、导入和导出 |

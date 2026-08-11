@@ -23,7 +23,7 @@ function artifactHtml(css, javascript) {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:">
-  <title>Agent Context Map · Single-file Artifact Spike</title>
+  <title>Agent Context Map · Single-file Read-only Viewer</title>
   <style>
     :root { --sans: system-ui, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif; --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
     * { box-sizing: border-box; }

@@ -7,7 +7,7 @@
 - 更新日期：2026-08-12。
 - 当前分支：`codex/project-harness-governed`。
 - Harness profile：`governed`。
-- **Visual Spec Artifact Renderer Phase 0 已验收；Phase 1 ready。**
+- **Visual Spec Artifact Renderer Phase 0–1 已验收；Phase 2 ready。**
 - 激活治理基线已单独提交为 `f88b0c3`；Phase 0 source、evidence 与状态按独立 scoped local commit 处理。
 - 实施基线仍为当前单体分支；`origin/codex/acm-pluginization-plan@4ed712c` 只作点采证据，未 merge/cherry-pick。
 
@@ -21,12 +21,12 @@
 | 文件职责 | `PROJECT_MAP.md` |
 | 文档权限与生命周期 | `docs/README.md` |
 | Active 产品计划 | `docs/exec-plans/active/02-visual-spec-artifact-renderer.md` |
-| Phase 0 证据与独立 review | `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/` |
+| Phase 0–1 证据与独立 review | `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/` |
 | 长期历史 | `docs/progress-archive/index.md` |
 
 ## In Progress
 
-- Phase 1 准备：将 Phase 0 构建 spike 收敛为默认只读 Viewer；旧编辑器只经显式 lazy/dynamic 边界进入。
+- Phase 2 准备：在统一 canonical graph 上实现 Structure / Dependency / Inquiry 三投影、状态筛选、搜索与深链导航。
 
 ## Blocked
 
@@ -34,16 +34,17 @@
 
 ## To Do
 
-- Phase 1：实现 `readOnly` 契约、Viewer shell、构建时 fixture、筛选/图例/fit/minimap，并证明 Artifact bundle 排除编辑器、storage 与 Tauri。
+- Phase 2：实现 `project(viewId)` 纯函数和可重复断言；补齐视图切换、状态筛选、搜索、折叠/focus 与 hash 定位。
 - Phase 3 前处理已登记的单文件 hardening：ELK/体积断言、CSP、大小写无关 closing-tag escaping。
 - 不 push、PR、merge、tag、Release。
 
 ## Completed (Rolling Window)
 
-- [x] 2026-08-12 — Phase 0 静态目录产物在 Orca Chromium 150 loopback 与 offline 模式渲染 2 节点/1 边；console 空、network 仅本地 HTML/JS/CSS。
-- [x] 2026-08-12 — dagre-only 单文件 HTML 以 `file://` 离线打开；512,471 bytes，SHA-256 `be427f277058bf9e7b8e4557b159dd5328d029a91d486026413c3d60a0adf48e`。
-- [x] 2026-08-12 — 原 `npm run build`、严格 ACM-MD fixture、governed harness、8/8 tests、启动文档预算与 diff check 通过。
-- [x] 2026-08-12 — Phase 0 source manifest 冻结为 `2e05af54...9d23`；Grok 与 Claude 独立 review 均 approve、无 blocking finding。
+- [x] 2026-08-12 — 默认 App 已切换到只读 Viewer；旧编辑器仅在显式“进入编辑器”后加载独立 lazy chunk，初始资源图不含写运行时。
+- [x] 2026-08-12 — Artifact 无编辑入口；drag/connect/delete/Handle 均禁用。Delete、筛选和节点选择后 canonical snapshot 不变。
+- [x] 2026-08-12 — Phase 1 静态目录与单文件 `file://` 均离线可用；无外部资源，严格 fixture、两类构建、原构建和 harness 全绿。
+- [x] 2026-08-12 — Phase 1 source manifest `76fcfb9e...bc2e`；Grok 010 与 AGY/Gemini 011 均 approve/high、无 blocking finding。
+- [x] 2026-08-12 — Phase 0 build spike、离线证据、严格校验和双独立 review 已闭环；保留 Phase 3 hardening 清单。
 - [x] 2026-08-11 — Visual Spec Artifact Renderer 完成用户批准、独立 review 与 activation；治理基线本地提交 `f88b0c3`。
 - [x] 2026-08-11 — governed harness 首个本地提交与 review 加固（`37ace47` / `c9cadf7`）。
 
@@ -51,13 +52,13 @@
 
 | Check | Result |
 | --- | --- |
-| Artifact directory build | Pass — 283 modules; HTML 1,008 B + CSS 15,869 B + JS 502,418 B |
-| Artifact single-file spike | Pass — one HTML, 512,471 B, dagre-only |
-| Original `npm run build` | Pass — 294 modules; existing large-chunk warning only |
+| Artifact directory build | Pass — 284 modules; HTML 1.02 kB + CSS 15.87 kB + JS 507.92 kB |
+| Artifact single-file spike | Pass — one HTML, 519,732 B, SHA-256 `af96ee2f...80e` |
+| Original `npm run build` | Pass — 297 modules; Viewer initial chunk + editor lazy chunk; existing large-chunk warning only |
 | ACM-MD strict smoke fixture | Pass — repo-local `.venv`, PyYAML 6.0.3 |
 | Local harness / tests / budget | Pass — governed; 8/8; no budget trigger |
-| Orca browser | Pass — loopback/offline and single `file://`; Chromium 150.0.7871.47 |
-| Independent review | Pass — Grok 008 + Claude 009; no blocking finding |
+| Orca browser | Pass — App lazy boundary, strict Artifact read-only, loopback offline and single `file://`; Chromium 150.0.7871.47 |
+| Independent review | Pass — Phase 1 Grok 010 + AGY/Gemini 011 approve/high; no blocking finding |
 | `git diff --check` | Pass |
 
 ## Historical Redirects

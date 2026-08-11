@@ -2,7 +2,7 @@
 
 ## Objective
 
-维护一个基于 ACM-MD v0.1 的本地优先图谱编辑器，把需求澄清、任务拆解和 Agent 协作上下文转成可视化、可编辑、可校验、可导出的结构化图谱，并让多轮开发能够安全启动、验证和交接。
+维护一个基于 ACM-MD v0.1 的本地优先 Visual Spec Artifact Renderer，把需求澄清、任务拆解和 Agent 协作上下文转成可校验、可离线展示与分享的交互图谱。默认主路径是只读 Viewer；原图谱编辑器作为显式次入口保留。
 
 ## Stable Project Facts
 
@@ -11,6 +11,7 @@
 - 布局：Dagre 默认，ELK 按需加载；支持子树折叠、分组容器、组级折叠和正交边。
 - 桌面：Tauri 2；浏览器开发模式以 localStorage 兜底，桌面端使用本地 SQLite 与文件接口。
 - 协议：`ACM-MD v0.1`；正式规范位于 `skills/acm-md/references/acm-md-v0.1.md`。
+- 默认 App 启动进入只读 Viewer；旧编辑器只在用户显式选择“进入编辑器”后 lazy/dynamic 加载。独立 Artifact 入口不暴露编辑器或 storage/Tauri 能力。
 - Harness profile：`governed`。
 - 当前仓库没有 CI 配置和产品级 `test` script；`npm run build` 是已确认的产品原生基线，repo-local harness checker 另有 Python `unittest` 覆盖。
 

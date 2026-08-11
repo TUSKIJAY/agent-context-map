@@ -1,9 +1,9 @@
 # Visual Spec Artifact Renderer Plan
 
-- Status: Active — Phase 0 accepted; Phase 1 ready
+- Status: Active — Phase 0–1 accepted; Phase 2 ready
 - Owner: product direction pivot (session 2026-08-11)
 - Created: 2026-08-11
-- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0 was accepted on 2026-08-12 and Phase 1 is ready; package merges and all remote Git/release actions remain unauthorized
+- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0–1 were accepted on 2026-08-12 and Phase 2 is ready; package merges and all remote Git/release actions remain unauthorized
 - Consulted: local audit + Grok + Claude + Kimi independent read-only reviews; user decisions and activation confirmed 2026-08-11; synthesis remains the plan author's responsibility
 
 ## 0. Prompt vs Repository Facts
@@ -317,7 +317,7 @@ load ACM-MD text
 
 ## 5. Active Execution Plan / 执行计划
 
-本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0 已按 Gate 验收，当前进入 Phase 1，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
+本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0–1 已按 Gate 验收，当前进入 Phase 2，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
 
 ### Phase 0 — 最小 Artifact build spike
 
@@ -342,6 +342,8 @@ load ACM-MD text
 - **文档同步**：`PROGRESS.md` / `HANDOFF.md` 记录体积与结论；不激活后续 Phase。
 
 ### Phase 1 — 只读图谱 Artifact Viewer
+
+- **Status**：Accepted 2026-08-12；evidence `phase-1-evidence-001.md`；Grok `review-010.md` 与 AGY/Gemini `review-011.md` 均 approve/high、无 blocking finding。
 
 - **目标**：交付可用的只读 Viewer 主路径（图谱 + 只读 Inspector + 基础导航）。
 - **范围**：
@@ -527,7 +529,7 @@ Goal objective 使用：
 - Reviewed candidate SHA-256: `9186323ecb9d72fa2b5140587818fef0229bebeb0ff0e041ea68204c1b63056c`
 - Final independent verdicts: Grok `approve/high`（`review-006.md`）；Claude `approve/high`（`review-007.md`）；均无 blocking finding
 - Post-review delta: status/authority/section title、review disposition、本 activation record，以及下述用户直接授权的资源约束修订
-- Execution state: Phase 0 accepted 2026-08-12；Phase 1 ready
+- Execution state: Phase 0–1 accepted 2026-08-12；Phase 2 ready
 
 ### 8.4 User Amendment / 用户修订（2026-08-11）
 

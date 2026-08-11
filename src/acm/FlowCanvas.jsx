@@ -20,12 +20,20 @@ import { NODE_TYPE_META, STATUS_META, RELATION_META, typeLabel } from "./data.js
 
 function AcmNode({ data, selected }) {
   const n = data.node;
+  const readOnly = data.readOnly === true;
   const meta = NODE_TYPE_META[n.type] || { c: "#64748b", glyph: "●" };
   const st = STATUS_META[n.status] || { dot: "#cbd5e1", label: n.status };
   const isDep = n.status === "deprecated";
   const isH = data.isH;
   const tint = `color-mix(in oklch, ${meta.c} 8%, white)`;
-  const hStyle = { width: 9, height: 9, background: "#fff", border: `2px solid ${meta.c}` };
+  const hStyle = {
+    width: 9,
+    height: 9,
+    background: "#fff",
+    border: `2px solid ${meta.c}`,
+    display: readOnly ? "none" : undefined,
+    pointerEvents: readOnly ? "none" : undefined,
+  };
   return (
     <div style={{
       position: "relative",
@@ -36,7 +44,7 @@ function AcmNode({ data, selected }) {
         : data.related ? `0 0 0 1.5px ${meta.c}55, 0 6px 18px -10px ${meta.c}55`
         : "0 1px 2px rgba(16,24,40,.06), 0 4px 14px -8px rgba(16,24,40,.18)",
     }}>
-      <Handle type="target" position={isH ? Position.Left : Position.Top} style={hStyle} />
+      <Handle type="target" position={isH ? Position.Left : Position.Top} isConnectable={!readOnly} style={hStyle} />
       <div style={{ padding: "10px 12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600,
@@ -71,7 +79,7 @@ function AcmNode({ data, selected }) {
           ▸ {data.hiddenCount}
         </div>
       )}
-      <Handle type="source" position={isH ? Position.Right : Position.Bottom} style={hStyle} />
+      <Handle type="source" position={isH ? Position.Right : Position.Bottom} isConnectable={!readOnly} style={hStyle} />
     </div>
   );
 }
@@ -163,7 +171,7 @@ function download(dataUrl, name) {
 
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
   hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes,
-  collapsedGroups, onToggleGroup }) {
+  collapsedGroups, onToggleGroup, readOnly = false }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
@@ -223,9 +231,11 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
         : { x: Number.isFinite(n.x) ? n.x : 0, y: Number.isFinite(n.y) ? n.y : 0 };
       const node = {
         id: n.id, type: "acm", position,
+        draggable: !readOnly,
+        connectable: !readOnly,
         selected: selection?.kind === "node" && selection.id === n.id,
         data: {
-          node: n, isH, dimmed: filtered || faded,
+          node: n, isH, readOnly, dimmed: filtered || faded,
           related: focus ? focus.nodes.has(n.id) && selection.id !== n.id : false,
           hasChildren: hasChildren?.has(n.id) || false,
           collapsed: collapsed?.has(n.id) || false,
@@ -237,7 +247,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
       out.push(node);
     }
     return out;
-  }, [doc.nodes, selection, isH, typeFilter, focus, hidden, collapsed, descCount, hasChildren, onToggleCollapse, grouped, groupOf, groupBoxes, collapsedGroups, onToggleGroup]);
+  }, [doc.nodes, selection, isH, readOnly, typeFilter, focus, hidden, collapsed, descCount, hasChildren, onToggleCollapse, grouped, groupOf, groupBoxes, collapsedGroups, onToggleGroup]);
 
   // React Flow's own node state; onNodesChange applies drag/select changes live.
   // We re-sync from derivedNodes whenever the doc or view state changes — none of
@@ -280,17 +290,20 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
   // A parented node's position is RELATIVE to its frame; add the frame origin back so the
   // doc keeps absolute coords (mirror of the relative subtraction in derivedNodes).
   const onNodeDragStop = useCallback((_, node) => {
+    if (readOnly || !onMoveNode) return;
     let x = node.position.x, y = node.position.y;
     const box = node.parentId && groupBoxes ? groupBoxes[node.parentId] : null;
     if (box) { x += box.x; y += box.y; }
     onMoveNode(node.id, Math.round(x), Math.round(y));
-  }, [onMoveNode, groupBoxes]);
+  }, [readOnly, onMoveNode, groupBoxes]);
   const onNodeClick = useCallback((_, node) => onSelect({ kind: "node", id: node.id }), [onSelect]);
   const onEdgeClick = useCallback((_, edge) => onSelect({ kind: "edge", id: edge.id }), [onSelect]);
   const onPaneClick = useCallback(() => onSelect(null), [onSelect]);
   const onConnect = useCallback((c) => {
-    if (c.source && c.target && c.source !== c.target) onCreateEdge(c.source, c.target, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  }, [onCreateEdge]);
+    if (!readOnly && onCreateEdge && c.source && c.target && c.source !== c.target) {
+      onCreateEdge(c.source, c.target, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    }
+  }, [readOnly, onCreateEdge]);
 
   // ---- export the whole graph (not just the visible part) to PNG / SVG ----
   const exportImage = useCallback(async (fmt) => {
@@ -326,14 +339,15 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
   };
 
   return (
-    <div ref={wrapRef} style={{ position: "absolute", inset: 0 }}>
+    <div ref={wrapRef} data-graph-read-only={readOnly ? "true" : "false"} style={{ position: "absolute", inset: 0 }}>
       <style>{`.react-flow__node.selected{box-shadow:none!important}.react-flow__attribution{display:none}`}</style>
       <ReactFlow
         nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} onNodesChange={onNodesChange}
-        onNodeDragStop={onNodeDragStop} onNodeClick={onNodeClick} onEdgeClick={onEdgeClick}
-        onPaneClick={onPaneClick} onConnect={onConnect}
+        onNodeDragStop={readOnly ? undefined : onNodeDragStop} onNodeClick={onNodeClick} onEdgeClick={onEdgeClick}
+        onPaneClick={onPaneClick} onConnect={readOnly ? undefined : onConnect}
         fitView fitViewOptions={{ padding: 0.18, maxZoom: 1.5 }}
-        minZoom={0.05} maxZoom={2.5} nodesConnectable elementsSelectable
+        minZoom={0.05} maxZoom={2.5} nodesDraggable={!readOnly} nodesConnectable={!readOnly}
+        connectOnClick={!readOnly} deleteKeyCode={readOnly ? null : "Backspace"} elementsSelectable
         proOptions={{ hideAttribution: true }} defaultEdgeOptions={{ type: "default" }}
       >
         {showGrid !== false && <Background gap={22} size={1} color="#e9ecf1" />}
