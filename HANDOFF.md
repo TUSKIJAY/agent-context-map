@@ -4,13 +4,14 @@
 
 ## Resume Point / 接手点
 
-**Visual Spec Artifact Renderer Phase 0–4 已验收；单一下一步是 active → completed 生命周期收尾。**
+**Visual Spec Artifact Renderer Phase 0–4 已验收并完成生命周期收尾；当前无 active plan 或已授权的下一实施步骤。**
 
-- Active plan：`docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
+- Completed plan：`docs/exec-plans/completed/02-visual-spec-artifact-renderer.md`
 - Phase 4 evidence：`docs/exec-plans/reviews/02-visual-spec-artifact-renderer/phase-4-evidence-001.md`
 - Independent reviews：`review-016.md`（Grok approve/high）与 `review-017.md`（AGY/Antigravity approve/high），均无 blocking finding
 - Frozen Phase 4 source manifest：`a82faa7def7ce64e1f92756da3bdf5876d44a52174295620fdd88f63eeaeea2c`
 - Frozen Phase 4 base HEAD：`b18dcbcba5c6ddcc3057ec354a38baf8b71b4c94`
+- Phase 4 implementation + acceptance commit：`2bba798`
 
 ## Phase 4 Result
 
@@ -33,7 +34,7 @@
 
 ## Next Gate / 单一下一步
 
-将已全部验收的计划从 `active/` 移至 `completed/`，同步 roadmap、active/completed/reviews indexes 与最终状态文件，然后创建本地 lifecycle closeout commit。
+无自动下一步。若用户要重新接入 Tauri/Codex Widget/MCP 宿主，先起草并 review 新的 proposed plan；任何 push、PR、merge、tag 或 Release 仍需单独授权。
 
 ## Scope Reminder
 

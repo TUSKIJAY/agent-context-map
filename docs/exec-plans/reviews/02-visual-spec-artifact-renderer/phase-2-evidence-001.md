@@ -1,6 +1,6 @@
 # Phase 2 Evidence 001 — Semantic Viewer Projections And Navigation
 
-- Plan: `docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
+- Plan: `docs/exec-plans/completed/02-visual-spec-artifact-renderer.md`
 - Phase: 2 — Structure / Dependency / Inquiry, filters, Inspector and navigation
 - Evidence date: 2026-08-12 (Asia/Shanghai)
 - Frozen Git HEAD: `ae13da8ebc54e2b517bb62cac9a1331cb7d5d5c2`

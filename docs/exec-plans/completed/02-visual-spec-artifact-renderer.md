@@ -1,9 +1,9 @@
 # Visual Spec Artifact Renderer Plan
 
-- Status: Active — Phase 0–4 accepted; completion transition ready
+- Status: Completed — Phase 0–4 accepted and lifecycle closed 2026-08-12
 - Owner: product direction pivot (session 2026-08-11)
 - Created: 2026-08-11
-- Scope authority: active authorization for the local Phase 0–4 work and gates written here; all phases were accepted on 2026-08-12 and only the active-to-completed lifecycle transition remains; package merges and all remote Git/release actions remain unauthorized
+- Scope authority: historical authorization for the completed local Phase 0–4 work and gates written here; it grants no new implementation or remote Git/release authority
 - Consulted: local audit + Grok + Claude + Kimi independent read-only reviews; user decisions and activation confirmed 2026-08-11; synthesis remains the plan author's responsibility
 
 ## 0. Prompt vs Repository Facts
@@ -317,7 +317,7 @@ load ACM-MD text
 
 ## 5. Active Execution Plan / 执行计划
 
-本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0–4 均已按 Gate 验收，当前只剩计划完成态迁移，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
+本文件已完成独立 review、用户批准、activation、Phase 0–4 实施与验收，并已迁移到完成态。历史授权只覆盖下述已完成工作，不授权任何新的实施、push、PR、merge、tag、Release 或远程分支改写。
 
 ### Phase 0 — 最小 Artifact build spike
 
@@ -476,7 +476,7 @@ git diff --check
 ### 7.3 状态文件
 
 - activation 同步 `PROGRESS.md`、`HANDOFF.md`、`active/index.md`、`proposed/index.md`、`reviews/index.md` 与 `roadmap.md`
-- Phase 0–4 已验收；状态文件只把 active → completed 生命周期迁移记为单一下一闸门，不得把可选宿主适配误写成当前授权范围
+- Phase 0–4 已验收并完成生命周期迁移；状态文件不得把可选宿主适配误写成当前授权范围
 
 ### 7.4 Commit 边界
 
@@ -535,7 +535,7 @@ Goal objective 使用：
 - Reviewed candidate SHA-256: `9186323ecb9d72fa2b5140587818fef0229bebeb0ff0e041ea68204c1b63056c`
 - Final independent verdicts: Grok `approve/high`（`review-006.md`）；Claude `approve/high`（`review-007.md`）；均无 blocking finding
 - Post-review delta: status/authority/section title、review disposition、本 activation record，以及下述用户直接授权的资源约束修订
-- Execution state: Phase 0–4 accepted 2026-08-12；completion transition ready
+- Execution state: Completed 2026-08-12；Phase 0–4 accepted and lifecycle closed
 
 ### 8.4 User Amendment / 用户修订（2026-08-11）
 
@@ -571,7 +571,15 @@ Goal objective 使用：
 - Independent verdicts: Grok `review-016.md` approve/high；AGY/Antigravity `review-017.md` approve/high；均无 blocking finding
 - Outcome: 两份真实 Spec 严格校验通过并形成不同三视图；README-only 目录/单文件闭环、中文搜索与空状态、错误输入 fail-closed、150/225 舒适与 250/375 扩展性能边界均已验证；产品叙事切换为 Artifact-first，编辑器保留为显式次路径。
 - Recorded limitations: 29 节点 Structure 在单屏 Fit View 下文字偏小，可用语义视图、缩放、筛选、聚焦和折叠缓解；`Page` 与未使用状态不为凑图例而伪造；Orca screenshot 仍为 `tool_failed`，由 snapshot/eval 与 Browser fallback 补证。
-- Completion state: Phase 0–4 全部验收；active plan 可迁移至 `completed/`。可选宿主适配只能由新的 proposed plan 重新授权。
+- Completion state: Phase 0–4 全部验收且计划已迁移至 `completed/`。可选宿主适配只能由新的 proposed plan 重新授权。
+
+### 8.8 Completion Record / 完成记录（2026-08-12）
+
+- Final disposition: Completed；Phase 0–4 全部 mandatory Gate 与独立 review 通过。
+- Phase 4 implementation and acceptance commit: `2bba798` (`feat: validate artifact product workflow`)
+- Lifecycle closeout: 本文件、active/completed/reviews indexes、roadmap、`PROGRESS.md` 与 `HANDOFF.md` 同步进入完成态。
+- Remaining scope: 无当前授权的后续 implementation；Optional 宿主适配必须新建 proposed plan。
+- Remote state: 未执行 push、PR、merge、tag 或 Release。
 
 ---
 

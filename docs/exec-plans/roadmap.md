@@ -40,9 +40,7 @@
 
 ## Active Plans
 
-当前 active：
-
-- `active/02-visual-spec-artifact-renderer.md` — Visual Spec Artifact Renderer（2026-08-11 激活；2026-08-12 Phase 0–3 已验收；Phase 4 ready）
+当前无 active plan。
 
 以 `active/index.md` 为当前索引。
 
@@ -54,4 +52,6 @@
 
 ## Completed Plans
 
-当前无 completed 计划。以 `completed/index.md` 为历史索引。
+- `completed/02-visual-spec-artifact-renderer.md` — Visual Spec Artifact Renderer（2026-08-11 激活；2026-08-12 Phase 0–4 验收并完成）
+
+以 `completed/index.md` 为历史索引。

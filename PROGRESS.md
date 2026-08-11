@@ -7,7 +7,7 @@
 - 更新日期：2026-08-12。
 - 当前分支：`codex/project-harness-governed`。
 - Harness profile：`governed`。
-- **Visual Spec Artifact Renderer Phase 0–4 已验收；completion transition ready。**
+- **Visual Spec Artifact Renderer Phase 0–4 已验收并移入 completed；当前无 active plan。**
 - 激活治理基线已单独提交为 `f88b0c3`；Phase 0 source、evidence 与状态按独立 scoped local commit 处理。
 - 实施基线仍为当前单体分支；`origin/codex/acm-pluginization-plan@4ed712c` 只作点采证据，未 merge/cherry-pick。
 
@@ -20,13 +20,13 @@
 | 最新会话接手点 | `HANDOFF.md` |
 | 文件职责 | `PROJECT_MAP.md` |
 | 文档权限与生命周期 | `docs/README.md` |
-| Active 产品计划 | `docs/exec-plans/active/02-visual-spec-artifact-renderer.md` |
+| Completed 产品计划 | `docs/exec-plans/completed/02-visual-spec-artifact-renderer.md` |
 | Phase 0–4 证据与独立 review | `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/` |
 | 长期历史 | `docs/progress-archive/index.md` |
 
 ## In Progress
 
-- 生命周期收尾：把已全部验收的 active plan 迁移到 `completed/` 并同步索引。
+- 无当前实施任务；等待新的明确请求。
 
 ## Blocked
 
@@ -34,11 +34,12 @@
 
 ## To Do
 
-- 完成 active → completed 迁移；可选宿主适配不属于当前授权，若启动需另立 proposed plan。
+- 可选宿主适配不属于当前授权，若启动需另立 proposed plan。
 - 不 push、PR、merge、tag、Release。
 
 ## Completed (Rolling Window)
 
+- [x] 2026-08-12 — Visual Spec Artifact Renderer Phase 0–4 全部验收，计划从 active 移入 completed；Phase 4 implementation + acceptance commit `2bba798`。
 - [x] 2026-08-12 — Phase 4 两份真实 Spec 已 strict-clean：零售补货试点 29/50，支付账本迁移 30/52；三语义视图区分、中文搜索、图例、空状态与错误输入均通过。
 - [x] 2026-08-12 — 性能基线覆盖 50–250 节点；README 记录日常 150/225、专项 250/375 边界，并切换为 Artifact-first，编辑器保留为显式次路径。
 - [x] 2026-08-12 — README-only 目录与离线单文件流程、150/225 浏览器 fixture 及 invalid structural Spec fail-closed 均通过 Orca/原生验证。

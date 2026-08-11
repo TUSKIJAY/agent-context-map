@@ -1,6 +1,6 @@
 # Phase 1 Evidence 001 — Read-only Artifact Viewer
 
-- Plan: `docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
+- Plan: `docs/exec-plans/completed/02-visual-spec-artifact-renderer.md`
 - Phase: 1 — Read-only graph Artifact Viewer
 - Evidence date: 2026-08-12 (Asia/Shanghai)
 - Frozen Git HEAD: `a04b33c6d626f6f4e2222440a77359bb67bf58d0`

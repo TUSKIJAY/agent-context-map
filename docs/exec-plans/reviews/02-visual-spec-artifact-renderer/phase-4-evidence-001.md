@@ -1,6 +1,6 @@
 # Phase 4 Evidence 001 — Real Specs, Product Walkthrough And Performance Boundary
 
-- Plan: `docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
+- Plan: `docs/exec-plans/completed/02-visual-spec-artifact-renderer.md`
 - Phase: 4 — product validation, real example Specs and experience convergence
 - Evidence date: 2026-08-12 (Asia/Shanghai)
 - Frozen Git HEAD: `b18dcbcba5c6ddcc3057ec354a38baf8b71b4c94`

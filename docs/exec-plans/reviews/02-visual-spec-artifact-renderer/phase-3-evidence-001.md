@@ -1,6 +1,6 @@
 # Phase 3 Evidence 001 — Offline Artifact Delivery And Portable Exports
 
-- Plan: `docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
+- Plan: `docs/exec-plans/completed/02-visual-spec-artifact-renderer.md`
 - Phase: 3 — static directory, single-file HTML, build metadata and PNG/SVG export
 - Evidence date: 2026-08-12 (Asia/Shanghai)
 - Frozen Git HEAD: `eaf3c84745ee84c0d5ada9c40667072ea4d8f278`

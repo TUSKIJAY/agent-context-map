@@ -1,6 +1,6 @@
 # Phase 0 Evidence 001 — Artifact Build Spike
 
-- Plan: `docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
+- Plan: `docs/exec-plans/completed/02-visual-spec-artifact-renderer.md`
 - Phase: 0 — Minimum Artifact build spike
 - Evidence date: 2026-08-12 (Asia/Shanghai)
 - Frozen Git HEAD: `f88b0c3a1b5453a1d08b93f14078ca3f31edb5b9`
