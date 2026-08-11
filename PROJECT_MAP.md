@@ -50,6 +50,8 @@
 | `skills/acm-md/SKILL.md` | 生成、读取、修复和验证 ACM-MD 的调用约定 |
 | `skills/acm-md/references/acm-md-v0.1.md` | 被 Git 跟踪的 ACM-MD v0.1 唯一规范 |
 | `skills/acm-md/scripts/validate_acm_md.py` | ACM-MD 结构、关系和悬空边校验器 |
+| `skills/acm-md/requirements.txt` | Python 校验器的可安装依赖声明 |
+| `skills/acm-md/examples/valid-basic.acm.md` | 严格模式可复现 smoke fixture |
 | `skills/acm-md/agents/openai.yaml` | Skill 接入元数据 |
 
 ## 文档与治理
@@ -61,14 +63,15 @@
 | `docs/decisions/` | Accepted/Proposed 决策记录 |
 | `docs/optimization/` | record-only 优化 intake |
 | `docs/progress-archive/` | 从启动文档迁出的历史证据 |
-| `doc/` | 被忽略且冻结的 legacy 本地资料；仅供历史回查 |
+| `doc/` | 若本地存在则视为被忽略且冻结的 legacy 资料；仅供历史回查 |
 
 ## Harness 工具
 
 | Path | Responsibility |
 | --- | --- |
-| `scripts/check-project-harness.py` | 结构与 profile/config 一致性检查 |
-| `scripts/check-startup-doc-budget.py` | 四份启动文档的行数和字节预算检查 |
+| `scripts/check-project-harness.py` | 必需文件、非空内容、关键契约锚点和 profile/config 一致性检查 |
+| `scripts/tests/test_project_harness.py` | checker 的通过与负向退化测试 |
+| `scripts/check-startup-doc-budget.py` | 五份强制启动文档的行数和字节预算检查 |
 
 ## 生成与本地目录
 
@@ -77,6 +80,7 @@
 - `node_modules/`、`dist/`、`.vite/`。
 - `src-tauri/target/`、`src-tauri/gen/`。
 - `output/`（绿色版桌面交付物）。
+- `.venv/`、`__pycache__/`、Python bytecode。
 - `.claude/`、`.env*`、日志、缓存和系统垃圾。
 
 Git 数据位置由当前 checkout 决定；始终使用 `git rev-parse --show-toplevel` 和 `git rev-parse --git-dir` 读取，不在项目地图中硬编码机器路径或 `.git` 形态。

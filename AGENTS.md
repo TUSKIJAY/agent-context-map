@@ -62,7 +62,7 @@ git status --short --branch
 - `HANDOFF.md`：短小的 session 书签；每次整体重写，不追加历史。
 - `PROJECT_MAP.md`：路径到职责的导航，不承担规则、状态或实施权限。
 - `docs/`：被 Git 跟踪的计划、评审、决策、优化 intake 和历史归档治理层。
-- `doc/`：被忽略的 legacy 本地资料；保持原位且冻结，只能回查，不新增、更新或作为当前规范、状态、计划及执行权限来源。
+- `doc/`：若当前 checkout 本地存在，则视为被忽略且冻结的 legacy 资料，只能回查；不得新增、更新或作为当前规范、状态、计划及执行权限来源。
 
 ## Git 纪律
 
@@ -78,6 +78,7 @@ Harness 或文档治理改动至少运行：
 
 ```bash
 python3 scripts/check-project-harness.py --root . --profile auto
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 python3 scripts/check-startup-doc-budget.py --root .
 git diff --check
 ```
@@ -88,10 +89,36 @@ git diff --check
 npm run build
 ```
 
-协议或 ACM-MD 样例改动还要运行：
+首次在当前 checkout 准备 ACM-MD Python 校验器时创建 repo-local `.venv` 并安装依赖；只需执行一次，或在 `requirements.txt` 变化后重新安装，不要安装到系统 Python。
+
+macOS / Linux：
 
 ```bash
-python3 skills/acm-md/scripts/validate_acm_md.py <file.acm.md>
+python3 -m venv .venv
+.venv/bin/python -m pip install -r skills/acm-md/requirements.txt
+```
+
+Windows PowerShell：
+
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r skills/acm-md/requirements.txt
+```
+
+协议、校验器或 ACM-MD 样例改动还要直接调用 `.venv` 解释器，先跑被跟踪的 smoke fixture，再验证目标文件；无需激活虚拟环境。
+
+macOS / Linux：
+
+```bash
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py <file.acm.md> --mode strict
+```
+
+Windows PowerShell：
+
+```powershell
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py <file.acm.md> --mode strict
 ```
 
 结构检查通过不能代替产品原生验证。结束前复核 diff，只保留当前范围，并如实更新 `PROGRESS.md` 与 `HANDOFF.md` 中的结果、未验证项、阻塞和下一闸门。

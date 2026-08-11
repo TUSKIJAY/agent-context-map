@@ -65,16 +65,50 @@ Ids must be stable and unique. Do not use titles as ids. Existing nonconforming 
 
 ## Validation
 
-Run strict validation for generated/exported ACM-MD:
+Create the repo-local virtual environment once per checkout. Re-run the install step only when `requirements.txt` changes. Do not install the dependency into system Python, and do not require shell activation.
+
+macOS / Linux:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r skills/acm-md/requirements.txt
+```
+
+Windows PowerShell:
 
 ```powershell
-python C:\Users\LENOVO\.codex\skills\acm-md\scripts\validate_acm_md.py <file.acm.md> --mode strict
+py -3 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r skills/acm-md/requirements.txt
+```
+
+Run the tracked smoke fixture before relying on a newly prepared environment:
+
+```bash
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
+```
+
+```powershell
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
+```
+
+Run strict validation for generated/exported ACM-MD:
+
+```bash
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py <file.acm.md> --mode strict
+```
+
+```powershell
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py <file.acm.md> --mode strict
 ```
 
 Run tolerant validation when repairing legacy or pasted input:
 
+```bash
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py <file.md> --mode tolerant
+```
+
 ```powershell
-python C:\Users\LENOVO\.codex\skills\acm-md\scripts\validate_acm_md.py <file.md> --mode tolerant
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py <file.md> --mode tolerant
 ```
 
 Strict mode fails on zero or multiple `acm` blocks, and also fails when the YAML body contains a raw three-backtick fence delimiter. Tolerant mode may parse raw YAML or use the first block, but reports warnings.

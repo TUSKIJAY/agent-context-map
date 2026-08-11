@@ -12,7 +12,7 @@
 - 桌面：Tauri 2；浏览器开发模式以 localStorage 兜底，桌面端使用本地 SQLite 与文件接口。
 - 协议：`ACM-MD v0.1`；正式规范位于 `skills/acm-md/references/acm-md-v0.1.md`。
 - Harness profile：`governed`。
-- 当前仓库没有 CI 配置和独立 `test` script；`npm run build` 是已确认的产品原生基线。
+- 当前仓库没有 CI 配置和产品级 `test` script；`npm run build` 是已确认的产品原生基线，repo-local harness checker 另有 Python `unittest` 覆盖。
 
 项目不依赖远程后端即可运行。除非用户明确批准架构变化，不新增服务器、云数据库、遥测或强制联网能力。
 
@@ -46,7 +46,18 @@ Harness 结构与启动文档预算：
 
 ```bash
 python3 scripts/check-project-harness.py --root . --profile auto
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 python3 scripts/check-startup-doc-budget.py --root .
+```
+
+ACM-MD 校验器使用被 `.gitignore` 排除的 repo-local `.venv`，不安装到系统 Python，也不依赖 shell activation。首次准备和依赖变化时按 `AGENTS.md` 的跨平台命令创建/更新环境；验证时直接调用对应解释器：
+
+```bash
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
+```
+
+```powershell
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
 ```
 
 Tauri 打包只在桌面壳、Rust 端、权限或桌面交付物相关任务中运行：

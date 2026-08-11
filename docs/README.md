@@ -12,7 +12,7 @@
 | Exec plans | `exec-plans/` | proposed、active、completed 与 reviews 生命周期 | 大型/敏感工作需位于 active 的已批准计划；小型工作按 `AGENTS.md` 任务分级直接执行，无需进入本目录 |
 | Optimization intake | `optimization/` | 摩擦和改进想法记录 | 只记录，不授权实施 |
 | Progress archive | `progress-archive/` | 从启动路径迁出的长期历史 | 证据检索；当前状态仍在根状态文件 |
-| Frozen legacy records | `../doc/` | 被忽略的早期本地计划、评审和协议镜像 | 仅可历史回查；不得新增、更新或作为当前权威 |
+| Frozen legacy records | `../doc/` | 当前 checkout 若本地存在的早期计划、评审和协议镜像 | 仅可历史回查；不得新增、更新或作为当前权威 |
 
 ## Entry Points
 
@@ -35,4 +35,4 @@
 - 完成、终止、拒绝或被取代的计划移动到 `completed/`；review 历史保留。
 - 长历史进入 `progress-archive/` 并保留索引；不得让启动文档无限增长。
 - 所有新的计划、评审、决策、优化记录和进度归档都进入 `docs/` 对应入口。
-- `doc/` 保持原位且冻结，不批量迁移或删除；复用旧内容前必须按当前仓库证据复核。
+- `doc/` 若本地存在则保持原位且冻结，不批量迁移或删除；复用旧内容前必须按当前仓库证据复核。
