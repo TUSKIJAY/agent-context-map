@@ -84,6 +84,8 @@
 | `scripts/build-artifact.mjs` | `--format directory|single` 正式构建 CLI；支持 `--spec`、`--generated-at` 与 `SOURCE_DATE_EPOCH` |
 | `scripts/check-artifact-build.mjs` | 固定生成时间下双构建复现、单文件封装、CSP、escaping、ELK/体积边界断言 |
 | `scripts/check-portable-svg.mjs` | 纯 SVG 可见元素、escaping、无 `foreignObject`/script 与稳定 hash 断言 |
+| `scripts/check-viewer-experience.mjs` | 两份真实示例的严格结构、三视图区分、中文搜索、图例、空状态与错误输入断言 |
+| `scripts/check-viewer-performance.mjs` | 50–250 节点合成图的投影、筛选/搜索与 dagre 性能基线；可输出浏览器验收 Spec |
 | `scripts/check-viewer-projections.mjs` | 三投影、筛选、搜索、focus、hash 及空图/孤点/环的可重复 Node 断言 |
 
 ## 生成与本地目录

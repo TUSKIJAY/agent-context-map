@@ -2,7 +2,7 @@
 
 # Agent Context Map
 
-**协议驱动的 Agent 需求图谱编辑器** · 把任务拆解、需求澄清和协作上下文变成可视化、可编辑、可校验、可导出的结构化图谱。
+**本地优先的 Visual Spec Artifact Renderer** · 把 ACM-MD 变成可离线打开、可交互浏览、可分享的结构 / 依赖 / 探询图谱。
 
 ![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646cff?logo=vite&logoColor=white)
@@ -14,15 +14,43 @@
 
 </div>
 
-Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器。它把对话式任务拆解结果整理成可视化、可编辑、可校验、可导出的结构化上下文，让后续 Agent 可以更清楚地理解目标、约束、模块、功能和执行关系。
+Agent Context Map（ACM）默认是一条只读 Artifact 交付路径：把结构化 Spec 渲染为普通浏览器可打开的交互图谱，让评审人不安装桌面壳、MCP 或后端也能理解目标、约束、依赖、风险和待澄清问题。原有图谱编辑器仍作为显式次入口保留，用于本地修改和 Agent Diff。
 
-项目基于 **ACM-MD v0.1** 协议构建——*ACM-MD = Agent Context Map · Markdown*，一种用 **Markdown + YAML** 描述 Agent 任务上下文（目标、模块、功能、约束、关系、校验结果等）的开放文本格式，人能读、Agent 也能解析。本工具用 Vite + React + React Flow 实现，并可通过 Tauri 打包为绿色版桌面应用，适合用于需求澄清、任务拆解、Agent 协作交接和复杂项目上下文管理。
+项目基于 **ACM-MD v0.1** 协议构建——*ACM-MD = Agent Context Map · Markdown*，一种用 **Markdown + YAML** 描述 Agent 任务上下文的开放文本格式，人能读、Agent 也能解析。布局、筛选、折叠、选择和视图偏好只存在于展示层，不写回协议真源。
+
+## 最快路径：从 ACM-MD 到 Artifact
+
+需要 Node.js 20+ 与 Python 3。首次在当前 checkout 使用时：
+
+```bash
+npm install
+python3 -m venv .venv
+.venv/bin/python -m pip install -r skills/acm-md/requirements.txt
+```
+
+严格校验一份真实示例并生成静态目录：
+
+```bash
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/retail-replenishment-pilot.acm.md --mode strict
+npm run build:artifact -- --spec skills/acm-md/examples/retail-replenishment-pilot.acm.md
+python3 -m http.server 4174 --directory dist-artifact-dir
+```
+
+浏览器打开 `http://127.0.0.1:4174/artifact.html`。页面可切换 Structure / Dependency / Inquiry，搜索和筛选节点，查看只读 Inspector，并导出 PNG / SVG。
+
+如需一个可直接双击或通过 `file://` 打开的文件：
+
+```bash
+npm run build:artifact:single -- --spec skills/acm-md/examples/retail-replenishment-pilot.acm.md
+```
+
+打开 `dist-artifact-single/artifact.html` 即可。构建遇到解析或结构校验错误会失败关闭，不生成可误用的有效 Artifact。
 
 ![Agent Context Map 演示](assets/screenshots/demo.gif)
 
-> 拖拽节点圆点即可连线、自动推断关系（suggested → 待确认）· 拖动节点实时跟手 · dagre / ELK 双引擎自动布局 + 分组容器 · 选中即可逐节点编辑 · 一键导出 ACM-MD / Agent Diff / Mermaid
+> 当前图片记录原有编辑器能力；默认产品入口已经是只读 Viewer，编辑器只在用户显式选择后加载。
 
-完整编辑器界面：
+可选编辑器界面：
 
 ![Agent Context Map 编辑器界面](assets/screenshots/02-editor.png)
 
@@ -49,17 +77,16 @@ Agent Context Map（ACM）是一个本地运行的 Agent 需求图谱编辑器�
 
 ## 核心能力
 
-- 可视化编辑 Agent 需求图谱，支持节点拖拽、画布平移、缩放和关系连线。
-- 支持目标、模块、功能、约束、资源、风险、交付物等节点类型。
+- 从同一份 canonical ACM-MD 投影 Structure / Dependency / Inquiry，不复制三套业务数据。
+- 只读 Viewer 支持平移、缩放、适配画布、MiniMap、中文搜索、类型/状态图例与筛选、折叠和 0–2 层关联聚焦。
+- Inspector 展示稳定 ID、标题、类型、状态、描述、来源、置信度、标签和上下游关系。
+- 静态目录与单文件 Artifact 均无强制外网、后端、Tauri 或 MCP 依赖；构建元数据记录源 Spec 与 canonical hash。
+- PNG 与 SVG 使用同一份可移植矢量表示，包含节点、关系线、箭头和标签。
+- 支持目标、模块、功能、约束、数据对象、接口、风险、假设、问题、决策和任务等节点类型。
+- 原编辑器作为显式次入口保留节点拖拽、关系连线、协议校验、Agent Diff 与多格式导出。
 - **双布局引擎**：dagre（分层，快速，默认）与 elkjs（ELK 正交边路由、绕开节点、少交叉、嵌套布局），工具栏一键互切。
-- **复杂图谱可读性**：按内容估算节点尺寸；子树折叠 / 展开按需下钻；按模块 / 类型把节点装入带标题的分组容器；整组折叠降噪。
-- 连线时根据节点类型推断关系，并区分建议关系与已确认关系。
-- 实时生成 Agent Diff，记录字段变更、布局变更和给后续 Agent 的执行提示。
-- 内置校验规则，可检查悬空边、重复 ID、未确认关系、缺少归属模块等问题。
-- 支持导出完整 ACM-MD、Agent Diff、图谱 JSON 和 Mermaid 预览。
-- 内置自描述示例图谱，用这个工具自身的需求作为演示数据。
 
-## 本地运行
+## 可选：本地应用与编辑器
 
 ```bash
 npm install
@@ -79,18 +106,18 @@ npm run build
 npm run preview
 ```
 
-## 构建只读 Artifact
+## Artifact 构建说明
 
 Artifact 是同一份 ACM-MD 的只读浏览器交付物，不需要 Tauri、MCP、后端或 CDN。构建前先用 repo-local `.venv` 做严格校验：
 
 ```bash
-.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-viewer-views.acm.md --mode strict
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/payment-ledger-migration.acm.md --mode strict
 ```
 
 生成可拷贝的静态目录：
 
 ```bash
-npm run build:artifact -- --spec skills/acm-md/examples/valid-viewer-views.acm.md
+npm run build:artifact -- --spec skills/acm-md/examples/payment-ledger-migration.acm.md
 python3 -m http.server 4174 --directory dist-artifact-dir
 ```
 
@@ -99,16 +126,33 @@ python3 -m http.server 4174 --directory dist-artifact-dir
 生成可直接双击打开的单文件：
 
 ```bash
-npm run build:artifact:single -- --spec skills/acm-md/examples/valid-viewer-views.acm.md
+npm run build:artifact:single -- --spec skills/acm-md/examples/payment-ledger-migration.acm.md
 ```
 
 输出只有 `dist-artifact-single/artifact.html`。如需逐字节复现，给两次构建传同一个 ISO 时间；也可使用标准的 `SOURCE_DATE_EPOCH`：
 
 ```bash
-npm run build:artifact:single -- --spec skills/acm-md/examples/valid-viewer-views.acm.md --generated-at 2026-08-12T00:00:00.000Z
+npm run build:artifact:single -- --spec skills/acm-md/examples/payment-ledger-migration.acm.md --generated-at 2026-08-12T00:00:00.000Z
 ```
 
 两种产物均使用 CSP、只包含本地资源、默认采用 dagre 且拒绝意外打入 ELK；Viewer 内可导出带关系线的 PNG 和不依赖 `foreignObject` 的纯 SVG。
+
+### 真实示例
+
+- `skills/acm-md/examples/retail-replenishment-pilot.acm.md`：连锁零售补货预警试点，29 节点 / 50 边。
+- `skills/acm-md/examples/payment-ledger-migration.acm.md`：支付账本数据库零停机迁移，30 节点 / 52 边。
+
+两份示例都通过 strict 校验，并刻意同时包含层级、依赖、约束、风险、问题和决策，让三种视图承担不同阅读任务。
+
+### 规模建议
+
+在 Apple Silicon / Node.js 22 的多次合成基线中，150 节点 / 225 边的 dagre 布局中位数约 0.19–0.29 秒，250 / 375 约 0.63–0.68 秒。建议：
+
+- 日常 Artifact 控制在 **150 节点 / 225 边以内**。
+- 最高到 **250 / 375** 时必须走真实浏览器专项验收，并优先使用筛选、折叠和语义投影。
+- 更大规模尚未形成质量承诺，应拆分 Spec 或另做性能计划。
+
+可用 `npm run check:viewer-performance` 在当前机器重跑基线；数字受硬件、浏览器与图结构影响，不是跨设备 SLA。
 
 ## 目录结构
 
@@ -159,7 +203,7 @@ skills/acm-md/
   agents/openai.yaml        # Agent 接入配置
 ```
 
-它让「对话式拆解 → 生成 ACM-MD → 在本编辑器里可视化校验 → 导出给下一个 Agent」形成闭环。
+它让「对话式拆解 → 生成并严格校验 ACM-MD → 构建只读 Artifact → 评审 → 必要时进入编辑器修订」形成闭环。
 
 ## 技术栈
 
@@ -179,4 +223,4 @@ skills/acm-md/
 
 ## 备注
 
-本项目是纯本地前端应用，不依赖后端服务。当前版本主要面向原型验证和协议沉淀，后续可以扩展为更完整的任务拆解、上下文审阅和 Agent 工作流编排工具。
+本项目是纯本地前端应用，不依赖后端服务。当前版本优先保证 ACM-MD 到离线只读 Artifact 的可重复交付；编辑、桌面壳和更深的 Agent 工作流属于可选能力。

@@ -13,6 +13,8 @@
     "build:artifact:single:spike": "npm run build:artifact:single",
     "check:artifact-build": "node scripts/check-artifact-build.mjs",
     "check:portable-svg": "node scripts/check-portable-svg.mjs",
+    "check:viewer-experience": "node scripts/check-viewer-experience.mjs",
+    "check:viewer-performance": "node scripts/check-viewer-performance.mjs",
     "check:viewer-projections": "node scripts/check-viewer-projections.mjs",
     "preview": "vite preview",
     "tauri": "tauri",

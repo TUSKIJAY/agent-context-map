@@ -9,6 +9,8 @@
     "npm run check:viewer-projections",
     "npm run check:artifact-build",
     "npm run check:portable-svg",
+    "npm run check:viewer-experience",
+    "npm run check:viewer-performance",
     "npm run build"
   ]
 }

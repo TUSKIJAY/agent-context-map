@@ -52,6 +52,7 @@ export async function loadArtifactContext({ specPath = defaultSpecPath, generate
   const packageMetadata = JSON.parse(await fs.readFile(path.join(projectRoot, "package.json"), "utf8"));
   const parsed = parseAcmMd(specText);
   if (!parsed.doc) throw new Error(`Artifact Spec parse failed: ${parsed.errors.join("; ")}`);
+  if (parsed.errors.length) throw new Error(`Artifact Spec structure failed: ${parsed.errors.join("; ")}`);
   const errors = validateDoc(parsed.doc).filter((issue) => issue.level === "error");
   if (errors.length) throw new Error(`Artifact Spec validation failed: ${errors.map((issue) => issue.message).join("; ")}`);
   const canonicalStructure = JSON.stringify({

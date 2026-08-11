@@ -7,7 +7,7 @@
 - 更新日期：2026-08-12。
 - 当前分支：`codex/project-harness-governed`。
 - Harness profile：`governed`。
-- **Visual Spec Artifact Renderer Phase 0–3 已验收；Phase 4 ready。**
+- **Visual Spec Artifact Renderer Phase 0–4 已验收；completion transition ready。**
 - 激活治理基线已单独提交为 `f88b0c3`；Phase 0 source、evidence 与状态按独立 scoped local commit 处理。
 - 实施基线仍为当前单体分支；`origin/codex/acm-pluginization-plan@4ed712c` 只作点采证据，未 merge/cherry-pick。
 
@@ -21,12 +21,12 @@
 | 文件职责 | `PROJECT_MAP.md` |
 | 文档权限与生命周期 | `docs/README.md` |
 | Active 产品计划 | `docs/exec-plans/active/02-visual-spec-artifact-renderer.md` |
-| Phase 0–3 证据与独立 review | `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/` |
+| Phase 0–4 证据与独立 review | `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/` |
 | 长期历史 | `docs/progress-archive/index.md` |
 
 ## In Progress
 
-- Phase 4 准备：用 1–2 份非工具自描述真实 Spec 完成交互走查、性能基线和 README 用户闭环。
+- 生命周期收尾：把已全部验收的 active plan 迁移到 `completed/` 并同步索引。
 
 ## Blocked
 
@@ -34,11 +34,15 @@
 
 ## To Do
 
-- Phase 4：创建真实示例、覆盖中文排版/图例/空状态/错误 ACM-MD、记录节点/边性能建议上限，并决定 README 产品叙事。
+- 完成 active → completed 迁移；可选宿主适配不属于当前授权，若启动需另立 proposed plan。
 - 不 push、PR、merge、tag、Release。
 
 ## Completed (Rolling Window)
 
+- [x] 2026-08-12 — Phase 4 两份真实 Spec 已 strict-clean：零售补货试点 29/50，支付账本迁移 30/52；三语义视图区分、中文搜索、图例、空状态与错误输入均通过。
+- [x] 2026-08-12 — 性能基线覆盖 50–250 节点；README 记录日常 150/225、专项 250/375 边界，并切换为 Artifact-first，编辑器保留为显式次路径。
+- [x] 2026-08-12 — README-only 目录与离线单文件流程、150/225 浏览器 fixture 及 invalid structural Spec fail-closed 均通过 Orca/原生验证。
+- [x] 2026-08-12 — Phase 4 source manifest `a82faa7d...a2c`；Grok 016 与 AGY/Antigravity 017 均 approve/high、无 blocking finding。
 - [x] 2026-08-12 — Phase 3 正式目录与单文件交付、构建元数据/固定时间复现、CSP、750,000 B/ELK 边界与 README 命令已闭环。
 - [x] 2026-08-12 — PNG 改为栅格化同一份纯 SVG；最终两类 Artifact 导出均保留中文节点、关系线、箭头与标签，SVG 视觉 QA PASS。
 - [x] 2026-08-12 — Phase 3 source manifest `360f85ac...86b`；Grok 014 与 AGY/Antigravity 015 均 approve/high、无 blocking finding。
@@ -55,11 +59,13 @@
 | Formal Artifact directory | Pass — 531,551 B, runtime SHA-256 `45cbd73e...6e44`, local assets + manifest |
 | Formal Artifact single file | Pass — one HTML, 530,832 B, runtime SHA-256 `53223103...8a3d`, offline `file://` |
 | Original `npm run build` | Pass — 289 modules; editor and lazy ELK preserved; existing large-chunk warning only |
-| ACM-MD strict fixtures | Pass — basic + three-view fixture through repo-local `.venv`; one intentional suggested-edge warning |
+| ACM-MD strict fixtures | Pass — basic、three-view、retail、payment；仅既有 three-view fixture 有 intentional suggested-edge warning |
 | Projection assertions | Pass — Structure `10/3`, Dependency `7/6`, Inquiry `6/5`; canonical stable; empty/orphan/cycle/focus/hash pass |
+| Real example experience | Pass — retail `29/50` → `29/28`, `19/15`, `12/8`; payment `30/52` → `30/29`, `15/12`, `14/8`; search/legend/empty/error pass |
+| Performance boundary | Pass — 50/75 to 250/375 repeatable baseline; comfortable `150/225`, extended-review `250/375`, above not qualified |
 | Local harness / tests / budget | Pass — governed; 8/8; no budget trigger |
-| Browser/export | Pass — directory local-only + single offline `file://`; PNG/SVG relations visible; Chromium 150.0.7871.47; Orca screenshot channel limitation recorded |
-| Independent review | Pass — Phase 3 Grok 014 + AGY/Antigravity 015 approve/high; no blocking finding |
+| Browser/export | Pass — real directory local-only + real single offline `file://`; 150/225 fixture rendered; PNG/SVG relations visible; Chromium 150.0.7871.47; Orca screenshot limitation recorded |
+| Independent review | Pass — Phase 4 Grok 016 + AGY/Antigravity 017 approve/high; no blocking finding |
 | `git diff --check` | Pass |
 
 ## Historical Redirects

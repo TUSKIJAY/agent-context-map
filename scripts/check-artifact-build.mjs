@@ -21,6 +21,11 @@ try {
     buildArtifact({ format: "single", outputRoot: path.join(temporaryRoot, "invalid-limit"), generatedAt: fixedGeneratedAt, maxBytes: Number.NaN, logLevel: "silent" }),
     /positive finite number/,
   );
+  const invalidSpecPath = path.resolve("scripts/fixtures/invalid-artifact-missing-nodes.acm.md");
+  await assert.rejects(
+    buildArtifact({ format: "directory", specPath: invalidSpecPath, outputRoot: path.join(temporaryRoot, "invalid-spec-output"), generatedAt: fixedGeneratedAt, logLevel: "silent" }),
+    /structure failed.*nodes/i,
+  );
 
   const directoryA = await buildArtifact({ format: "directory", specPath: defaultSpecPath, outputRoot: path.join(temporaryRoot, "dir-a"), generatedAt: fixedGeneratedAt, logLevel: "warn" });
   const directoryB = await buildArtifact({ format: "directory", specPath: defaultSpecPath, outputRoot: path.join(temporaryRoot, "dir-b"), generatedAt: fixedGeneratedAt, logLevel: "warn" });

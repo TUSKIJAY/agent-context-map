@@ -14,6 +14,7 @@
 - 默认 App 启动进入只读 Viewer；旧编辑器只在用户显式选择“进入编辑器”后 lazy/dynamic 加载。独立 Artifact 入口不暴露编辑器或 storage/Tauri 能力。
 - Viewer 从同一 canonical graph 纯投影 Structure / Dependency / Inquiry；筛选、搜索、折叠、0–2 层 focus、布局、选择和 `view` + `node` hash 都是派生状态。Structure 默认只用 `contains` 排序，Dependency 的 `impacts` 是可隐藏辅助层。
 - Artifact 有正式静态目录与单文件两种构建；构建时注入通过校验的 ACM-MD、来源与 canonical hash、生成时间和协议版本。两种产物只读、无强制外网，默认只含 dagre；PNG 由同一份可移植纯 SVG 栅格化。
+- 被跟踪的真实示例是零售补货试点与支付账本零停机迁移。Viewer 的本机建议规模为日常不超过 150 节点 / 225 边；250 / 375 仅作需专项浏览器验收的扩展范围，更大规模尚未形成质量承诺。
 - Harness profile：`governed`。
 - 当前仓库没有 CI 配置和产品级 `test` script；`npm run build` 是已确认的产品原生基线，repo-local harness checker 另有 Python `unittest` 覆盖。
 
@@ -44,6 +45,8 @@
 ```bash
 npm run build
 npm run check:viewer-projections
+npm run check:viewer-experience
+npm run check:viewer-performance
 npm run check:artifact-build
 npm run check:portable-svg
 ```
@@ -61,11 +64,15 @@ ACM-MD 校验器使用被 `.gitignore` 排除的 repo-local `.venv`，不安装�
 ```bash
 .venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
 .venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-viewer-views.acm.md --mode strict
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/retail-replenishment-pilot.acm.md --mode strict
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/payment-ledger-migration.acm.md --mode strict
 ```
 
 ```powershell
 .venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-basic.acm.md --mode strict
 .venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-viewer-views.acm.md --mode strict
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/retail-replenishment-pilot.acm.md --mode strict
+.venv\Scripts\python.exe skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/payment-ledger-migration.acm.md --mode strict
 ```
 
 Tauri 打包只在桌面壳、Rust 端、权限或桌面交付物相关任务中运行：

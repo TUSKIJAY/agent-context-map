@@ -4,28 +4,28 @@
 
 ## Resume Point / 接手点
 
-**Visual Spec Artifact Renderer Phase 0–3 已验收；单一下一步是 Phase 4 产品验证、真实示例与体验收敛。**
+**Visual Spec Artifact Renderer Phase 0–4 已验收；单一下一步是 active → completed 生命周期收尾。**
 
 - Active plan：`docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
-- Phase 3 evidence：`docs/exec-plans/reviews/02-visual-spec-artifact-renderer/phase-3-evidence-001.md`
-- Independent reviews：`review-014.md`（Grok approve/high）与 `review-015.md`（AGY/Antigravity approve/high），均无 blocking finding
-- Frozen Phase 3 source manifest：`360f85ac21b94ffcab928e8a232e493e9bbade42056ec9e87ec69abdb33c786b`
-- Phase 2 local commit：`eaf3c84745ee84c0d5ada9c40667072ea4d8f278`
+- Phase 4 evidence：`docs/exec-plans/reviews/02-visual-spec-artifact-renderer/phase-4-evidence-001.md`
+- Independent reviews：`review-016.md`（Grok approve/high）与 `review-017.md`（AGY/Antigravity approve/high），均无 blocking finding
+- Frozen Phase 4 source manifest：`a82faa7def7ce64e1f92756da3bdf5876d44a52174295620fdd88f63eeaeea2c`
+- Frozen Phase 4 base HEAD：`b18dcbcba5c6ddcc3057ec354a38baf8b71b4c94`
 
-## Phase 3 Result
+## Phase 4 Result
 
-- `npm run build:artifact` 生成可拷贝目录与 `artifact-manifest.json`；`npm run build:artifact:single` 生成唯一 `artifact.html`。
-- 固定 `generated_at` 时，目录 runtime hash 为 `45cbd73e...6e44`（531,551 B），单文件为 `53223103...8a3d`（530,832 B）；canonical structure hash 为 `f89a1dc...edb9`。
-- 两种 Artifact 均有 CSP、无强制外网、默认仅 dagre，并拒绝 ELK、编辑器/storage/Tauri 运行时和超过 750,000 B 的产物。
-- PNG 由同一份可移植纯 SVG 栅格化；最终目录与离线单文件导出均保留中文节点、关系线、箭头和标签，SVG 自动视觉 QA 为 PASS。
+- 新增零售补货试点（29 节点 / 50 边）与支付账本迁移（30 / 52）两份真实 Spec，均 strict-clean；Structure / Dependency / Inquiry 投影承担不同阅读任务。
+- `check:viewer-experience` 覆盖中文搜索、11/12 contextual legend、空投影、invalid YAML 与 dangling edge；Artifact build 现在对缺失 `nodes` 的结构错误 fail closed。
+- `check:viewer-performance` 建立 50–250 节点基线；README 建议日常不超过 150/225，250/375 需专项浏览器验收，更大规模未承诺。
+- README-only 目录与 `file://` 单文件均已实跑；150/225 浏览器 fixture、canonical 稳定性与零校验错误通过。README 已切换为 Artifact-first，编辑器仍是显式次路径。
 
 ## Last Verification
 
-- formal directory + single builds、`check:artifact-build`、`check:portable-svg`、`check:viewer-projections`：pass。
+- strict basic、three-view、retail、payment：pass；仅既有 three-view fixture 有 intentional warning。
+- `check:viewer-projections`、`check:viewer-experience`、`check:viewer-performance`、`check:artifact-build`、`check:portable-svg`：pass。
 - `npm run build`：pass，289 modules；编辑器与 lazy ELK 路径保留。
-- strict basic + three-view fixtures：pass；three-view 仅有 intentional suggested-edge warning。
 - governed harness、8/8 tests、startup budget 与 `git diff --check`：pass。
-- Orca Chromium 150：目录 local-only、single `file://` offline reload、PNG/SVG clicks 均 pass；Orca screenshot 超时已记 `tool_failed` 并由 Browser connector screenshot fallback 补证。
+- Orca Chromium 150：真实目录 local-only、真实 single `file://` offline reload、150/225 fixture 与交互走查均 pass；Orca screenshot 超时已记 `tool_failed` 并由 Browser connector screenshot fallback 补证。
 
 ## Blocker
 
@@ -33,10 +33,10 @@
 
 ## Next Gate / 单一下一步
 
-Phase 4：创建 1–2 份高质量真实 Spec，逐项验收中文排版、图例、空状态与错误 ACM-MD，记录性能基线和建议节点/边上限，并依据真实证据决定 README 是否切换为 Artifact 优先。全部 Gate 与双独立 review 通过后，将 active plan 移至 completed。
+将已全部验收的计划从 `active/` 移至 `completed/`，同步 roadmap、active/completed/reviews indexes 与最终状态文件，然后创建本地 lifecycle closeout commit。
 
 ## Scope Reminder
 
 - 保持 local-first 与 ACM-MD v0.1；不 merge 插件化分支。
 - 不 push、PR、merge、tag、Release。
-- Phase 4 不扩成协议升级、营销站点、插件复活或云发布。
+- 可选宿主适配不是本计划后续 phase；如需启动必须另立 proposed plan。
