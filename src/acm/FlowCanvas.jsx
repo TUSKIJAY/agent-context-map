@@ -17,6 +17,7 @@ import {
 import { toPng, toSvg } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 import { NODE_TYPE_META, STATUS_META, RELATION_META, typeLabel } from "./data.js";
+import { focusNeighborhood } from "./project.js";
 
 function AcmNode({ data, selected }) {
   const n = data.node;
@@ -171,24 +172,22 @@ function download(dataUrl, name) {
 
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
   hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes,
-  collapsedGroups, onToggleGroup, readOnly = false }) {
+  collapsedGroups, onToggleGroup, readOnly = false, focusDepth = 1, auxiliaryEdgeIds }) {
   const rf = useReactFlow();
   const wrapRef = useRef(null);
   const isH = (rankdir || "LR") !== "TB";
   const [edgeStyle, setEdgeStyle] = useState("bezier"); // bezier (曲线) | smoothstep (直角)
   const [exporting, setExporting] = useState(false);
 
-  // focus highlight: when a node is selected, surface only it + its direct neighbours
+  // focus highlight is view-only and cycle-safe. Viewer can choose 0/1/2 layers;
+  // the editor keeps its historical one-hop default.
   const focus = useMemo(() => {
-    if (selection?.kind !== "node") return null;
-    const id = selection.id;
-    const nodes = new Set([id]); const edges = new Set();
-    for (const e of doc.edges) {
-      if (e.from === id) { nodes.add(e.to); edges.add(e.id); }
-      if (e.to === id) { nodes.add(e.from); edges.add(e.id); }
-    }
-    return { nodes, edges };
-  }, [selection, doc.edges]);
+    if (selection?.kind !== "node" || Number(focusDepth) <= 0) return null;
+    return focusNeighborhood(doc, selection.id, focusDepth);
+  }, [selection, doc, focusDepth]);
+  const auxiliaryEdges = useMemo(() => (
+    auxiliaryEdgeIds instanceof Set ? auxiliaryEdgeIds : new Set(auxiliaryEdgeIds || [])
+  ), [auxiliaryEdgeIds]);
 
   // Derived nodes are the source of truth for *what* to render (position, styling,
   // selection/focus state). React Flow, however, needs to own a mutable node list so
@@ -261,6 +260,7 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
     const rm = RELATION_META[e.type] || { c: "#94a3b8", label: e.type };
     const sel = selection?.kind === "edge" && selection.id === e.id;
     const sug = e.status === "suggested";
+    const auxiliary = auxiliaryEdges.has(e.id);
     const onPath = focus ? focus.edges.has(e.id) : null;
     const faded = (focus && !onPath) || (!focus && typeFilter != null);
     const strong = sel || onPath;
@@ -274,12 +274,17 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
       data: route ? { points: route } : undefined,
       label: faded ? undefined : rm.label, selected: sel, animated: sug && !faded,
       markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: rm.c },
-      style: { stroke: rm.c, strokeWidth: strong ? 2.6 : 1.4, strokeDasharray: sug ? "6 4" : undefined, opacity: faded ? 0.08 : 0.9 },
+      style: {
+        stroke: rm.c,
+        strokeWidth: strong ? 2.6 : auxiliary ? 1.1 : 1.4,
+        strokeDasharray: sug ? "6 4" : auxiliary ? "3 5" : undefined,
+        opacity: faded ? 0.08 : auxiliary ? 0.38 : 0.9,
+      },
       labelStyle: { fontSize: 10, fontWeight: 600, fill: rm.c },
       labelBgStyle: { fill: "#fff", fillOpacity: 0.9 }, labelBgPadding: [4, 2], labelBgBorderRadius: 4,
       zIndex: strong ? 10 : 0,
     };
-  }), [doc.edges, selection, typeFilter, focus, edgeStyle, hidden, engine, elkRoutes]);
+  }), [doc.edges, selection, typeFilter, focus, edgeStyle, hidden, engine, elkRoutes, auxiliaryEdges]);
 
   useEffect(() => {
     if (!fitSignal) return;

@@ -31,6 +31,7 @@
 | `src/acm/Home.jsx` | 开始页、最近图谱、新建、示例和导入入口 |
 | `src/acm/FlowCanvas.jsx` | React Flow 画布、节点、边、布局、分组和折叠交互；`readOnly` 契约禁拖拽、连线和删除 |
 | `src/acm/viewer/ViewerApp.jsx` | 默认只读 Viewer shell：构建时 fixture、类型图例/筛选、只读 Inspector 与画布导航 |
+| `src/acm/project.js` | 纯 Viewer 投影与导航逻辑：三语义视图、筛选、搜索、1–2 层 focus 和 hash 编解码；只返回稳定 id 与视图选项 |
 | `src/acm/Panels.jsx` | Inspector、Agent Diff、校验结果及左右侧栏 |
 | `src/acm/TweaksPanel.jsx` | 节点样式、网格和主色等显示偏好 |
 | `src/acm/data.js` | ACM 数据契约、受控词表、关系推断、校验、Diff、导入和导出 |
@@ -57,6 +58,7 @@
 | `skills/acm-md/scripts/validate_acm_md.py` | ACM-MD 结构、关系和悬空边校验器 |
 | `skills/acm-md/requirements.txt` | Python 校验器的可安装依赖声明 |
 | `skills/acm-md/examples/valid-basic.acm.md` | 严格模式可复现 smoke fixture |
+| `skills/acm-md/examples/valid-viewer-views.acm.md` | 覆盖 Structure / Dependency / Inquiry 的严格模式 Viewer fixture |
 | `skills/acm-md/agents/openai.yaml` | Skill 接入元数据 |
 
 ## 文档与治理
@@ -78,6 +80,7 @@
 | `scripts/tests/test_project_harness.py` | checker 的通过与负向退化测试 |
 | `scripts/check-startup-doc-budget.py` | 五份强制启动文档的行数和字节预算检查 |
 | `scripts/build-artifact-single-spike.mjs` | Phase 0 dagre-only 单文件 HTML 可行性构建；正式化前需完成 Phase 3 hardening |
+| `scripts/check-viewer-projections.mjs` | 三投影、筛选、搜索、focus、hash 及空图/孤点/环的可重复 Node 断言 |
 
 ## 生成与本地目录
 

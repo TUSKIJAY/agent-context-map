@@ -1,9 +1,9 @@
 # Visual Spec Artifact Renderer Plan
 
-- Status: Active — Phase 0–1 accepted; Phase 2 ready
+- Status: Active — Phase 0–2 accepted; Phase 3 ready
 - Owner: product direction pivot (session 2026-08-11)
 - Created: 2026-08-11
-- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0–1 were accepted on 2026-08-12 and Phase 2 is ready; package merges and all remote Git/release actions remain unauthorized
+- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0–2 were accepted on 2026-08-12 and Phase 3 is ready; package merges and all remote Git/release actions remain unauthorized
 - Consulted: local audit + Grok + Claude + Kimi independent read-only reviews; user decisions and activation confirmed 2026-08-11; synthesis remains the plan author's responsibility
 
 ## 0. Prompt vs Repository Facts
@@ -317,7 +317,7 @@ load ACM-MD text
 
 ## 5. Active Execution Plan / 执行计划
 
-本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0–1 已按 Gate 验收，当前进入 Phase 2，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
+本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0–2 已按 Gate 验收，当前进入 Phase 3，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
 
 ### Phase 0 — 最小 Artifact build spike
 
@@ -365,6 +365,8 @@ load ACM-MD text
 - **文档同步**：更新 `PROJECT_MAP.md` 入口；`INSTRUCTIONS.md` 仅在稳定事实变化时改。
 
 ### Phase 2 — 三语义视图、筛选、Inspector 与导航
+
+- **Status**：Accepted 2026-08-12；evidence `phase-2-evidence-001.md`；Grok `review-012.md` 与 AGY/Antigravity `review-013.md` 均 approve/high、无 blocking finding。
 
 - **目标**：同一图模型投影出 Structure / Dependency / Inquiry；补齐筛选与导航。
 - **范围**：
@@ -470,7 +472,7 @@ git diff --check
 ### 7.3 状态文件
 
 - activation 同步 `PROGRESS.md`、`HANDOFF.md`、`active/index.md`、`proposed/index.md`、`reviews/index.md` 与 `roadmap.md`
-- Phase 0 已验收；状态文件必须把 Phase 1 记为单一下一闸门，不得把 Phase 0 spike 误写为完整只读 Viewer
+- Phase 0–2 已验收；状态文件必须把 Phase 3 记为单一下一闸门，不得把 Phase 2 导航增强误写为正式单文件交付完成
 
 ### 7.4 Commit 边界
 
@@ -529,7 +531,7 @@ Goal objective 使用：
 - Reviewed candidate SHA-256: `9186323ecb9d72fa2b5140587818fef0229bebeb0ff0e041ea68204c1b63056c`
 - Final independent verdicts: Grok `approve/high`（`review-006.md`）；Claude `approve/high`（`review-007.md`）；均无 blocking finding
 - Post-review delta: status/authority/section title、review disposition、本 activation record，以及下述用户直接授权的资源约束修订
-- Execution state: Phase 0–1 accepted 2026-08-12；Phase 2 ready
+- Execution state: Phase 0–2 accepted 2026-08-12；Phase 3 ready
 
 ### 8.4 User Amendment / 用户修订（2026-08-11）
 
