@@ -4,28 +4,39 @@
 
 ## Resume Point / 接手点
 
-`codex/project-harness-governed` 已完成 governed harness 首个本地提交。针对合并前 review 的 5 项加固已经实施：checker 语义增强、启动地图预算、PyYAML/fixture 可复现验证、条件化 `doc/` 表述和 installer/人工校准边界澄清。Follow-up 改动尚未 commit；产品源码、Node 依赖、锁文件、Tauri 配置和 ACM-MD 协议未改动。
+**Visual Spec Artifact Renderer** 已激活，Phase 0 尚未开始；本 session 只完成 plan/review/状态治理，没有修改运行时代码。
+
+- Active plan：`docs/exec-plans/active/02-visual-spec-artifact-renderer.md`
+- Final reviews：`docs/exec-plans/reviews/02-visual-spec-artifact-renderer/review-006.md`（Grok approve/high）与 `review-007.md`（Claude approve/high）
+- 当前分支：`codex/project-harness-governed` @ `37ace47`
+- Reviewed candidate SHA-256：`9186323ecb9d72fa2b5140587818fef0229bebeb0ff0e041ea68204c1b63056c`
+- Post-review user amendment：撤销 Codex 账户额度前置约束；产品范围和 Phase Gate 不变
+
+## Confirmed Direction
+
+- 当前单体分支是实施基线；远程 pluginization 只点采，禁止整支 merge。
+- P1 静态目录、P3 单文件；Viewer 为默认主路径，旧编辑器为显式 lazy-loaded 次路径。
+- Artifact 构建时嵌入 Spec；P1 不提供运行时本地 `.acm.md` picker。
+- Dependency 主边含 `depends_on`、`requires`、`constrains`、`conflicts_with`；`impacts` 为可隐藏辅助边。
+- 当前分支没有可归档的 active plugin plan，生命周期处理为 N/A。
+
+## Orca Execution Contract
+
+- Orca 1.4.180；本机有 Codex 0.147.0、Grok 1.0.0、Claude Code 2.1.224、Kimi 0.31.0。
+- 一个 Codex Goal writer/coordinator；每 Phase 冻结 revision 后由至少两名非 Codex CLI 独立审核。普通实现方向、修复、review 选择与验收不再请求用户微确认。
+- 用户允许长时间运行；Goal 无账户额度前置条件。
+- local Phase commit 只在该 Phase 验收后按 plan 执行；activation 文档当前未 commit。push、PR、merge、tag、Release 仍无授权。
+
+## Blocker
+
+无已知阻塞。
+
+## Next Gate / 单一下一步
+
+在当前 Orca worktree 创建 Codex Goal，使用 active plan §7.5 的 objective，从 Phase 0 开始；先冻结 exact HEAD、工作树状态和 activation 文档基线，再进入 spike。
 
 ## Last Verification
 
-- Skill structural validation：通过，100/100，0 critical failures。
-- 本地 harness contract check：通过，0 missing/empty/content/config errors。
-- Checker 与预算负向/正向测试：通过，8/8。
-- 启动文档预算：通过，5 份文档均无 attention 或 hard-limit trigger。
-- ACM-MD 严格模式 fixture：在全新临时 venv 从 `requirements.txt` 安装 PyYAML 6.0.3 后通过。
-- `npm run build`：通过，294 modules transformed；保留既有 large-chunk warning。
-- `git diff --check`：通过。
-
-## Blockers
-
-- 无。
-
-## Next Gate / 下一步
-
-审阅本轮未提交的 follow-up diff；由用户决定是否创建 scoped local commit。Push、PR 和合并仍需另行明确授权。
-
-## Scope Reminder
-
-- 本分支只改造 project harness 和治理文档。
-- `main`、`codex/project-harness-retrofit` 与 `origin/codex/acm-pluginization-plan` 均保持不变。
-- 当前任务不授权 push、PR、合并、产品功能开发、依赖升级或协议变更。
+- account-quota 约束修订后的 harness、8/8 unittest、startup budget 与 `git diff --check` 已通过。
+- 未运行 `npm run build`：本次没有修改 `src/`、`src-tauri/`、`index.html`、`package.json` 或 `vite.config.js`。
+- 未运行 Windows canary、插件安装或任何远程 Git/发布动作。

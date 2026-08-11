@@ -4,4 +4,4 @@ Proposed plans are drafts and carry no implementation authority.
 
 | Plan | Status | Review | Next gate |
 | --- | --- | --- | --- |
-| None | — | — | Draft only after an explicit user request |
+| None | — | — | New formal work requires a proposed plan when `AGENTS.md` triage calls for it |

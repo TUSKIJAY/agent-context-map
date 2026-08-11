@@ -5,10 +5,10 @@
 ## Current Status
 
 - 更新日期：2026-08-11。
-- 当前分支：`codex/project-harness-governed`，基于 `main` commit `2d570d4`。
+- 当前分支：`codex/project-harness-governed`，HEAD `37ace47`（基于 `main` `2d570d4`）。
 - Harness profile：`governed`。
-- 当前状态：governed harness 已完成首个本地提交；针对合并前 review 的 5 项加固已实施并通过验证，follow-up 改动尚未 commit。
-- 产品源码、依赖、锁文件、Tauri 配置和 ACM-MD v0.1 协议不在本次修改范围。
+- **Visual Spec Artifact Renderer** 计划已完成独立 review 与用户批准，现位于 `active/`；Phase 0 尚未开始，运行时代码未改。
+- 实施基线固定为当前单体分支。`origin/codex/acm-pluginization-plan@4ed712c` 仅作远程点采证据，禁止整支 merge/批量 cherry-pick。
 
 ## Navigation
 
@@ -19,47 +19,46 @@
 | 最新会话接手点 | `HANDOFF.md` |
 | 文件职责 | `PROJECT_MAP.md` |
 | 文档权限与生命周期 | `docs/README.md` |
+| Active 产品计划 | `docs/exec-plans/active/02-visual-spec-artifact-renderer.md` |
+| 独立 review | `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/` |
 | 长期历史 | `docs/progress-archive/index.md` |
 
 ## In Progress
 
-- 无。
+- 无运行时实施。activation 与用户资源约束修订已完成，Orca Goal 可直接从 Phase 0 开始。
 
 ## Blocked
 
-- 无。
+- 无已知阻塞。
 
 ## To Do
 
-- 由用户决定是否为本轮加固创建 follow-up commit，以及后续是否 push、开 PR 或合并；当前任务未授权远端操作。
+- 在当前 Orca worktree 创建 Goal，从 Phase 0 最小 Artifact build spike 开始；普通实现、review 和验收方向由 active plan 内自治 loop 决定，不再逐项请求用户确认。
+- 不 push、PR、merge、tag、Release。
+- 本次 activation 文档尚未 commit；由后续获得明确授权的 scoped commit 处理，不混入 Phase 0 产品 diff。
 
 ## Completed (Rolling Window)
 
-- [x] 2026-08-11 — 从干净的 `main` 创建隔离分支 `codex/project-harness-governed`。
-- [x] 2026-08-11 — `project-harness-engineer` installer 只创建缺失文件并跳过既有 `AGENTS.md`、`HANDOFF.md`；随后人工校准并重写 `AGENTS.md`、`HANDOFF.md` 与 `PROJECT_MAP.md`。
-- [x] 2026-08-11 — 将旧 `HANDOFF.md` 的长期历史迁入 `docs/progress-archive/2026-06-pre-harness-history.md`。
-- [x] 2026-08-11 — 建立启动链、任务分级、文档生命周期、Accepted 决策和动态 Git readback 规则。
-- [x] 2026-08-11 — 通过结构评分、本地结构检查、启动文档预算、前端生产构建和 diff 检查。
-- [x] 2026-08-11 — 加固 repo-local checker 的非空/契约检查，补齐 governed 模板覆盖和 8 项负向/正向单测。
-- [x] 2026-08-11 — 将 `PROJECT_MAP.md` 纳入预算，并为 ACM-MD 校验器增加 PyYAML 声明和严格模式 fixture。
-- [x] 2026-08-11 — 修正不存在的 `doc/` 与 installer/人工校准边界表述。
+- [x] 2026-08-11 — 用户确认产品与执行决策；计划经 Grok、Claude、Kimi 多轮独立 review，最终冻结稿由 Grok 与 Claude `approve/high`，无 blocking finding。
+- [x] 2026-08-11 — Visual Spec Artifact Renderer 从 `proposed/` 迁入 `active/`；review、索引、roadmap 与状态文档同步，Phase 0 未启动。
+- [x] 2026-08-11 — 用户撤销 Codex 账户额度保留要求；active plan、Goal prompt 与状态入口删除全部额度预检/阈值/自动停止规则。
+- [x] 2026-08-11 — 明确 P1 静态目录、P3 单文件，Viewer 默认/编辑器显式次路径，构建时 Spec 注入，Dependency 主/辅边，以及 remote plugin plan 生命周期 N/A。
+- [x] 2026-08-11 — governed harness 首个本地提交与 review 加固（既有 commit `37ace47` / `c9cadf7`）。
 
 ## Verification Baseline
 
 | Check | Result |
 | --- | --- |
-| Skill structural validation | Pass — 100/100，0 critical failures |
 | Local harness contract check | Pass — governed，0 missing/empty/content/config errors |
 | Harness checker and budget tests | Pass — 8/8 |
 | Startup document budget | Pass — 5 documents，no attention or hard-limit trigger |
-| ACM-MD strict smoke fixture | Pass — clean temporary venv，PyYAML 6.0.3 |
-| `npm run build` | Pass — 294 modules transformed |
 | `git diff --check` | Pass |
-
-非阻塞提示：Vite 继续报告既有 large-chunk warning；本次 harness-only 范围未调整 bundle 或依赖。
+| 运行时代码 / `npm run build` | 本 session 未改 `src/**`，不要求产品重构建 |
+| Windows Widget canary / 插件安装 | 按范围禁止，未运行 |
 
 ## Historical Redirects
 
 | Period or topic | Archive path |
 | --- | --- |
 | 2026-06 pre-harness product and layout history | `docs/progress-archive/2026-06-pre-harness-history.md` |
+| Codex 插件化与 Widget Phase 8 证据 | 仅 `origin/codex/acm-pluginization-plan@4ed712c`（本 checkout 未持有该 active 文件） |
