@@ -42,7 +42,7 @@
 
 当前 active：
 
-- `active/02-visual-spec-artifact-renderer.md` — Visual Spec Artifact Renderer（2026-08-11 激活；Phase 0 尚未开始；账户额度前置闸门已由用户撤销，可直接在 Orca 启动 Goal）
+- `active/02-visual-spec-artifact-renderer.md` — Visual Spec Artifact Renderer（2026-08-11 激活；2026-08-12 Phase 0 已验收；Phase 1 ready）
 
 以 `active/index.md` 为当前索引。
 

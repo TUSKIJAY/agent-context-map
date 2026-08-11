@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-artifact-dir/
+dist-artifact-single/
 .vite/
 .claude/
 

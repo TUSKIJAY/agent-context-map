@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:artifact:spike": "vite build --config vite.artifact.config.js",
+    "build:artifact:single:spike": "node scripts/build-artifact-single-spike.mjs",
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",

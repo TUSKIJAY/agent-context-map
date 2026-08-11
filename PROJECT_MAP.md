@@ -17,12 +17,15 @@
 | `package.json` | Node 依赖与开发、构建、预览和 Tauri 脚本 |
 | `vite.config.js` | Vite + React 构建配置 |
 | `index.html` | Vite HTML 入口 |
+| `artifact.html` | Visual Spec Artifact 的独立 Vite HTML 入口；不得加载编辑器、storage 或 Tauri |
+| `vite.artifact.config.js` | Artifact 静态目录构建配置；相对资源路径、独立输出目录 |
 
 ## 应用源码
 
 | Path | Responsibility |
 | --- | --- |
 | `src/main.jsx` | React 应用挂载入口 |
+| `src/artifact/main.jsx` | Phase 0 Artifact browser-only 入口与构建时 fixture 注入；Phase 1 起由 Viewer shell 接管 |
 | `src/App.jsx` | 首页/编辑器切换、全局状态、工具栏、撤销重做、自动保存、打开和导出 |
 | `src/acm/Home.jsx` | 开始页、最近图谱、新建、示例和导入入口 |
 | `src/acm/FlowCanvas.jsx` | React Flow 画布、节点、边、拖拽、布局、分组和折叠交互 |
@@ -72,12 +75,13 @@
 | `scripts/check-project-harness.py` | 必需文件、非空内容、关键契约锚点和 profile/config 一致性检查 |
 | `scripts/tests/test_project_harness.py` | checker 的通过与负向退化测试 |
 | `scripts/check-startup-doc-budget.py` | 五份强制启动文档的行数和字节预算检查 |
+| `scripts/build-artifact-single-spike.mjs` | Phase 0 dagre-only 单文件 HTML 可行性构建；正式化前需完成 Phase 3 hardening |
 
 ## 生成与本地目录
 
 以下路径不应提交：
 
-- `node_modules/`、`dist/`、`.vite/`。
+- `node_modules/`、`dist/`、`dist-artifact-dir/`、`dist-artifact-single/`、`.vite/`。
 - `src-tauri/target/`、`src-tauri/gen/`。
 - `output/`（绿色版桌面交付物）。
 - `.venv/`、`__pycache__/`、Python bytecode。

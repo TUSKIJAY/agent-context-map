@@ -1,9 +1,9 @@
 # Visual Spec Artifact Renderer Plan
 
-- Status: Active — Phase 0 not started
+- Status: Active — Phase 0 accepted; Phase 1 ready
 - Owner: product direction pivot (session 2026-08-11)
 - Created: 2026-08-11
-- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0 is not started by activation; package merges and all remote Git/release actions remain unauthorized
+- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0 was accepted on 2026-08-12 and Phase 1 is ready; package merges and all remote Git/release actions remain unauthorized
 - Consulted: local audit + Grok + Claude + Kimi independent read-only reviews; user decisions and activation confirmed 2026-08-11; synthesis remains the plan author's responsibility
 
 ## 0. Prompt vs Repository Facts
@@ -317,9 +317,11 @@ load ACM-MD text
 
 ## 5. Active Execution Plan / 执行计划
 
-本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；本次 activation 不等于已经启动 Phase 0，也不授权任何 push、PR、merge、tag、Release 或远程分支改写。
+本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0 已按 Gate 验收，当前进入 Phase 1，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
 
 ### Phase 0 — 最小 Artifact build spike
+
+- **Status**：Accepted 2026-08-12；evidence `phase-0-evidence-001.md`；Grok `review-008.md` 与 Claude `review-009.md` 均 approve、无 blocking finding。
 
 - **目标**：用最小改动证明“ACM-MD → 浏览器可打开图谱”构建路径与体积/离线约束，不做产品 UI 完整化。
 - **范围**：
@@ -466,7 +468,7 @@ git diff --check
 ### 7.3 状态文件
 
 - activation 同步 `PROGRESS.md`、`HANDOFF.md`、`active/index.md`、`proposed/index.md`、`reviews/index.md` 与 `roadmap.md`
-- Phase 0 未开始；状态文件不得把 plan activation 写成产品实现或验收完成
+- Phase 0 已验收；状态文件必须把 Phase 1 记为单一下一闸门，不得把 Phase 0 spike 误写为完整只读 Viewer
 
 ### 7.4 Commit 边界
 
@@ -525,13 +527,22 @@ Goal objective 使用：
 - Reviewed candidate SHA-256: `9186323ecb9d72fa2b5140587818fef0229bebeb0ff0e041ea68204c1b63056c`
 - Final independent verdicts: Grok `approve/high`（`review-006.md`）；Claude `approve/high`（`review-007.md`）；均无 blocking finding
 - Post-review delta: status/authority/section title、review disposition、本 activation record，以及下述用户直接授权的资源约束修订
-- Execution state: Phase 0 not started；Orca Goal 可直接按本计划从 Phase 0 开始
+- Execution state: Phase 0 accepted 2026-08-12；Phase 1 ready
 
 ### 8.4 User Amendment / 用户修订（2026-08-11）
 
 - 用户撤销此前的 Codex 账户额度保留要求，并明确允许长时间运行。
 - 与账户额度读取、百分比阈值及自动停止相关的 Goal 前置条件全部移除；不再阻塞 Phase 0 启动。
 - 本修订不改变产品范围、Phase Gate、独立 review、local-first、单写者或 Git/发布权限边界。
+
+### 8.5 Phase 0 Acceptance Record / 验收记录（2026-08-12）
+
+- Frozen HEAD: `f88b0c3a1b5453a1d08b93f14078ca3f31edb5b9`
+- Frozen source-manifest SHA-256: `2e05af54a090b42a0ab7aba9fdb73c3ba64e0ba45d5b6350c5ec9a26006d9d23`
+- Native evidence: `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/phase-0-evidence-001.md`
+- Independent verdicts: Grok `review-008.md` approve/high；Claude `review-009.md` approve/medium-high；均无 blocking finding
+- Outcome: 静态目录与 dagre-only 单文件均可行；原编辑器构建、严格 ACM-MD fixture、harness、单测和启动文档预算通过；Phase 1 可开始。
+- Deferred hardening: 目录 `file://` 不作为 Gate；ELK 体积断言、CSP 与内联 closing-tag escaping 留给 Phase 3 正式构建。
 
 ---
 
@@ -549,5 +560,5 @@ Recent:
 Remote pluginization tip (evidence only): 4ed712c docs: add honest product retrospective
 Local Orca: 1.4.180 ready; orchestration contract available
 Local CLIs: codex 0.147.0; grok 1.0.0; Claude Code 2.1.224; Kimi 0.31.0
-Known activation baseline exception: this plan/review/index/state docs may remain uncommitted until separately authorized; Phase 0 must capture and preserve their exact paths instead of treating them as its product diff
+Activation baseline was committed separately as f88b0c3 before the Phase 0 source manifest was frozen.
 ```
