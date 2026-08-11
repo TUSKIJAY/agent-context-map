@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useState } from "react";
+import fixtureText from "../skills/acm-md/examples/valid-viewer-views.acm.md?raw";
 import { ViewerApp } from "./acm/viewer/ViewerApp.jsx";
 
 const EditorApp = lazy(() => import("./App.jsx"));
@@ -17,6 +18,7 @@ export default function Launcher() {
   return (
     <ViewerApp
       surface="app"
+      specText={fixtureText}
       appAction={(
         <button
           type="button"

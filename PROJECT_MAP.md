@@ -18,7 +18,7 @@
 | `vite.config.js` | Vite + React 构建配置 |
 | `index.html` | Vite HTML 入口 |
 | `artifact.html` | Visual Spec Artifact 的独立 Vite HTML 入口；不得加载编辑器、storage 或 Tauri |
-| `vite.artifact.config.js` | Artifact 静态目录构建配置；相对资源路径、独立输出目录 |
+| `scripts/artifact-build-lib.mjs` | Visual Spec Artifact 的独立 Vite 构建配置与目录/单文件交付逻辑 |
 
 ## 应用源码
 
@@ -30,7 +30,8 @@
 | `src/App.jsx` | 作为次入口保留的旧编辑器壳：全局状态、工具栏、撤销重做、自动保存、打开和导出 |
 | `src/acm/Home.jsx` | 开始页、最近图谱、新建、示例和导入入口 |
 | `src/acm/FlowCanvas.jsx` | React Flow 画布、节点、边、布局、分组和折叠交互；`readOnly` 契约禁拖拽、连线和删除 |
-| `src/acm/viewer/ViewerApp.jsx` | 默认只读 Viewer shell：构建时 fixture、类型图例/筛选、只读 Inspector 与画布导航 |
+| `src/acm/export-svg.js` | 纯 SVG 图谱导出器；直接输出可渲染的 rect/path/text，不依赖 `foreignObject` |
+| `src/acm/viewer/ViewerApp.jsx` | 默认只读 Viewer shell：接收构建时 Spec/元数据、三视图筛选导航与只读 Inspector |
 | `src/acm/project.js` | 纯 Viewer 投影与导航逻辑：三语义视图、筛选、搜索、1–2 层 focus 和 hash 编解码；只返回稳定 id 与视图选项 |
 | `src/acm/Panels.jsx` | Inspector、Agent Diff、校验结果及左右侧栏 |
 | `src/acm/TweaksPanel.jsx` | 节点样式、网格和主色等显示偏好 |
@@ -79,7 +80,10 @@
 | `scripts/check-project-harness.py` | 必需文件、非空内容、关键契约锚点和 profile/config 一致性检查 |
 | `scripts/tests/test_project_harness.py` | checker 的通过与负向退化测试 |
 | `scripts/check-startup-doc-budget.py` | 五份强制启动文档的行数和字节预算检查 |
-| `scripts/build-artifact-single-spike.mjs` | Phase 0 dagre-only 单文件 HTML 可行性构建；正式化前需完成 Phase 3 hardening |
+| `scripts/artifact-build-lib.mjs` | 正式 Artifact 构建核心：Spec 注入、元数据、目录/单文件输出、CSP、体积与依赖边界、manifest/hash |
+| `scripts/build-artifact.mjs` | `--format directory|single` 正式构建 CLI；支持 `--spec`、`--generated-at` 与 `SOURCE_DATE_EPOCH` |
+| `scripts/check-artifact-build.mjs` | 固定生成时间下双构建复现、单文件封装、CSP、escaping、ELK/体积边界断言 |
+| `scripts/check-portable-svg.mjs` | 纯 SVG 可见元素、escaping、无 `foreignObject`/script 与稳定 hash 断言 |
 | `scripts/check-viewer-projections.mjs` | 三投影、筛选、搜索、focus、hash 及空图/孤点/环的可重复 Node 断言 |
 
 ## 生成与本地目录

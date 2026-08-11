@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import fixtureText from "../../../skills/acm-md/examples/valid-viewer-views.acm.md?raw";
 import { GraphCanvas } from "../FlowCanvas.jsx";
 import {
   NODE_STATUSES,
@@ -25,8 +24,12 @@ import {
   serializeViewerHash,
 } from "../project.js";
 
-export function ViewerApp({ surface = "app", appAction = null }) {
-  const parsed = useMemo(() => parseAcmMd(fixtureText), []);
+export function ViewerApp({ surface = "app", appAction = null, specText = null, artifactMetadata = null }) {
+  const parsed = useMemo(() => (
+    typeof specText === "string" && specText.trim()
+      ? parseAcmMd(specText)
+      : { doc: null, errors: ["Artifact 构建未注入 ACM-MD Spec。"] }
+  ), [specText]);
   const initialHash = useMemo(() => parseViewerHash(typeof window === "undefined" ? "" : window.location.hash), []);
   const [viewId, setViewId] = useState(initialHash.viewId);
   const [selection, setSelection] = useState(initialHash.nodeId ? { kind: "node", id: initialHash.nodeId } : null);
@@ -168,6 +171,11 @@ export function ViewerApp({ surface = "app", appAction = null }) {
       data-validation-errors={validationErrors.length}
       data-active-view={viewId}
       data-hash-node={selection?.kind === "node" ? selection.id : ""}
+      data-artifact-doc-id={artifactMetadata?.doc_id || doc.doc_id}
+      data-artifact-schema-version={artifactMetadata?.schema_version || doc.schema_version}
+      data-artifact-generated-at={artifactMetadata?.generated_at || ""}
+      data-artifact-spec-sha256={artifactMetadata?.source_spec_sha256 || ""}
+      data-artifact-structure-sha256={artifactMetadata?.canonical_structure_sha256 || ""}
       style={shellStyle}
     >
       <header style={headerStyle}>
@@ -357,6 +365,8 @@ export function ViewerApp({ surface = "app", appAction = null }) {
             <strong style={{ fontSize: 12 }}>{doc.doc_id}</strong>
             <span>{doc.nodes.length} canonical nodes · {doc.edges.length} edges</span>
             <span>{doc.schema_version}</span>
+            {artifactMetadata?.generated_at && <span>generated {artifactMetadata.generated_at}</span>}
+            {artifactMetadata?.source_spec_sha256 && <span title={artifactMetadata.source_spec_sha256}>spec {artifactMetadata.source_spec_sha256.slice(0, 12)}</span>}
           </div>
         </aside>
 

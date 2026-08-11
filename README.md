@@ -79,6 +79,37 @@ npm run build
 npm run preview
 ```
 
+## 构建只读 Artifact
+
+Artifact 是同一份 ACM-MD 的只读浏览器交付物，不需要 Tauri、MCP、后端或 CDN。构建前先用 repo-local `.venv` 做严格校验：
+
+```bash
+.venv/bin/python skills/acm-md/scripts/validate_acm_md.py skills/acm-md/examples/valid-viewer-views.acm.md --mode strict
+```
+
+生成可拷贝的静态目录：
+
+```bash
+npm run build:artifact -- --spec skills/acm-md/examples/valid-viewer-views.acm.md
+python3 -m http.server 4174 --directory dist-artifact-dir
+```
+
+浏览器打开 `http://127.0.0.1:4174/artifact.html`。目录内的 `artifact-manifest.json` 记录 `doc_id`、`schema_version`、`generated_at`、源 Spec hash、canonical structure hash、文件 hash、体积上限和是否包含 ELK。
+
+生成可直接双击打开的单文件：
+
+```bash
+npm run build:artifact:single -- --spec skills/acm-md/examples/valid-viewer-views.acm.md
+```
+
+输出只有 `dist-artifact-single/artifact.html`。如需逐字节复现，给两次构建传同一个 ISO 时间；也可使用标准的 `SOURCE_DATE_EPOCH`：
+
+```bash
+npm run build:artifact:single -- --spec skills/acm-md/examples/valid-viewer-views.acm.md --generated-at 2026-08-12T00:00:00.000Z
+```
+
+两种产物均使用 CSP、只包含本地资源、默认采用 dagre 且拒绝意外打入 ELK；Viewer 内可导出带关系线的 PNG 和不依赖 `foreignObject` 的纯 SVG。
+
 ## 目录结构
 
 ```text
@@ -89,7 +120,8 @@ src/
   main.jsx
   App.jsx
   acm/
-    FlowCanvas.jsx     # React Flow 画布、节点与连线
+    FlowCanvas.jsx     # React Flow 画布、节点、连线与 PNG/SVG 导出
+    export-svg.js      # 可移植纯 SVG 导出
     Home.jsx           # 开始页
     Panels.jsx         # Inspector / Agent Diff / 校验面板
     TweaksPanel.jsx    # 显示设置
@@ -134,7 +166,7 @@ skills/acm-md/
 - React 18 + Vite 5
 - React Flow（@xyflow/react）画布与连线
 - 双布局引擎：Dagre（默认，同步）+ elkjs（ELK 嵌套布局 / 正交边路由，按需动态加载、不增重默认包）
-- html-to-image 画布导出（PNG / SVG）
+- 可移植纯 SVG 导出（rect/path/text）+ 浏览器 Canvas PNG 栅格化
 - Tauri 2 桌面打包（绿色版 exe，SQLite 本地持久化）
 - 原生 CSS / 内联样式，纯前端本地状态管理
 

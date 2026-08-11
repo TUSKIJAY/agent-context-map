@@ -11,12 +11,12 @@
 import React, { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Panel,
-  Handle, Position, MarkerType, useReactFlow, useNodesState, getNodesBounds, getViewportForBounds,
+  Handle, Position, MarkerType, useReactFlow, useNodesState,
   BaseEdge, getStraightPath,
 } from "@xyflow/react";
-import { toPng, toSvg } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 import { NODE_TYPE_META, STATUS_META, RELATION_META, typeLabel } from "./data.js";
+import { buildPortableSvg } from "./export-svg.js";
 import { focusNeighborhood } from "./project.js";
 
 function AcmNode({ data, selected }) {
@@ -170,6 +170,35 @@ function download(dataUrl, name) {
   a.download = name; a.href = dataUrl; a.click();
 }
 
+async function rasterizePortableSvg(svg, pixelRatio = 2) {
+  const parsed = new DOMParser().parseFromString(svg, "image/svg+xml");
+  const root = parsed.documentElement;
+  const width = Number(root.getAttribute("width"));
+  const height = Number(root.getAttribute("height"));
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    throw new Error("Portable SVG has invalid dimensions");
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(width * pixelRatio);
+  canvas.height = Math.ceil(height * pixelRatio);
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const objectUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+  try {
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("Portable SVG could not be rasterized"));
+      image.src = objectUrl;
+    });
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSignal, typeFilter, rankdir, showGrid,
   hidden, collapsed, descCount, hasChildren, onToggleCollapse, engine, elkRoutes, groupOf, groupBoxes,
   collapsedGroups, onToggleGroup, readOnly = false, focusDepth = 1, auxiliaryEdgeIds }) {
@@ -312,30 +341,18 @@ function FlowInner({ doc, selection, onSelect, onMoveNode, onCreateEdge, fitSign
 
   // ---- export the whole graph (not just the visible part) to PNG / SVG ----
   const exportImage = useCallback(async (fmt) => {
-    const viewportEl = wrapRef.current?.querySelector(".react-flow__viewport");
     const all = rf.getNodes();
-    if (!viewportEl || !all.length) return;
-    const bounds = getNodesBounds(all);
-    const pad = 80;
-    const w = Math.ceil(bounds.width) + pad * 2;
-    const h = Math.ceil(bounds.height) + pad * 2;
-    const vp = getViewportForBounds(bounds, w, h, 0.2, 2, 0.1);
+    if (!all.length) return;
     setExporting(true);
-    const opts = {
-      backgroundColor: "#ffffff", width: w, height: h, pixelRatio: 2,
-      // skipFonts avoids html-to-image trying to read cssRules from the cross-origin
-      // Google Fonts stylesheet (a SecurityError that aborts the export); fonts are
-      // already loaded in the page, so the rasterised text still renders correctly.
-      skipFonts: true,
-      style: { width: `${w}px`, height: `${h}px`, transform: `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})` },
-      filter: (el) => !el?.classList || !(el.classList.contains("react-flow__minimap") || el.classList.contains("react-flow__controls") || el.classList.contains("react-flow__panel")),
-    };
     const safe = (doc.meta?.title || "context-map").replace(/[\\/:*?"<>|]/g, "_");
     try {
-      if (fmt === "svg") download(await toSvg(viewportEl, opts), safe + ".svg");
-      else download(await toPng(viewportEl, opts), safe + ".png");
+      const svg = buildPortableSvg({ doc, nodes: all, edges });
+      if (fmt === "svg") {
+        download(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, safe + ".svg");
+      }
+      else download(await rasterizePortableSvg(svg), safe + ".png");
     } finally { setExporting(false); }
-  }, [rf, doc.meta]);
+  }, [rf, doc, edges]);
 
   const pillBtn = {
     border: "1px solid #e3e6eb", background: "#fff", borderRadius: 8, padding: "5px 10px",

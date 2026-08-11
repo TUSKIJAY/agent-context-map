@@ -13,6 +13,7 @@
 - 协议：`ACM-MD v0.1`；正式规范位于 `skills/acm-md/references/acm-md-v0.1.md`。
 - 默认 App 启动进入只读 Viewer；旧编辑器只在用户显式选择“进入编辑器”后 lazy/dynamic 加载。独立 Artifact 入口不暴露编辑器或 storage/Tauri 能力。
 - Viewer 从同一 canonical graph 纯投影 Structure / Dependency / Inquiry；筛选、搜索、折叠、0–2 层 focus、布局、选择和 `view` + `node` hash 都是派生状态。Structure 默认只用 `contains` 排序，Dependency 的 `impacts` 是可隐藏辅助层。
+- Artifact 有正式静态目录与单文件两种构建；构建时注入通过校验的 ACM-MD、来源与 canonical hash、生成时间和协议版本。两种产物只读、无强制外网，默认只含 dagre；PNG 由同一份可移植纯 SVG 栅格化。
 - Harness profile：`governed`。
 - 当前仓库没有 CI 配置和产品级 `test` script；`npm run build` 是已确认的产品原生基线，repo-local harness checker 另有 Python `unittest` 覆盖。
 
@@ -43,6 +44,8 @@
 ```bash
 npm run build
 npm run check:viewer-projections
+npm run check:artifact-build
+npm run check:portable-svg
 ```
 
 Harness 结构与启动文档预算：

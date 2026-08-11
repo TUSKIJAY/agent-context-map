@@ -7,8 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:artifact:spike": "vite build --config vite.artifact.config.js",
-    "build:artifact:single:spike": "node scripts/build-artifact-single-spike.mjs",
+    "build:artifact": "node scripts/build-artifact.mjs --format directory",
+    "build:artifact:single": "node scripts/build-artifact.mjs --format single",
+    "build:artifact:spike": "npm run build:artifact",
+    "build:artifact:single:spike": "npm run build:artifact:single",
+    "check:artifact-build": "node scripts/check-artifact-build.mjs",
+    "check:portable-svg": "node scripts/check-portable-svg.mjs",
     "check:viewer-projections": "node scripts/check-viewer-projections.mjs",
     "preview": "vite preview",
     "tauri": "tauri",
@@ -22,7 +26,6 @@
     "@tauri-apps/plugin-sql": "^2.4.0",
     "@xyflow/react": "^12.11.0",
     "elkjs": "^0.11.1",
-    "html-to-image": "^1.11.13",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "yaml": "^2.9.0"

@@ -1,9 +1,9 @@
 # Visual Spec Artifact Renderer Plan
 
-- Status: Active — Phase 0–2 accepted; Phase 3 ready
+- Status: Active — Phase 0–3 accepted; Phase 4 ready
 - Owner: product direction pivot (session 2026-08-11)
 - Created: 2026-08-11
-- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0–2 were accepted on 2026-08-12 and Phase 3 is ready; package merges and all remote Git/release actions remain unauthorized
+- Scope authority: active authorization for the local Phase 0–4 work and gates written here; Phase 0–3 were accepted on 2026-08-12 and Phase 4 is ready; package merges and all remote Git/release actions remain unauthorized
 - Consulted: local audit + Grok + Claude + Kimi independent read-only reviews; user decisions and activation confirmed 2026-08-11; synthesis remains the plan author's responsibility
 
 ## 0. Prompt vs Repository Facts
@@ -317,7 +317,7 @@ load ACM-MD text
 
 ## 5. Active Execution Plan / 执行计划
 
-本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0–2 已按 Gate 验收，当前进入 Phase 3，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
+本文件已完成独立 review、用户批准与 activation。它只授权下述 Phase 0–4 本地工作；Phase 0–3 已按 Gate 验收，当前进入 Phase 4，不授权任何 push、PR、merge、tag、Release 或远程分支改写。
 
 ### Phase 0 — 最小 Artifact build spike
 
@@ -388,6 +388,8 @@ load ACM-MD text
 - **文档同步**：产品简报中的视图规则落为 accepted 说明（若有决策则另立 DEC）。
 
 ### Phase 3 — 离线/单文件输出与 PNG/SVG 导出
+
+- **Status**：Accepted 2026-08-12；evidence `phase-3-evidence-001.md`；Grok `review-014.md` 与 AGY/Antigravity `review-015.md` 均 approve/high、无 blocking finding。
 
 - **目标**：可分享交付物闭环。
 - **范围**：
@@ -472,7 +474,7 @@ git diff --check
 ### 7.3 状态文件
 
 - activation 同步 `PROGRESS.md`、`HANDOFF.md`、`active/index.md`、`proposed/index.md`、`reviews/index.md` 与 `roadmap.md`
-- Phase 0–2 已验收；状态文件必须把 Phase 3 记为单一下一闸门，不得把 Phase 2 导航增强误写为正式单文件交付完成
+- Phase 0–3 已验收；状态文件必须把 Phase 4 记为单一下一闸门，不得把正式单文件交付误写成已经完成真实示例、体验和性能验证
 
 ### 7.4 Commit 边界
 
@@ -531,7 +533,7 @@ Goal objective 使用：
 - Reviewed candidate SHA-256: `9186323ecb9d72fa2b5140587818fef0229bebeb0ff0e041ea68204c1b63056c`
 - Final independent verdicts: Grok `approve/high`（`review-006.md`）；Claude `approve/high`（`review-007.md`）；均无 blocking finding
 - Post-review delta: status/authority/section title、review disposition、本 activation record，以及下述用户直接授权的资源约束修订
-- Execution state: Phase 0–2 accepted 2026-08-12；Phase 3 ready
+- Execution state: Phase 0–3 accepted 2026-08-12；Phase 4 ready
 
 ### 8.4 User Amendment / 用户修订（2026-08-11）
 
@@ -547,6 +549,16 @@ Goal objective 使用：
 - Independent verdicts: Grok `review-008.md` approve/high；Claude `review-009.md` approve/medium-high；均无 blocking finding
 - Outcome: 静态目录与 dagre-only 单文件均可行；原编辑器构建、严格 ACM-MD fixture、harness、单测和启动文档预算通过；Phase 1 可开始。
 - Deferred hardening: 目录 `file://` 不作为 Gate；ELK 体积断言、CSP 与内联 closing-tag escaping 留给 Phase 3 正式构建。
+
+### 8.6 Phase 3 Acceptance Record / 验收记录（2026-08-12）
+
+- Frozen HEAD: `eaf3c84745ee84c0d5ada9c40667072ea4d8f278`
+- Frozen source-manifest SHA-256: `360f85ac21b94ffcab928e8a232e493e9bbade42056ec9e87ec69abdb33c786b`
+- Frozen tracked binary diff SHA-256: `6ea88b40b58bc7010f290a8d6384f431338afc2ef03e0b7f6a7906dc20cc7522`
+- Native evidence: `docs/exec-plans/reviews/02-visual-spec-artifact-renderer/phase-3-evidence-001.md`
+- Independent verdicts: Grok `review-014.md` approve/high；AGY/Antigravity `review-015.md` approve/high；均无 blocking finding
+- Outcome: 正式静态目录与单文件均可离线交付；固定生成时间下可复现；无强制外网、ELK、编辑器/storage/Tauri 运行时；PNG 与纯 SVG 均保留节点和关系。
+- Recorded tool limitation: Orca `screenshot` 通道超时并记为 `tool_failed`；Orca snapshot/eval/export receipts 与 in-app Browser screenshot fallback 共同留证，不伪造成原生 screenshot 成功。
 
 ---
 
